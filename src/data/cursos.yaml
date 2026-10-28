@@ -292,9 +292,9 @@ cursos:
           - titulo: Patrón Strategy
             repo: DYAS-BehavioralPatterns-strategy
             descripcion: >-
-              Implementa el patrón Strategy para intercambiar el método de
-              autenticación (XML, base de datos o memoria) sin modificar el
-              código que lo usa.
+              Implementa el patrón Strategy en un servicio Spring Boot que
+              elige por configuración el método de autenticación (memoria,
+              MySQL o XML), y lo despliega con Docker Compose.
           - titulo: Patrón Adapter en un reproductor de audio
             repo: DYAS-MusicPlayer
             descripcion: >-

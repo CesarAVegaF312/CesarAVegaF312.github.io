@@ -602,6 +602,8 @@ cursos:
         presentaciones:
           - titulo: Integración y CI/CD
             archivo: 04-integracion-ci-cd.pdf
+          - titulo: Pruebas de integración y de sistema
+            archivo: 04-pruebas-integracion.pdf
         talleres:
           - titulo: Pruebas de integración y de sistema
             repo: TYVS-Taller_Pruebas_Integracion
@@ -625,6 +627,8 @@ cursos:
         presentaciones:
           - titulo: Rendimiento y carga
             archivo: 05-rendimiento-carga.pdf
+          - titulo: Pruebas de carga y rendimiento
+            archivo: 05-pruebas-carga-rendimiento.pdf
         talleres:
           - titulo: Pruebas de carga y rendimiento
             repo: TYVS-Taller_Pruebas_de_carga
@@ -643,6 +647,8 @@ cursos:
         presentaciones:
           - titulo: Gestión de defectos y validación final
             archivo: 06-gestion-defectos-validacion.pdf
+          - titulo: Pruebas de UI y UX
+            archivo: 06-pruebas-ui-ux.pdf
         talleres:
           - titulo: Pruebas de UI y UX
             repo: TYVS-Taller_Pruebas_de_UX

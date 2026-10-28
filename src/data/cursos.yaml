@@ -279,19 +279,19 @@ cursos:
               Código de partida, sin refactorizar, para la primera parte del
               taller de patrones creacionales.
           - titulo: Patrón Observer
-            repo: DAYS-BehavioralPatterns-observer
+            repo: DYAS-BehavioralPatterns-Observer
             descripcion: >-
               Implementa el patrón Observer para que los cambios de
               configuración del sistema se notifiquen automáticamente a los
               objetos interesados.
           - titulo: Patrón Strategy
-            repo: DAYS-BehavioralPatterns-strategy
+            repo: DYAS-BehavioralPatterns-Strategy
             descripcion: >-
               Implementa el patrón Strategy para intercambiar el método de
               autenticación (XML, base de datos o memoria) sin modificar el
               código que lo usa.
           - titulo: Patrón Adapter en un reproductor de audio
-            repo: DAYS-MusicPlayer
+            repo: DYAS-MusicPlayer
             descripcion: >-
               Aplica el patrón Adapter para que un reproductor use dos
               bibliotecas de terceros incompatibles a través de una sola
@@ -349,7 +349,7 @@ cursos:
             archivo: 07-devops.pdf
         talleres:
           - titulo: Integración continua con GitHub Actions
-            repo: DAYS-Integracion_continua
+            repo: DYAS-Integracion_continua
             descripcion: >-
               Configura un pipeline de integración continua para un proyecto
               Java y Maven que ejecuta las pruebas, exige una cobertura mínima

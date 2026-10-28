@@ -1,0 +1,112 @@
+---
+import Base from '../layouts/Base.astro';
+import { cargarSemilleros } from '../lib/datos';
+
+const semilleros = cargarSemilleros();
+---
+
+<Base titulo="Semilleros" descripcion="Semilleros y grupos estudiantiles que acompaña César Augusto Vega Fernández.">
+  <div class="contenedor">
+    <header class="encabezado-pagina">
+      <h1>Semilleros</h1>
+      <p>Semilleros y grupos estudiantiles, con sus actividades y el material cuando está disponible.</p>
+    </header>
+
+    <ul class="lista">
+      {
+        semilleros.map((s) => (
+          <li class="elemento">
+            <h2 class="elemento__titulo">{s.nombre}</h2>
+            {s.contexto && <p class="elemento__contexto">{s.contexto}</p>}
+            {s.descripcion && <p class="elemento__texto">{s.descripcion}</p>}
+            {s.actividades.length > 0 && (
+              <>
+                <h3 class="elemento__subtitulo">Actividades</h3>
+                <ul class="actividades">
+                  {s.actividades.map((a) => (
+                    <li>
+                      {a.periodo && <span class="periodo">{a.periodo}</span>}
+                      <span>{a.titulo}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {s.enlace && (
+              <p class="elemento__enlace">
+                <a href={s.enlace}>{s.texto_enlace ?? 'Ver material'}</a>
+              </p>
+            )}
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</Base>
+
+<style>
+  .lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: 52rem;
+  }
+
+  .elemento {
+    padding-block: 1.5rem;
+    border-top: 1px solid var(--borde);
+  }
+
+  .elemento:last-child {
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .elemento__titulo {
+    font-size: 1.45rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .elemento__contexto {
+    color: var(--acento-texto);
+    font-weight: 600;
+    font-size: 0.97rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .elemento__texto {
+    color: var(--texto-suave);
+  }
+
+  .elemento__subtitulo {
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+    margin: 1rem 0 0.4rem;
+  }
+
+  .actividades {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .actividades li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.75rem;
+    padding-block: 0.2rem;
+  }
+
+  .periodo {
+    min-width: 4.5rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--texto-suave);
+  }
+
+  .elemento__enlace {
+    margin: 0.75rem 0 0;
+  }
+</style>

@@ -1,0 +1,283 @@
+---
+import Base from '../../layouts/Base.astro';
+import {
+  cargarCursos,
+  cargarPerfil,
+  presentacionesVisibles,
+  urlTaller,
+  type Curso,
+  type Taller,
+} from '../../lib/datos';
+
+export function getStaticPaths() {
+  return cargarCursos().map((curso) => ({ params: { id: curso.id }, props: { curso } }));
+}
+
+interface Props {
+  curso: Curso;
+}
+
+const { curso } = Astro.props;
+const { usuario_github } = cargarPerfil();
+
+const nivel =
+  curso.nivel === 'pregrado' ? 'Pregrado' : 'Maestría en Ingeniería de Software';
+
+const modulos = curso.modulos.map((modulo, i) => ({
+  ...modulo,
+  ancla: `modulo-${i + 1}`,
+  numero: i + 1,
+  visibles: presentacionesVisibles(curso, modulo),
+}));
+
+const enlaceTaller = (t: Taller) => urlTaller(t, usuario_github);
+---
+
+<Base titulo={`${curso.nombre} (${curso.codigo})`} descripcion={curso.descripcion}>
+  <div class="contenedor">
+    <nav class="migas" aria-label="Ruta de navegación">
+      <ol>
+        <li><a href="/cursos/">Cursos</a></li>
+        <li aria-current="page">{curso.codigo}</li>
+      </ol>
+    </nav>
+
+    <header class="encabezado-pagina">
+      <p class="etiqueta">{curso.codigo} · {nivel}</p>
+      <h1>{curso.nombre}</h1>
+      {curso.programa && <p class="programa">{curso.programa}</p>}
+      <p>{curso.descripcion}</p>
+      {
+        curso.aeva && (
+          <p class="aeva">
+            <a href={curso.aeva}>Asistente del curso</a>
+          </p>
+        )
+      }
+    </header>
+
+    <section class="seccion" aria-labelledby="titulo-modulos">
+      <h2 id="titulo-modulos">{curso.nombre_modulos}</h2>
+
+      <ol class="modulos">
+        {
+          modulos.map((m) => (
+            <li class="modulo" id={m.ancla}>
+              <h3 class="modulo__titulo">
+                <span class="modulo__numero" aria-hidden="true">
+                  {String(m.numero).padStart(2, '0')}
+                </span>
+                {m.titulo}
+              </h3>
+              {m.descripcion && <p class="suave">{m.descripcion}</p>}
+
+              {m.visibles.length > 0 && (
+                <div class="bloque">
+                  <h4>Presentaciones</h4>
+                  <ul class="enlaces">
+                    {m.visibles.map((p) => (
+                      <li>
+                        <a href={p.href}>{p.titulo}</a>
+                        {p.formato && <span class="formato">{p.formato}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {m.talleres.length > 0 && (
+                <div class="bloque">
+                  <h4>Talleres</h4>
+                  <ul class="talleres">
+                    {m.talleres.map((t) => (
+                      <li>
+                        <a href={enlaceTaller(t)}>{t.titulo}</a>
+                        {t.repo && <span class="repo">{t.repo}</span>}
+                        {t.descripcion && <p>{t.descripcion}</p>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {m.material.length > 0 && (
+                <div class="bloque">
+                  <h4>Material</h4>
+                  <ul class="enlaces">
+                    {m.material.map((e) => (
+                      <li>
+                        <a href={e.url}>{e.titulo}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {m.visibles.length === 0 && m.talleres.length === 0 && m.material.length === 0 && (
+                <p class="suave sin-material">Sin material publicado por ahora.</p>
+              )}
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    {
+      curso.talleres.length > 0 && (
+        <section class="seccion" aria-labelledby="titulo-generales">
+          <h2 id="titulo-generales">Guías y talleres de todo el curso</h2>
+          <ul class="talleres talleres--generales">
+            {curso.talleres.map((t) => (
+              <li>
+                <a href={enlaceTaller(t)}>{t.titulo}</a>
+                {t.repo && <span class="repo">{t.repo}</span>}
+                {t.descripcion && <p>{t.descripcion}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+  </div>
+</Base>
+
+<style>
+  .migas {
+    padding-top: 1.5rem;
+    font-size: 0.92rem;
+  }
+
+  .migas ol {
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    color: var(--texto-suave);
+  }
+
+  .migas li + li::before {
+    content: '/';
+    margin-inline: 0.5rem;
+    color: var(--texto-suave);
+  }
+
+  .encabezado-pagina {
+    padding-top: 1.5rem;
+  }
+
+  .programa {
+    font-size: 1rem;
+  }
+
+  .aeva a {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--enlace);
+    border-radius: var(--radio);
+    font-size: 1rem;
+    text-decoration: none;
+  }
+
+  .aeva a:hover {
+    border-color: var(--enlace-hover);
+    text-decoration: underline;
+  }
+
+  .modulos {
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0;
+  }
+
+  .modulo {
+    padding-block: 1.5rem;
+    border-top: 1px solid var(--borde);
+    max-width: 52rem;
+  }
+
+  .modulo__titulo {
+    display: flex;
+    align-items: baseline;
+    gap: 0.85rem;
+    font-size: 1.35rem;
+  }
+
+  .modulo__numero {
+    flex: none;
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--acento-texto);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .modulo > :not(h3) {
+    margin-left: 2.1rem;
+  }
+
+  @media (max-width: 30rem) {
+    .modulo > :not(h3) {
+      margin-left: 0;
+    }
+  }
+
+  .bloque {
+    margin-top: 1rem;
+  }
+
+  .bloque h4 {
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+    margin-bottom: 0.4rem;
+  }
+
+  .enlaces,
+  .talleres {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .enlaces li {
+    padding-block: 0.15rem;
+  }
+
+  .talleres li {
+    padding: 0.55rem 0 0.55rem 0.9rem;
+    border-left: 2px solid var(--borde);
+    margin-bottom: 0.5rem;
+  }
+
+  .talleres li:hover {
+    border-left-color: var(--acento);
+  }
+
+  .talleres p {
+    margin: 0.2rem 0 0;
+    color: var(--texto-suave);
+    font-size: 0.97rem;
+  }
+
+  .repo {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--texto-suave);
+  }
+
+  .talleres--generales {
+    max-width: 52rem;
+    margin-top: 1rem;
+  }
+
+  .sin-material {
+    margin: 0.25rem 0 0;
+    font-size: 0.95rem;
+  }
+</style>

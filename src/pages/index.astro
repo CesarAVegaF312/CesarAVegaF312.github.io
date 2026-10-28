@@ -30,19 +30,7 @@ const accesos = [
     <p class="afiliacion">{perfil.afiliacion}</p>
     <p class="resumen">{perfil.resumen}</p>
 
-    {
-      perfil.presentacion.length > 0 ? (
-        <div class="texto bio">
-          {perfil.presentacion.map((parrafo) => (
-            <p>{parrafo}</p>
-          ))}
-        </div>
-      ) : (
-        <div class="pendiente" role="note">
-          <p class="pendiente__titulo">Texto por completar</p>
-        </div>
-      )
-    }
+    <p class="mas"><a href="/sobre-mi/">Más sobre el profesor</a></p>
   </section>
 
   <section class="contenedor accesos" aria-labelledby="titulo-accesos">
@@ -93,23 +81,9 @@ const accesos = [
     background: var(--acento);
   }
 
-  .bio {
-    margin-top: 1.5rem;
-  }
-
-  .pendiente {
-    max-width: var(--ancho-texto);
-    margin-top: 1.75rem;
-    padding: 1rem 1.25rem;
-    border: 2px dashed var(--borde);
-    border-radius: var(--radio);
-    background: var(--fondo-suave);
-  }
-
-  .pendiente__titulo {
-    font-weight: 600;
-    color: var(--acento-texto);
+  .mas {
     margin: 0;
+    font-weight: 600;
   }
 
   .accesos {

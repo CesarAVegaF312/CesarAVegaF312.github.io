@@ -14,7 +14,7 @@ El sitio está hecho con [Astro](https://astro.build/) y genera páginas estáti
 6. [Agregar un curso](#6-agregar-un-curso)
 7. [Asistente del curso (AEVA)](#7-asistente-del-curso-aeva)
 8. [Charlas y semilleros](#8-charlas-y-semilleros)
-9. [Texto de la página de inicio](#9-texto-de-la-página-de-inicio)
+9. [Página de inicio y Sobre mí](#9-página-de-inicio-y-sobre-mí)
 10. [Ver el sitio en el computador](#10-ver-el-sitio-en-el-computador)
 11. [Publicación](#11-publicación)
 12. [Reglas básicas de YAML](#12-reglas-básicas-de-yaml)
@@ -197,17 +197,17 @@ Cada curso tiene el campo `aeva`. Si está vacío (`aeva: ""`), no se muestra na
         periodo: 2026-2
 ```
 
-## 9. Texto de la página de inicio
+## 9. Página de inicio y Sobre mí
 
-En `src/data/perfil.yaml`, el campo `presentacion` guarda el texto corto de presentación. Mientras esté vacío, la página de inicio muestra un recuadro "Texto por completar". Cada párrafo es un elemento de la lista:
+Todo está en `src/data/perfil.yaml`:
 
-```yaml
-presentacion:
-  - Primer párrafo.
-  - Segundo párrafo.
-```
+- `nombre`, `afiliacion` y `resumen`: lo que se ve en la página de inicio.
+- `presentacion`: los párrafos de la página **Sobre mí**. Cada párrafo es un elemento de la lista. Si queda vacía, la página muestra "Texto por completar".
+- `areas`: las áreas de trabajo de la página Sobre mí.
+- `formacion` y `trayectoria`: listas con título, institución y año, y con cargo, lugar y periodo. Mientras las dos estén vacías, la página muestra "Formación y trayectoria: por completar". El archivo trae un ejemplo comentado de cada una.
+- `contacto`: `correo` y `linkedin`. Los vacíos no se muestran; el perfil de GitHub se muestra siempre.
 
-En el mismo archivo están el nombre, la afiliación y el resumen que aparecen debajo del nombre.
+La lista de cursos de la página Sobre mí se arma sola a partir de `cursos.yaml`.
 
 ## 10. Ver el sitio en el computador
 

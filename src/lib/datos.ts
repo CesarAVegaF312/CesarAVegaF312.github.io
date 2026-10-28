@@ -75,11 +75,27 @@ export interface Semillero {
   actividades: Actividad[];
 }
 
+export interface Formacion {
+  titulo: string;
+  institucion?: string;
+  anio?: string;
+}
+
+export interface Cargo {
+  cargo: string;
+  lugar?: string;
+  periodo?: string;
+}
+
 export interface Perfil {
   nombre: string;
   afiliacion: string;
   resumen: string;
   presentacion: string[];
+  areas: string[];
+  formacion: Formacion[];
+  trayectoria: Cargo[];
+  contacto: { correo?: string; linkedin?: string };
   usuario_github: string;
 }
 
@@ -121,6 +137,25 @@ export function cargarPerfil(): Perfil {
     afiliacion: texto(datos.afiliacion),
     resumen: texto(datos.resumen),
     presentacion: lista<string>(datos.presentacion).map(texto).filter(Boolean),
+    areas: lista<string>(datos.areas).map(texto).filter(Boolean),
+    formacion: lista<any>(datos.formacion)
+      .filter((f) => texto(f?.titulo))
+      .map((f) => ({
+        titulo: texto(f.titulo),
+        institucion: texto(f.institucion) || undefined,
+        anio: texto(f.anio) || undefined,
+      })),
+    trayectoria: lista<any>(datos.trayectoria)
+      .filter((t) => texto(t?.cargo))
+      .map((t) => ({
+        cargo: texto(t.cargo),
+        lugar: texto(t.lugar) || undefined,
+        periodo: texto(t.periodo) || undefined,
+      })),
+    contacto: {
+      correo: texto(datos.contacto?.correo) || undefined,
+      linkedin: texto(datos.contacto?.linkedin) || undefined,
+    },
     usuario_github: texto(datos.usuario_github) || 'CesarAVegaF312',
   };
 }

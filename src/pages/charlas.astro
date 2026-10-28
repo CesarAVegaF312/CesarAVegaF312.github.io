@@ -23,7 +23,7 @@ const propuestas = charlas.filter((c) => c.propuesta);
               <li class="elemento">
                 <h3 class="elemento__titulo">{c.titulo}</h3>
                 <p class="elemento__datos">
-                  {c.evento ? <span>{c.evento}</span> : <span class="pendiente">Evento por completar</span>}
+                  {c.evento ? <span>{c.evento}</span> : <span class="sin-evento">Evento por completar</span>}
                   {c.lugar && <span>{c.lugar}</span>}
                   {c.anio && <span>{c.anio}</span>}
                 </p>
@@ -98,7 +98,7 @@ const propuestas = charlas.filter((c) => c.propuesta);
     margin-inline: 0.5rem;
   }
 
-  .pendiente {
+  .sin-evento {
     font-style: italic;
   }
 

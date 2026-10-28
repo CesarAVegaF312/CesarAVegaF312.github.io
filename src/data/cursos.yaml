@@ -145,21 +145,10 @@ cursos:
               identifica las brechas frente al estado actual y prioriza las
               soluciones que las cierran.
 
-      - titulo: Gobierno de arquitectura
-        presentaciones:
-          - titulo: Gobierno de arquitectura
-            archivo: 10-gobierno-arquitectura.pdf
-        talleres:
-          - titulo: Taller 9. Simulación de comité de arquitectura
-            repo: AREM-Taller_9_Presentacion_Final
-            descripcion: >-
-              Presenta y defiende la solución arquitectónica final del cliente
-              ante un comité simulado, con un plan de implementación por fases.
-
-      - titulo: Riesgos arquitectónicos
+      - titulo: Integración de vistas y riesgos arquitectónicos
         presentaciones:
           - titulo: Riesgos arquitectónicos
-            archivo: 11-riesgos-arquitectonicos.pdf
+            archivo: 10-riesgos-arquitectonicos.pdf
         talleres:
           - titulo: Taller 8. Integración de vistas de arquitectura
             repo: AREM-Taller_8_Integracion_Vistas
@@ -167,6 +156,17 @@ cursos:
               Integra las vistas de negocio, información, aplicaciones,
               infraestructura y seguridad en una narrativa coherente con los
               objetivos del cliente.
+
+      - titulo: Gobierno de arquitectura
+        presentaciones:
+          - titulo: Gobierno de arquitectura
+            archivo: 11-gobierno-arquitectura.pdf
+        talleres:
+          - titulo: Taller 9. Simulación de comité de arquitectura
+            repo: AREM-Taller_9_Presentacion_Final
+            descripcion: >-
+              Presenta y defiende la solución arquitectónica final del cliente
+              ante un comité simulado, con un plan de implementación por fases.
 
     talleres:
       - titulo: Proyecto con el cliente real

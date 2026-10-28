@@ -1,0 +1,649 @@
+# Cursos, módulos, presentaciones y talleres.
+#
+# La guía completa para editar este archivo está en el README del repositorio.
+#
+# Estructura de un curso:
+#
+#   - id: dyas                      identificador en minúsculas, sin espacios ni tildes.
+#                                   Define la dirección de la página (/cursos/dyas/)
+#                                   y la carpeta de presentaciones (public/presentaciones/dyas/).
+#     codigo: DYAS
+#     nombre: Diseño y Arquitectura de Software
+#     nivel: pregrado               pregrado | maestria
+#     programa: ...                 opcional, se muestra debajo del nombre
+#     descripcion: ...
+#     aeva: ""                      URL del asistente del curso; vacío = no se muestra
+#     nombre_modulos: Módulos       opcional: Módulos, Unidades, Sesiones...
+#     modulos:
+#       - titulo: Introducción
+#         descripcion: ...          opcional
+#         presentaciones:
+#           - titulo: Introducción
+#             archivo: 01-introduccion.pdf      archivo en public/presentaciones/<id>/
+#           - titulo: Presentación web
+#             url: https://...                  o enlace externo (PDF o HTML)
+#         talleres:
+#           - titulo: Taller de ...
+#             repo: NOMBRE-DEL-REPO             repositorio en github.com/CesarAVegaF312
+#             descripcion: Una frase sobre lo que enseña.
+#         material:                             otros enlaces de la unidad, opcional
+#           - titulo: Portada de la unidad
+#             url: https://...
+#     talleres: []                  talleres o guías de todo el curso, opcional
+#
+# Una presentación con "archivo" solo aparece en el sitio cuando el archivo existe
+# en public/presentaciones/<id>/. Mientras falte, el build lo lista en un aviso.
+
+cursos:
+  # ---------------------------------------------------------------- Pregrado
+
+  - id: arem
+    codigo: AREM
+    nombre: Arquitectura Empresarial
+    nivel: pregrado
+    descripcion: >-
+      Alinear la estrategia de la organización con soluciones tecnológicas
+      (procesos, datos, aplicaciones, infraestructura y seguridad) mediante un
+      proyecto con un cliente real que va del estado actual al estado objetivo.
+    aeva: ""
+    modulos:
+      - titulo: Introducción
+        presentaciones:
+          - titulo: Introducción
+            archivo: 01-introduccion.pdf
+
+      - titulo: Arquitectura Empresarial
+        presentaciones:
+          - titulo: Arquitectura Empresarial
+            archivo: 02-arquitectura-empresarial.pdf
+        talleres:
+          - titulo: Taller 0. Preliminary y Architecture Vision
+            repo: AREM-Taller_0_Preliminary_Vision
+            descripcion: >-
+              Define el alcance, el contexto estratégico y la visión de la
+              arquitectura del cliente con las fases Preliminary y Architecture
+              Vision del ADM de TOGAF.
+
+      - titulo: Modelado de procesos (BPMN)
+        presentaciones:
+          - titulo: Modelado de procesos (BPMN)
+            archivo: 03-modelado-procesos-bpmn.pdf
+        talleres:
+          - titulo: Taller 1. Modelado de procesos con BPMN
+            repo: AREM-Taller_1_BPMN
+            descripcion: >-
+              Modela en BPMN un proceso de negocio real del cliente, con sus
+              eventos, actividades, decisiones, actores y puntos críticos.
+
+      - titulo: Modelado de información (ERD)
+        presentaciones:
+          - titulo: Modelado de información (ERD)
+            archivo: 04-modelado-informacion-erd.pdf
+        talleres:
+          - titulo: Taller 2. Modelo de información y diagrama de contexto
+            repo: AREM-Taller_2_Modelo_Informacion
+            descripcion: >-
+              Modela las entidades del dominio del cliente con un diagrama
+              entidad-relación y los flujos de información entre actores y
+              sistemas con un diagrama de contexto.
+
+      - titulo: Documentar la arquitectura (C4)
+        presentaciones:
+          - titulo: Documentar la arquitectura (C4)
+            archivo: 05-documentar-arquitectura-c4.pdf
+        talleres:
+          - titulo: Taller 3. Arquitectura actual con el modelo C4
+            repo: AREM-Taller_3_Arquitectura_C4
+            descripcion: >-
+              Representa la arquitectura actual del sistema del cliente con las
+              vistas de contexto (C1) y de contenedores (C2) del modelo C4.
+
+      - titulo: Infraestructura y topologías
+        presentaciones:
+          - titulo: Infraestructura y topologías
+            archivo: 06-infraestructura-topologias.pdf
+        talleres:
+          - titulo: Taller 4. Mapa de infraestructura y diagnóstico técnico
+            repo: AREM-Taller_4_Infraestructura
+            descripcion: >-
+              Construye el mapa de la infraestructura tecnológica del sistema y
+              diagnostica sus debilidades, cuellos de botella y oportunidades
+              de mejora.
+
+      - titulo: Seguridad y STRIDE
+        presentaciones:
+          - titulo: Seguridad y STRIDE
+            archivo: 07-seguridad-stride.pdf
+        talleres:
+          - titulo: Taller 5. Evaluación de seguridad con STRIDE
+            repo: AREM-Taller_5_Seguridad
+            descripcion: >-
+              Analiza y prioriza los riesgos de seguridad de una parte crítica
+              del sistema con las seis categorías de STRIDE.
+
+      - titulo: Normatividad y cumplimiento
+        presentaciones:
+          - titulo: Normatividad y cumplimiento
+            archivo: 08-normatividad-cumplimiento.pdf
+        talleres:
+          - titulo: Taller 6. Checklist de cumplimiento normativo
+            repo: AREM-Taller_6_Normatividad
+            descripcion: >-
+              Verifica el cumplimiento legal y normativo del sistema frente a
+              marcos como ISO/IEC 27001, GDPR y la Ley 1581 de 2012 de
+              protección de datos personales.
+
+      - titulo: Oportunidades y soluciones
+        presentaciones:
+          - titulo: Oportunidades y soluciones
+            archivo: 09-oportunidades-soluciones.pdf
+        talleres:
+          - titulo: Taller 7. Opportunities and Solutions
+            repo: AREM-Taller_7_Opportunities_Solutions
+            descripcion: >-
+              Propone la arquitectura objetivo de aplicaciones y tecnología,
+              identifica las brechas frente al estado actual y prioriza las
+              soluciones que las cierran.
+
+      - titulo: Gobierno de arquitectura
+        presentaciones:
+          - titulo: Gobierno de arquitectura
+            archivo: 10-gobierno-arquitectura.pdf
+        talleres:
+          - titulo: Taller 9. Simulación de comité de arquitectura
+            repo: AREM-Taller_9_Presentacion_Final
+            descripcion: >-
+              Presenta y defiende la solución arquitectónica final del cliente
+              ante un comité simulado, con un plan de implementación por fases.
+
+      - titulo: Riesgos arquitectónicos
+        presentaciones:
+          - titulo: Riesgos arquitectónicos
+            archivo: 11-riesgos-arquitectonicos.pdf
+        talleres:
+          - titulo: Taller 8. Integración de vistas de arquitectura
+            repo: AREM-Taller_8_Integracion_Vistas
+            descripcion: >-
+              Integra las vistas de negocio, información, aplicaciones,
+              infraestructura y seguridad en una narrativa coherente con los
+              objetivos del cliente.
+
+    talleres:
+      - titulo: Proyecto con el cliente real
+        repo: AREM-Proyecto-Cliente
+        descripcion: >-
+          Explica cómo organizar en un solo repositorio por equipo el trabajo
+          con el cliente real de los diez talleres, de modo que el cliente
+          pueda usar el resultado.
+      - titulo: Notación ArchiMate
+        repo: AREM-ArchiMate
+        descripcion: >-
+          Guía de referencia de ArchiMate, la notación de modelado del curso,
+          y de cómo se relaciona con el diagrama de cada taller.
+      - titulo: Modelado con Astah UML
+        repo: AREM-astah
+        descripcion: >-
+          Explica cómo instalar Astah UML con licencia de estudiante y
+          construir diagramas UML paso a paso.
+
+  - id: dalgo
+    codigo: DALGO
+    nombre: Estructuras de Datos y Algoritmos
+    nivel: pregrado
+    descripcion: >-
+      Resolver problemas diseñando algoritmos eficientes y eligiendo las
+      estructuras de datos adecuadas, con análisis formal de complejidad, en
+      Python.
+    aeva: ""
+    modulos:
+      - titulo: Introducción
+        presentaciones:
+          - titulo: Introducción
+            archivo: 01-introduccion.pdf
+      - titulo: Algoritmos y su complejidad
+        presentaciones:
+          - titulo: Algoritmos y su complejidad
+            archivo: 02-algoritmos-complejidad.pdf
+      - titulo: Lenguaje GCL
+        presentaciones:
+          - titulo: Lenguaje GCL
+            archivo: 03-lenguaje-gcl.pdf
+      - titulo: Complejidad algorítmica
+        presentaciones:
+          - titulo: Complejidad algorítmica
+            archivo: 04-complejidad-algoritmica.pdf
+      - titulo: Estructuras de datos
+        presentaciones:
+          - titulo: Estructuras de datos
+            archivo: 05-estructuras-datos.pdf
+      - titulo: Tipos de algoritmos
+        presentaciones:
+          - titulo: Tipos de algoritmos
+            archivo: 06-tipos-algoritmos.pdf
+      - titulo: Introducción a grafos
+        presentaciones:
+          - titulo: Introducción a grafos
+            archivo: 07-introduccion-grafos.pdf
+      - titulo: Algoritmos para grafos
+        presentaciones:
+          - titulo: Algoritmos para grafos
+            archivo: 08-algoritmos-grafos.pdf
+
+  - id: dyas
+    codigo: DYAS
+    nombre: Diseño y Arquitectura de Software
+    nivel: pregrado
+    descripcion: >-
+      Construir un sistema profesional con los estándares actuales de la
+      industria, mediante retos.
+    aeva: ""
+    modulos:
+      - titulo: Introducción
+        presentaciones:
+          - titulo: Introducción
+            archivo: 01-introduccion.pdf
+        talleres:
+          - titulo: Taller de nivelación en Java y Maven
+            repo: DYAS-Taller_nivelacion
+            descripcion: >-
+              Nivela los fundamentos de Java y Maven: programación orientada a
+              objetos, compilación desde consola, empaquetado en .jar y ciclo de
+              vida de un proyecto.
+
+      - titulo: Fundamentos de ingeniería de software
+        presentaciones:
+          - titulo: Fundamentos de ingeniería de software
+            archivo: 02-fundamentos-ingenieria-software.pdf
+        talleres:
+          - titulo: Persistencia con MyBatis
+            repo: DYAS-MyBatis_Introduction_VideoRental
+            descripcion: >-
+              Introduce el framework de persistencia MyBatis con mappers que
+              reconstruyen los objetos de un sistema de alquiler de videos
+              sobre SQLite.
+
+      - titulo: SOLID y patrones de diseño
+        presentaciones:
+          - titulo: SOLID y patrones de diseño
+            archivo: 03-solid-patrones-diseno.pdf
+        talleres:
+          - titulo: Patrones creacionales y refactoring de un juego
+            repo: DYAS-GoF-CreationalPatterns-GameRefactoring
+            descripcion: >-
+              Aplica la fábrica abstracta a un controlador de fabricación de
+              pizzas y la inversión de dependencias para desacoplar la lógica
+              de un juego de su estilo de visualización.
+          - titulo: Código base de la fábrica de pizzas
+            repo: DYAS-GoF-Patterns-Creational-PizzaFactory
+            descripcion: >-
+              Código de partida, sin refactorizar, para la primera parte del
+              taller de patrones creacionales.
+          - titulo: Patrón Observer
+            repo: DAYS-BehavioralPatterns-observer
+            descripcion: >-
+              Implementa el patrón Observer para que los cambios de
+              configuración del sistema se notifiquen automáticamente a los
+              objetos interesados.
+          - titulo: Patrón Strategy
+            repo: DAYS-BehavioralPatterns-strategy
+            descripcion: >-
+              Implementa el patrón Strategy para intercambiar el método de
+              autenticación (XML, base de datos o memoria) sin modificar el
+              código que lo usa.
+          - titulo: Patrón Adapter en un reproductor de audio
+            repo: DAYS-MusicPlayer
+            descripcion: >-
+              Aplica el patrón Adapter para que un reproductor use dos
+              bibliotecas de terceros incompatibles a través de una sola
+              interfaz.
+          - titulo: Patrones estructurales en un cliente de mensajería
+            repo: DYAS-GuasappMessenger
+            descripcion: >-
+              Protege un cliente de mensajería de terceros, sin modificarlo,
+              con validaciones combinables de contenido, longitud y frecuencia
+              construidas con patrones estructurales.
+          # Repositorios públicos de versiones anteriores del curso que no se
+          # publican por ahora. Para mostrarlos, quite el signo # de las líneas.
+          # - titulo: Factory Method, implementación de referencia
+          #   repo: DYAS-GoF-FactoryMethod-ReferenceExample
+          #   descripcion: >-
+          #     Implementación de referencia del patrón Factory Method en una
+          #     aplicación de terminal con un mensaje de bienvenida configurable.
+
+      - titulo: Pruebas
+        presentaciones:
+          - titulo: Pruebas
+            archivo: 04-pruebas.pdf
+        talleres:
+          - titulo: TDD y pruebas unitarias
+            repo: DYAS-TDD
+            descripcion: >-
+              Aplica TDD (rojo, verde, refactor) sobre una arquitectura limpia,
+              con pruebas unitarias del dominio según el patrón AAA, clases de
+              equivalencia y BDD.
+          # - titulo: Pruebas unitarias con el patrón Arrange-Act-Assert
+          #   repo: DAYS-TDD-example
+          #   descripcion: >-
+          #     Ejemplos de pruebas unitarias en Java organizadas con el patrón
+          #     Arrange-Act-Assert sobre un gestor de inventario.
+
+      - titulo: Arquitecturas (estilos, SOA, microservicios, REST)
+        presentaciones:
+          - titulo: Arquitecturas (estilos, SOA, microservicios, REST)
+            archivo: 05-arquitecturas.pdf
+        # talleres:
+        #   - titulo: Event Sourcing
+        #     repo: DAYS-Pattern_EventSourcing
+        #     descripcion: >-
+        #       Implementa el patrón Event Sourcing en un sistema de cuentas
+        #       bancarias y reconstruye su estado a partir de los eventos.
+
+      - titulo: Arquitectura limpia y hexagonal
+        presentaciones:
+          - titulo: Arquitectura limpia y hexagonal
+            archivo: 06-arquitectura-limpia-hexagonal.pdf
+
+      - titulo: DevOps
+        presentaciones:
+          - titulo: DevOps
+            archivo: 07-devops.pdf
+        talleres:
+          - titulo: Integración continua con GitHub Actions
+            repo: DAYS-Integracion_continua
+            descripcion: >-
+              Configura un pipeline de integración continua para un proyecto
+              Java y Maven que ejecuta las pruebas, exige una cobertura mínima
+              con JaCoCo y protege la rama principal.
+          - titulo: Docker y Docker Compose
+            repo: DYAS-Docker
+            descripcion: >-
+              Enseña a crear imágenes, ejecutar contenedores y componer
+              aplicaciones de varios servicios con Docker y Docker Compose,
+              hasta contenerizar una aplicación Spring Boot.
+          - titulo: DevSecOps y despliegue continuo
+            repo: DYAS-DevSecOps
+            descripcion: >-
+              Incorpora reglas de arquitectura, controles de seguridad y
+              despliegue automático al pipeline de GitHub Actions de un
+              servicio Spring Boot con arquitectura hexagonal.
+          - titulo: Monitoreo y observabilidad
+            repo: DYAS-Monitoreo
+            descripcion: >-
+              Instrumenta una aplicación Spring Boot y recolecta y visualiza
+              sus métricas y trazas con Prometheus, Grafana y Jaeger.
+
+      - titulo: Comunicación asíncrona
+        presentaciones:
+          - titulo: Comunicación asíncrona
+            archivo: 08-comunicacion-asincrona.pdf
+        talleres:
+          - titulo: Multi-threading en Java
+            repo: DYAS-Multi-threading
+            descripcion: >-
+              Practica los conceptos básicos de concurrencia en Java con
+              ejemplos de creación y coordinación de varios hilos.
+          - titulo: Mensajería con RabbitMQ
+            repo: DYAS-RabbitMQ
+            descripcion: >-
+              Introduce la mensajería asíncrona con RabbitMQ mediante ejemplos
+              de envío y recepción de mensajes en Java y Python.
+          - titulo: RabbitMQ con Spring Boot
+            repo: DYAS-RabbitMQ_SpringBoot
+            descripcion: >-
+              Integra RabbitMQ en una aplicación Spring Boot creada desde cero,
+              con un productor y un consumidor de mensajes.
+          - titulo: Programación reactiva con RxJava y Reactor
+            repo: DYAS-Programacion_reactiva
+            descripcion: >-
+              Usa operadores reactivos (map, filter, flatMap, merge y zip) con
+              RxJava y Reactor y expone un endpoint reactivo con Spring
+              WebFlux.
+          # - titulo: Introducción a Apache Kafka
+          #   repo: DYAS-Kafka
+          #   descripcion: >-
+          #     Introduce Apache Kafka con Docker: tópicos, productores y
+          #     consumidores desde consola y desde código.
+
+      - titulo: Documentar la arquitectura
+        presentaciones:
+          - titulo: Documentar la arquitectura
+            archivo: 09-documentar-arquitectura.pdf
+
+  - id: fpln
+    codigo: FPLN
+    nombre: Fundamentos de Procesamiento de Lenguaje Natural
+    nivel: pregrado
+    descripcion: >-
+      Del texto a representaciones numéricas (tokenización, bolsa de palabras,
+      TF-IDF, embeddings) para clasificación y análisis de sentimiento, hacia
+      Transformers y modelos de lenguaje.
+    aeva: ""
+    nombre_modulos: Sesiones
+    modulos:
+      - titulo: Explorar texto con Python
+        presentaciones:
+          - titulo: Explorar texto con Python
+            archivo: 01-explorar-texto-python.pdf
+      - titulo: Preprocesamiento
+        presentaciones:
+          - titulo: Preprocesamiento
+            archivo: 02-preprocesamiento.pdf
+      - titulo: Bolsa de palabras y TF-IDF
+        presentaciones:
+          - titulo: Bolsa de palabras y TF-IDF
+            archivo: 03-bolsa-palabras-tf-idf.pdf
+      - titulo: Embeddings
+        presentaciones:
+          - titulo: Embeddings
+            archivo: 04-embeddings.pdf
+      - titulo: Comparar representaciones con rigor experimental
+        presentaciones:
+          - titulo: Comparar representaciones con rigor experimental
+            archivo: 05-comparar-representaciones.pdf
+      - titulo: Clasificación de texto
+        presentaciones:
+          - titulo: Clasificación de texto
+            archivo: 06-clasificacion-texto.pdf
+      - titulo: Análisis de sentimiento
+        presentaciones:
+          - titulo: Análisis de sentimiento
+            archivo: 07-analisis-sentimiento.pdf
+      - titulo: Su modelo frente a un modelo de lenguaje
+        presentaciones:
+          - titulo: Su modelo frente a un modelo de lenguaje
+            archivo: 08-modelo-frente-modelo-lenguaje.pdf
+
+  # ------------------------------------- Maestría en Ingeniería de Software
+
+  - id: arem-maestria
+    codigo: AREM
+    nombre: Arquitectura Empresarial
+    nivel: maestria
+    descripcion: >-
+      Arquitecturas empresariales que alinean las TI con la estrategia:
+      gobierno, gestión del cambio y transformación.
+    aeva: ""
+    nombre_modulos: Unidades
+    modulos:
+      - titulo: Marcos y capacidades
+        descripcion: >-
+          Diagnóstico de una organización con TOGAF y el Zachman Framework:
+          modelo operativo, capacidades, madurez y brechas.
+        presentaciones:
+          - titulo: Presentación de la unidad
+            url: https://cesaravegaf312.github.io/AREM-S1_Marcos_y_Capacidades-repositorio/presentacion.html
+        material:
+          - titulo: Portada de la unidad
+            url: https://cesaravegaf312.github.io/AREM-S1_Marcos_y_Capacidades-repositorio/
+          - titulo: Repositorio de la unidad
+            url: https://github.com/CesarAVegaF312/AREM-S1_Marcos_y_Capacidades-repositorio
+
+      - titulo: Modelado y decisión
+        descripcion: >-
+          Modelado empresarial con ArchiMate y evaluación de alternativas de
+          arquitectura y sus trade-offs.
+        presentaciones:
+          - titulo: Presentación de la unidad
+            url: https://cesaravegaf312.github.io/AREM-S2_Modelado_y_Decision/presentacion.html
+        material:
+          - titulo: Portada de la unidad
+            url: https://cesaravegaf312.github.io/AREM-S2_Modelado_y_Decision/
+          - titulo: Repositorio de la unidad
+            url: https://github.com/CesarAVegaF312/AREM-S2_Modelado_y_Decision
+
+      - titulo: Gobierno y control
+        descripcion: >-
+          Gobierno de arquitectura empresarial con TOGAF, COBIT 2019 e ITIL 4:
+          reglas, excepciones y métricas.
+        presentaciones:
+          - titulo: Presentación de la unidad
+            url: https://cesaravegaf312.github.io/AREM-S3_Gobierno_y_Control/presentacion.html
+        material:
+          - titulo: Portada de la unidad
+            url: https://cesaravegaf312.github.io/AREM-S3_Gobierno_y_Control/
+          - titulo: Repositorio de la unidad
+            url: https://github.com/CesarAVegaF312/AREM-S3_Gobierno_y_Control
+
+      - titulo: Transformación y roadmap
+        descripcion: >-
+          Del estado actual al estado objetivo: análisis de brechas, roadmap
+          priorizado y gestión del cambio.
+        presentaciones:
+          - titulo: Presentación de la unidad
+            url: https://cesaravegaf312.github.io/AREM-S4_Transformacion_y_Roadmap/presentacion.html
+        material:
+          - titulo: Portada de la unidad
+            url: https://cesaravegaf312.github.io/AREM-S4_Transformacion_y_Roadmap/
+          - titulo: Repositorio de la unidad
+            url: https://github.com/CesarAVegaF312/AREM-S4_Transformacion_y_Roadmap
+
+  - id: gcms
+    codigo: GCMS
+    nombre: Gestión de Configuración y Mantenimiento de Software
+    nivel: maestria
+    descripcion: >-
+      Gestión de configuración, control de cambios, versiones y mantenimiento
+      para que el software no se degrade.
+    aeva: ""
+    nombre_modulos: Unidades
+    modulos:
+      - titulo: Evolución del software y mantenimiento
+        presentaciones:
+          - titulo: Evolución del software y mantenimiento
+            archivo: 01-evolucion-mantenimiento.pdf
+      - titulo: Gestión de configuración
+        presentaciones:
+          - titulo: Gestión de configuración
+            archivo: 02-gestion-configuracion.pdf
+      - titulo: Control de versiones y DevOps
+        presentaciones:
+          - titulo: Control de versiones y DevOps
+            archivo: 03-control-versiones-devops.pdf
+      - titulo: Estrategias de mantenimiento y evolución
+        presentaciones:
+          - titulo: Estrategias de mantenimiento y evolución
+            archivo: 04-estrategias-mantenimiento.pdf
+
+  - id: tyvs
+    codigo: TYVS
+    nombre: Testing y Validación de Software
+    nivel: maestria
+    descripcion: >-
+      Diseñar, ejecutar y automatizar estrategias de prueba funcionales y no
+      funcionales integradas en CI/CD.
+    aeva: ""
+    nombre_modulos: Unidades
+    modulos:
+      - titulo: Fundamentos de verificación y validación
+        presentaciones:
+          - titulo: Fundamentos de verificación y validación
+            archivo: 01-fundamentos-verificacion-validacion.pdf
+
+      - titulo: Estrategia y planificación de pruebas
+        presentaciones:
+          - titulo: Estrategia y planificación de pruebas
+            archivo: 02-estrategia-planificacion.pdf
+        talleres:
+          - titulo: Economía de las pruebas
+            repo: TYVS-Taller_Economia_de_las_Pruebas
+            descripcion: >-
+              Mide el costo real de una suite de pruebas, distingue cobertura
+              de mutación y decide con datos qué pruebas conservar y cuáles
+              borrar.
+
+      - titulo: Pruebas unitarias y TDD
+        presentaciones:
+          - titulo: Pruebas unitarias y TDD
+            archivo: 03-pruebas-unitarias-tdd.pdf
+        talleres:
+          - titulo: Taller de pruebas unitarias con TDD
+            repo: TYVS-Taller_Pruebas_Unitarias
+            descripcion: >-
+              Aplica TDD sobre una arquitectura limpia con pruebas del dominio
+              según el patrón AAA, clases de equivalencia, cobertura con JaCoCo
+              y pruebas de mutación con PIT.
+          - titulo: Proyecto de pruebas unitarias
+            repo: TYVS-Proyecto_Pruebas_Unitarias
+            descripcion: >-
+              Cada grupo elige un dominio propio y valida sus reglas de negocio
+              con TDD, el patrón AAA, clases de equivalencia, valores límite y
+              BDD.
+
+      - titulo: Integración y CI/CD
+        presentaciones:
+          - titulo: Integración y CI/CD
+            archivo: 04-integracion-ci-cd.pdf
+        talleres:
+          - titulo: Pruebas de integración y de sistema
+            repo: TYVS-Taller_Pruebas_Integracion
+            descripcion: >-
+              Diseña pruebas de integración y de sistema sobre una arquitectura
+              limpia con JUnit, Mockito, H2, Testcontainers, Pact y Spring Boot
+              Test.
+          - titulo: Proyecto de pruebas de integración y de sistema
+            repo: TYVS-Proyecto_Pruebas_Integracion
+            descripcion: >-
+              Aplica pruebas de integración y de sistema a una aplicación
+              multicapa o de microservicios y mide su cobertura con JaCoCo.
+          - titulo: Pruebas de seguridad
+            repo: TYVS-Taller_Pruebas_de_Seguridad
+            descripcion: >-
+              Convierte un modelo de amenazas STRIDE en casos de abuso
+              automatizados y configura el análisis estático de seguridad como
+              puerta de calidad del build.
+
+      - titulo: Rendimiento y carga
+        presentaciones:
+          - titulo: Rendimiento y carga
+            archivo: 05-rendimiento-carga.pdf
+        talleres:
+          - titulo: Pruebas de carga y rendimiento
+            repo: TYVS-Taller_Pruebas_de_carga
+            descripcion: >-
+              Diseña y ejecuta pruebas de línea base, carga, estrés, pico y
+              resistencia con k6 o JMeter, con SLO definidos y reportes
+              reproducibles.
+          - titulo: Proyecto de pruebas de carga y rendimiento
+            repo: TYVS-Proyecto_Pruebas_carga_y_rendimiento
+            descripcion: >-
+              Define SLO para un servicio REST, lo somete a pruebas de carga con
+              k6 o JMeter y analiza latencia, throughput, errores y cuellos de
+              botella.
+
+      - titulo: Gestión de defectos y validación final
+        presentaciones:
+          - titulo: Gestión de defectos y validación final
+            archivo: 06-gestion-defectos-validacion.pdf
+        talleres:
+          - titulo: Pruebas de UI y UX
+            repo: TYVS-Taller_Pruebas_de_UX
+            descripcion: >-
+              Automatiza pruebas de interfaz con Playwright y Selenium, audita
+              la accesibilidad según WCAG 2.1 AA y diseña una sesión de
+              usabilidad con usuarios reales.
+          - titulo: Pruebas de sistemas de IA
+            repo: TYVS-Taller_Pruebas_de_Sistemas_de_IA
+            descripcion: >-
+              Prueba sistemas sin oráculo con precisión y recall, pruebas
+              metamórficas y análisis desagregado, y detecta regresiones en
+              comportamientos que no son binarios.

@@ -1,0 +1,22 @@
+# Datos generales del sitio y texto de la página de inicio.
+
+nombre: César Augusto Vega Fernández
+
+# Afiliación, tal como aparece en la página de inicio.
+afiliacion: Facultad de Ingeniería, Universidad de La Sabana, Colombia
+
+# Resumen corto que va debajo del nombre.
+resumen: >-
+  Profesor de la Facultad de Ingeniería de la Universidad de La Sabana.
+  Dicta cursos de pregrado y de la Maestría en Ingeniería de Software.
+
+# Texto de presentación escrito por el profesor. Mientras esté vacío,
+# la página de inicio muestra un recuadro marcado "Texto por completar".
+# Cada párrafo es un elemento de la lista. Ejemplo:
+# presentacion:
+#   - Primer párrafo.
+#   - Segundo párrafo.
+presentacion: []
+
+# Cuenta de GitHub donde están los repositorios de los talleres.
+usuario_github: CesarAVegaF312

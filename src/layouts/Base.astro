@@ -1,0 +1,157 @@
+---
+import '../styles/global.css';
+import { cargarPerfil } from '../lib/datos';
+
+interface Props {
+  titulo?: string;
+  descripcion?: string;
+}
+
+const perfil = cargarPerfil();
+const { titulo, descripcion = `${perfil.nombre}. ${perfil.resumen}` } = Astro.props;
+const tituloCompleto = titulo ? `${titulo} | ${perfil.nombre}` : perfil.nombre;
+
+const secciones = [
+  { href: '/', texto: 'Inicio' },
+  { href: '/cursos/', texto: 'Cursos' },
+  { href: '/charlas/', texto: 'Charlas' },
+  { href: '/semilleros/', texto: 'Semilleros' },
+];
+
+const ruta = Astro.url.pathname.replace(/\/?$/, '/');
+function esActual(href: string) {
+  return href === '/' ? ruta === '/' : ruta.startsWith(href);
+}
+const canonica = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{tituloCompleto}</title>
+    <meta name="description" content={descripcion} />
+    <meta name="author" content={perfil.nombre} />
+    <link rel="canonical" href={canonica} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#1f2d4e" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={tituloCompleto} />
+    <meta property="og:description" content={descripcion} />
+    <meta property="og:url" content={canonica} />
+    <meta property="og:locale" content="es_CO" />
+  </head>
+  <body>
+    <a class="saltar" href="#contenido">Saltar al contenido</a>
+
+    <header class="cabecera">
+      <div class="contenedor cabecera__fila">
+        <a class="cabecera__nombre" href="/">{perfil.nombre}</a>
+        <nav aria-label="Secciones del sitio">
+          <ul class="cabecera__menu">
+            {
+              secciones.map((s) => (
+                <li>
+                  <a href={s.href} aria-current={esActual(s.href) ? 'page' : undefined}>
+                    {s.texto}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main id="contenido" tabindex="-1">
+      <slot />
+    </main>
+
+    <footer class="pie">
+      <div class="contenedor">
+        <p>
+          © {perfil.nombre}. Material de los cursos bajo licencia{' '}
+          <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es" rel="license">CC BY-NC-SA 4.0</a>.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .cabecera {
+    background: var(--cabecera-fondo);
+    color: var(--cabecera-texto);
+    border-bottom: 3px solid var(--terracota);
+  }
+
+  .cabecera__fila {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 2rem;
+    padding-block: 1rem;
+  }
+
+  .cabecera__nombre {
+    font-family: var(--serif);
+    font-size: 1.2rem;
+    color: var(--cabecera-texto);
+    text-decoration: none;
+  }
+
+  .cabecera__nombre:hover {
+    color: var(--cabecera-texto);
+    text-decoration: underline;
+  }
+
+  .cabecera__menu {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.25rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .cabecera__menu a {
+    display: inline-block;
+    padding-block: 0.35rem;
+    color: var(--cabecera-suave);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+  }
+
+  .cabecera__menu a:hover {
+    color: var(--cabecera-texto);
+    border-bottom-color: var(--cabecera-suave);
+  }
+
+  .cabecera__menu a[aria-current='page'] {
+    color: var(--cabecera-texto);
+    border-bottom-color: var(--terracota);
+  }
+
+  .cabecera :focus-visible {
+    outline-color: #ffffff;
+  }
+
+  main:focus {
+    outline: none;
+  }
+
+  .pie {
+    margin-top: 3rem;
+    padding-block: 1.75rem;
+    border-top: 1px solid var(--borde);
+    background: var(--fondo-suave);
+    font-size: 0.92rem;
+    color: var(--texto-suave);
+  }
+
+  .pie p {
+    margin: 0;
+  }
+</style>

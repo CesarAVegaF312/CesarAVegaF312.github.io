@@ -1,0 +1,30 @@
+# Semilleros de investigación y grupos estudiantiles.
+#
+# Campos de cada semillero:
+#   nombre       (obligatorio)
+#   contexto     grupo o capítulo al que pertenece, opcional
+#   descripcion  una o dos frases, opcional
+#   enlace       URL del material, opcional
+#   texto_enlace texto del enlace (por defecto "Ver material")
+#   actividades  lista de { titulo, periodo }, opcional
+
+semilleros:
+  - nombre: Maratonistas de Programación
+    contexto: IEEE Computer Society UniSabana
+    descripcion: >-
+      Entrenamiento para la Maratón Nacional de Programación (ICPC): banco de
+      algoritmos y problemas de maratones con soluciones comentadas en Python.
+    enlace: https://github.com/CesarAVegaF312/IEEE-Maratonistas_Programacion
+    texto_enlace: Banco de algoritmos y problemas ICPC
+    actividades:
+      - titulo: Maratón de programación
+        periodo: 2025-2
+      - titulo: Maratón de programación
+        periodo: 2026-1
+      - titulo: Maratón de programación
+        periodo: 2026-2
+
+  - nombre: Semillero de ciberseguridad
+    actividades:
+      - titulo: Hackathon "No muerdas el anzuelo"
+        periodo: 2026-2

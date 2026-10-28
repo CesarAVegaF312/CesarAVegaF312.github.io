@@ -1,0 +1,110 @@
+---
+import Base from '../../layouts/Base.astro';
+import { cargarCursos } from '../../lib/datos';
+
+const cursos = cargarCursos();
+
+const grupos = [
+  { id: 'pregrado', titulo: 'Pregrado', nota: undefined },
+  { id: 'maestria', titulo: 'Maestría en Ingeniería de Software', nota: 'Modalidad virtual.' },
+]
+  .map((g) => ({ ...g, cursos: cursos.filter((c) => c.nivel === g.id) }))
+  .filter((g) => g.cursos.length > 0);
+---
+
+<Base
+  titulo="Cursos"
+  descripcion="Cursos de pregrado y de la Maestría en Ingeniería de Software: módulos, presentaciones y talleres."
+>
+  <div class="contenedor">
+    <header class="encabezado-pagina">
+      <h1>Cursos</h1>
+      <p>Cada curso reúne sus módulos en orden, con las presentaciones y los talleres de cada uno.</p>
+    </header>
+
+    {
+      grupos.map((g) => (
+        <section class="seccion" aria-labelledby={`grupo-${g.id}`}>
+          <h2 id={`grupo-${g.id}`}>{g.titulo}</h2>
+          {g.nota && <p class="suave">{g.nota}</p>}
+          <ul class="tarjetas">
+            {g.cursos.map((c) => (
+              <li>
+                <a class="tarjeta" href={`/cursos/${c.id}/`}>
+                  <span class="etiqueta">{c.codigo}</span>
+                  <span class="tarjeta__nombre">{c.nombre}</span>
+                  <span class="tarjeta__texto">{c.descripcion}</span>
+                  <span class="tarjeta__pie">
+                    {c.modulos.length} {c.nombre_modulos.toLowerCase()}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+</Base>
+
+<style>
+  .tarjetas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+    gap: 1.25rem;
+    list-style: none;
+    margin: 1.25rem 0 0;
+    padding: 0;
+  }
+
+  .tarjeta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    height: 100%;
+    padding: 1.4rem 1.5rem;
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-left: 4px solid var(--marino);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    color: var(--texto);
+    text-decoration: none;
+  }
+
+  .tarjeta:hover {
+    color: var(--texto);
+    border-left-color: var(--acento);
+  }
+
+  .tarjeta__nombre {
+    font-family: var(--serif);
+    font-size: 1.35rem;
+    line-height: 1.25;
+    color: var(--enlace);
+  }
+
+  .tarjeta:hover .tarjeta__nombre {
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+
+  .tarjeta__texto {
+    color: var(--texto-suave);
+    flex: 1;
+  }
+
+  .tarjeta__pie {
+    font-size: 0.9rem;
+    color: var(--texto-suave);
+    border-top: 1px solid var(--borde);
+    padding-top: 0.6rem;
+    margin-top: 0.4rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .tarjeta {
+      border-left-color: var(--enlace);
+    }
+  }
+</style>

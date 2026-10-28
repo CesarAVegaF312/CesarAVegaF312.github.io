@@ -52,7 +52,8 @@ export interface Curso {
 
 export interface Charla {
   titulo: string;
-  anio: number | string;
+  anio?: number | string;
+  propuesta: boolean;
   evento?: string;
   lugar?: string;
   enlace?: string;
@@ -207,10 +208,12 @@ export function cargarCharlas(): Charla[] {
   return lista<any>(datos.charlas).map((c, i) => {
     const donde = `charlas.yaml, charla ${i + 1}`;
     exigir(c && texto(c.titulo), `${donde} no tiene "titulo".`);
-    exigir(texto(c.anio), `${donde} no tiene "anio".`);
+    const propuesta = c.propuesta === true;
+    exigir(propuesta || texto(c.anio), `${donde} no tiene "anio" (o "propuesta: true" si aún no se presenta).`);
     return {
       titulo: texto(c.titulo),
-      anio: c.anio,
+      anio: texto(c.anio) ? c.anio : undefined,
+      propuesta,
       evento: texto(c.evento) || undefined,
       lugar: texto(c.lugar) || undefined,
       enlace: texto(c.enlace) || undefined,

@@ -16,7 +16,20 @@ resumen: >-
 # presentacion:
 #   - Primer párrafo.
 #   - Segundo párrafo.
-presentacion: []
+presentacion:
+  - >-
+    Sus cursos cubren arquitectura empresarial, diseño y arquitectura de
+    software, estructuras de datos y algoritmos y procesamiento de lenguaje
+    natural en pregrado, y arquitectura empresarial, gestión de configuración
+    y testing de software en la maestría. Se trabajan con talleres prácticos y
+    proyectos: en Arquitectura Empresarial cada equipo lleva la arquitectura de
+    un cliente real del estado actual al estado objetivo, y en Diseño y
+    Arquitectura de Software se construye un sistema mediante retos.
+  - >-
+    Acompaña el semillero Maratonistas de Programación de la IEEE Computer
+    Society UniSabana y el semillero de ciberseguridad. Las presentaciones,
+    talleres y guías de sus cursos se publican en esta página y en sus
+    repositorios de GitHub bajo licencia CC BY-NC-SA 4.0.
 
 # Cuenta de GitHub donde están los repositorios de los talleres.
 usuario_github: CesarAVegaF312

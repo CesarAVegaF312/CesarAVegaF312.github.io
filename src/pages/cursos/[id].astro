@@ -47,14 +47,19 @@ const enlaceTaller = (t: Taller) => urlTaller(t, usuario_github);
       <h1>{curso.nombre}</h1>
       {curso.programa && <p class="programa">{curso.programa}</p>}
       <p>{curso.descripcion}</p>
-      {
-        curso.aeva && (
-          <p class="aeva">
-            <a href={curso.aeva}>Asistente del curso</a>
-          </p>
-        )
-      }
     </header>
+
+    {
+      curso.aeva && (
+        <section class="aeva" aria-labelledby="titulo-aeva">
+          <div>
+            <h2 id="titulo-aeva" class="aeva__titulo">AEVA, asistente del curso</h2>
+            <p class="aeva__texto">Chat para consultar dudas sobre {curso.nombre}.</p>
+          </div>
+          <a class="aeva__boton" href={curso.aeva}>Abrir el chat con AEVA</a>
+        </section>
+      )
+    }
 
     <section class="seccion" aria-labelledby="titulo-modulos">
       <h2 id="titulo-modulos">{curso.nombre_modulos}</h2>
@@ -170,18 +175,57 @@ const enlaceTaller = (t: Taller) => urlTaller(t, usuario_github);
     font-size: 1rem;
   }
 
-  .aeva a {
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--enlace);
+  .aeva {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    max-width: 52rem;
+    margin-bottom: 1rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--fondo-suave);
+    border: 1px solid var(--borde);
+    border-left: 4px solid var(--acento);
     border-radius: var(--radio);
-    font-size: 1rem;
+  }
+
+  .aeva__titulo {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .aeva__texto {
+    margin: 0;
+    color: var(--texto-suave);
+  }
+
+  .aeva__boton {
+    flex: none;
+    display: inline-block;
+    padding: 0.6rem 1.1rem;
+    background: var(--marino);
+    color: #ffffff;
+    border-radius: var(--radio);
+    font-weight: 600;
     text-decoration: none;
   }
 
-  .aeva a:hover {
-    border-color: var(--enlace-hover);
+  .aeva__boton:hover {
+    color: #ffffff;
+    background: var(--enlace-hover);
     text-decoration: underline;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .aeva__boton {
+      background: var(--enlace);
+      color: var(--fondo);
+    }
+
+    .aeva__boton:hover {
+      color: var(--fondo);
+    }
   }
 
   .modulos {

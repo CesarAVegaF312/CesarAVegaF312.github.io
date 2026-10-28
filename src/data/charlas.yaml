@@ -1,38 +1,42 @@
 # Charlas y conferencias.
 #
+# La página muestra dos grupos:
+#   - Charlas presentadas: las que tienen "evento".
+#   - Temas de charla: las marcadas con "propuesta: true", que son temas
+#     disponibles que todavía no se han presentado en un evento.
+#
 # Campos de cada charla:
-#   titulo   (obligatorio)
-#   anio     (obligatorio)
-#   evento   evento o contexto; si se deja vacío, el sitio muestra "Evento por completar"
-#   lugar    ciudad, opcional
-#   enlace   URL del material (diapositivas, video, repositorio), opcional
-#   archivo  nombre de un PDF guardado en public/charlas/, opcional;
-#            si el archivo no existe, no se muestra el enlace
+#   titulo     (obligatorio)
+#   anio       año en que se presentó; obligatorio en las charlas presentadas
+#   evento     evento o contexto donde se presentó
+#   lugar      ciudad, opcional
+#   propuesta  true si es un tema disponible y no una charla ya presentada
+#   enlace     URL del material (diapositivas, video, repositorio), opcional
+#   archivo    nombre de un PDF guardado en public/charlas/, opcional;
+#              si el archivo no existe, no se muestra el enlace
+#
+# Cuando un tema propuesto se presente, quite "propuesta: true" y agregue
+# "evento", "anio" y, si aplica, "lugar".
 #
 # El orden de la lista es el orden en que aparecen en la página.
 
 charlas:
-  - titulo: Arquitectura empresarial en la era de los agentes
-    anio: 2026
-    evento: ""
-
-  - titulo: De la IA a los agentes
-    anio: 2026
-    evento: ""
-
-  - titulo: "Del texto a los agentes: evolución del PLN"
-    anio: 2026
-    evento: ""
-
   - titulo: Cuando los agentes construyen y ejecutan, ¿quién diseña?
     anio: 2026
     evento: Latam Architecture Day 2026
     lugar: Bogotá
 
+  - titulo: Arquitectura empresarial en la era de los agentes
+    propuesta: true
+
+  - titulo: De la IA a los agentes
+    propuesta: true
+
+  - titulo: "Del texto a los agentes: evolución del PLN"
+    propuesta: true
+
   - titulo: El rol del Dev en DevSecOps
-    anio: 2026
-    evento: ""
+    propuesta: true
 
   - titulo: "Un número por un peso: cómo funciona ChatGPT por dentro"
-    anio: 2026
-    evento: ""
+    propuesta: true

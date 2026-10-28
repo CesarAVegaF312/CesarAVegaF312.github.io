@@ -175,7 +175,7 @@ Cada curso tiene el campo `aeva`. Si está vacío (`aeva: ""`), no se muestra na
 
 ## 8. Charlas y semilleros
 
-**Charlas** (`src/data/charlas.yaml`). Cada charla tiene `titulo`, `anio` y, si se conocen, `evento` y `lugar`. Si `evento` está vacío, el sitio muestra "Evento por completar". Para enlazar el material:
+**Charlas** (`src/data/charlas.yaml`). La página tiene dos grupos: **Charlas presentadas**, con `titulo`, `anio`, `evento` y `lugar`, y **Temas de charla**, que son los marcados con `propuesta: true` (temas disponibles que todavía no se han presentado; solo necesitan `titulo`). Cuando un tema se presente, quite `propuesta: true` y agregue `evento`, `anio` y `lugar`. Para enlazar el material:
 
 - `enlace: https://...` para material publicado en otro lugar (diapositivas, video, repositorio), o
 - `archivo: nombre.pdf` para un PDF subido a `public/charlas/`. Si el archivo no existe, no se muestra el enlace y aparece en el aviso de faltantes.

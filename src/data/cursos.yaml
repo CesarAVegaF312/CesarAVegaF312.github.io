@@ -13,6 +13,8 @@
 #     programa: ...                 opcional, se muestra debajo del nombre
 #     descripcion: ...
 #     aeva: ""                      URL del asistente del curso; vacío = no se muestra
+#     periodo: 2026-2               periodo académico del material; se muestra como
+#                                   "Material del periodo 2026-2". Actualícelo cada semestre.
 #     nombre_modulos: Módulos       opcional: Módulos, Unidades, Sesiones...
 #     modulos:
 #       - titulo: Introducción
@@ -46,6 +48,7 @@ cursos:
       (procesos, datos, aplicaciones, infraestructura y seguridad) mediante un
       proyecto con un cliente real que va del estado actual al estado objetivo.
     aeva: ""
+    periodo: 2026-2
     modulos:
       - titulo: Introducción
         presentaciones:
@@ -195,6 +198,7 @@ cursos:
       estructuras de datos adecuadas, con análisis formal de complejidad, en
       Python.
     aeva: ""
+    periodo: 2026-2
     modulos:
       - titulo: Introducción
         presentaciones:
@@ -237,6 +241,7 @@ cursos:
       Construir un sistema profesional con los estándares actuales de la
       industria, mediante retos.
     aeva: ""
+    periodo: 2026-2
     modulos:
       - titulo: Introducción
         presentaciones:
@@ -418,6 +423,7 @@ cursos:
       TF-IDF, embeddings) para clasificación y análisis de sentimiento, hacia
       Transformers y modelos de lenguaje.
     aeva: ""
+    periodo: 2026-2
     nombre_modulos: Sesiones
     modulos:
       - titulo: Explorar texto con Python
@@ -463,6 +469,7 @@ cursos:
       Arquitecturas empresariales que alinean las TI con la estrategia:
       gobierno, gestión del cambio y transformación.
     aeva: ""
+    periodo: 2026-2
     nombre_modulos: Unidades
     modulos:
       - titulo: Marcos y capacidades
@@ -525,6 +532,7 @@ cursos:
       Gestión de configuración, control de cambios, versiones y mantenimiento
       para que el software no se degrade.
     aeva: ""
+    periodo: 2026-2
     nombre_modulos: Unidades
     modulos:
       - titulo: Evolución del software y mantenimiento
@@ -552,6 +560,7 @@ cursos:
       Diseñar, ejecutar y automatizar estrategias de prueba funcionales y no
       funcionales integradas en CI/CD.
     aeva: ""
+    periodo: 2026-2
     nombre_modulos: Unidades
     modulos:
       - titulo: Fundamentos de verificación y validación

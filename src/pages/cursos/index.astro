@@ -36,6 +36,7 @@ const grupos = [
                   <span class="tarjeta__texto">{c.descripcion}</span>
                   <span class="tarjeta__pie">
                     {c.modulos.length} {c.nombre_modulos.toLowerCase()}
+                    {c.periodo && ` · Periodo ${c.periodo}`}
                   </span>
                 </a>
               </li>

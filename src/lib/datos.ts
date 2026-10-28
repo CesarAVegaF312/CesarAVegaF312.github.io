@@ -45,6 +45,7 @@ export interface Curso {
   programa?: string;
   descripcion: string;
   aeva?: string;
+  periodo?: string;
   nombre_modulos: string;
   modulos: Modulo[];
   talleres: Taller[];
@@ -159,6 +160,7 @@ export function cargarCursos(): Curso[] {
       programa: texto(c.programa) || undefined,
       descripcion: texto(c.descripcion),
       aeva: texto(c.aeva) || undefined,
+      periodo: texto(c.periodo) || undefined,
       nombre_modulos: texto(c.nombre_modulos) || 'Módulos',
       modulos: lista<any>(c.modulos).map((m, j) => leerModulo(m, `curso "${id}", módulo ${j + 1}`)),
       talleres: lista<any>(c.talleres).map((t, j) => leerTaller(t, `curso "${id}", taller ${j + 1}`)),

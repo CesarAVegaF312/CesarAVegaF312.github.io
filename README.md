@@ -153,6 +153,7 @@ Un módulo sin presentaciones visibles, talleres ni material muestra el texto "S
     descripcion: >-
       Una o dos frases sobre el curso.
     aeva: ""
+    periodo: 2026-2                 # se muestra como "Material del periodo 2026-2"
     nombre_modulos: Módulos         # opcional: Módulos, Unidades o Sesiones
     modulos:
       - titulo: Introducción

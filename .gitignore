@@ -1,0 +1,9 @@
+# Dependencias y resultado del build
+node_modules/
+dist/
+.astro/
+
+# Registros y archivos del sistema
+npm-debug.log*
+.DS_Store
+Thumbs.db

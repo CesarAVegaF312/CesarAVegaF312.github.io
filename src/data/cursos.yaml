@@ -284,13 +284,13 @@ cursos:
               Código de partida, sin refactorizar, para la primera parte del
               taller de patrones creacionales.
           - titulo: Patrón Observer
-            repo: DYAS-BehavioralPatterns-Observer
+            repo: DYAS-BehavioralPatterns-observer
             descripcion: >-
               Implementa el patrón Observer para que los cambios de
               configuración del sistema se notifiquen automáticamente a los
               objetos interesados.
           - titulo: Patrón Strategy
-            repo: DYAS-BehavioralPatterns-Strategy
+            repo: DYAS-BehavioralPatterns-strategy
             descripcion: >-
               Implementa el patrón Strategy para intercambiar el método de
               autenticación (XML, base de datos o memoria) sin modificar el
@@ -327,7 +327,7 @@ cursos:
               con pruebas unitarias del dominio según el patrón AAA, clases de
               equivalencia y BDD.
           # - titulo: Pruebas unitarias con el patrón Arrange-Act-Assert
-          #   repo: DAYS-TDD-example
+          #   repo: DYAS-TDD-example
           #   descripcion: >-
           #     Ejemplos de pruebas unitarias en Java organizadas con el patrón
           #     Arrange-Act-Assert sobre un gestor de inventario.

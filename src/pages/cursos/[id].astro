@@ -4,6 +4,7 @@ import Aeva from '../../components/Aeva.astro';
 import {
   cargarCursos,
   cargarPerfil,
+  materialVisible,
   presentacionesVisibles,
   urlTaller,
   type Curso,
@@ -29,6 +30,7 @@ const modulos = curso.modulos.map((modulo, i) => ({
   ancla: `modulo-${i + 1}`,
   numero: i + 1,
   visibles: presentacionesVisibles(curso, modulo),
+  materiales: materialVisible(curso, modulo),
 }));
 
 const enlaceTaller = (t: Taller) => urlTaller(t, usuario_github);
@@ -97,20 +99,21 @@ const enlaceTaller = (t: Taller) => urlTaller(t, usuario_github);
                 </div>
               )}
 
-              {m.material.length > 0 && (
+              {m.materiales.length > 0 && (
                 <div class="bloque">
                   <h4>Material</h4>
                   <ul class="enlaces">
-                    {m.material.map((e) => (
+                    {m.materiales.map((e) => (
                       <li>
-                        <a href={e.url}>{e.titulo}</a>
+                        <a href={e.href}>{e.titulo}</a>
+                        {e.formato && <span class="formato">{e.formato}</span>}
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
 
-              {m.visibles.length === 0 && m.talleres.length === 0 && m.material.length === 0 && (
+              {m.visibles.length === 0 && m.talleres.length === 0 && m.materiales.length === 0 && (
                 <p class="suave sin-material">Sin material publicado por ahora.</p>
               )}
             </li>

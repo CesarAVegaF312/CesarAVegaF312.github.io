@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>Laboratorio de clasificación FPLN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: course header + four tabs; each tab = short explanation column beside a live stage. Institutional palette. */
+:root {
+  --bg: #F4F6FA; --surface: #FFFFFF; --sunk: #EAEFF5; --line: #D3DAE4;
+  --ink: #1B2A4A; --text: #26344D; --muted: #5E6B7A;
+  --teal: #2A9D8F; --amber: #E9A23B; --warn: #B5561B; --gray: #A7B3C2;
+  --c-comida: #1B2A4A; --c-servicio: #2A9D8F; --c-precio: #E9A23B;
+  --on-ink: #FFFFFF;
+  --f-display: "Source Serif 4", Cambria, Georgia, serif;
+  --f-body: "Source Sans 3", Calibri, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", "Courier New", monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E1524; --surface: #152035; --sunk: #1C2A44; --line: #2C3C5A;
+  --ink: #E6EDF7; --text: #CFD8E6; --muted: #93A1B7;
+  --teal: #3DB5A6; --amber: #F0B454; --warn: #F08A5D; --gray: #4A5A76;
+  --c-comida: #8FA8D6; --c-servicio: #3DB5A6; --c-precio: #F0B454; --on-ink: #0E1524; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0E1524; --surface: #152035; --sunk: #1C2A44; --line: #2C3C5A;
+  --ink: #E6EDF7; --text: #CFD8E6; --muted: #93A1B7;
+  --teal: #3DB5A6; --amber: #F0B454; --warn: #F08A5D; --gray: #4A5A76;
+  --c-comida: #8FA8D6; --c-servicio: #3DB5A6; --c-precio: #F0B454; --on-ink: #0E1524; color-scheme: dark }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--text); font: 16px/1.55 var(--f-body); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; }
+header .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--teal); }
+h1 { font: 700 clamp(28px, 4vw, 40px)/1.1 var(--f-display); color: var(--ink); margin: 6px 0 6px; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); max-width: 62ch; }
+h2 { font: 700 26px/1.2 var(--f-display); color: var(--ink); margin: 0 0 10px; text-wrap: balance; }
+h3 { font: 600 13px/1.3 var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 22px 0 18px; border-bottom: 1px solid var(--line); }
+.tab { font: 600 15px var(--f-body); color: var(--muted); background: none; border: 0; padding: 10px 14px; border-bottom: 3px solid transparent; cursor: pointer; margin-bottom: -1px; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--amber); }
+.tab:focus-visible, button:focus-visible, input:focus-visible, .tile:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.panel { display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 820px) { .panel { grid-template-columns: minmax(0, 1fr); } }
+.explain p { margin: 0 0 12px; max-width: 60ch; }
+.explain .key { background: var(--sunk); border-radius: var(--r); padding: 12px 14px; font-size: 15px; }
+.stage { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; min-width: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.btn { font: 600 14px var(--f-body); border-radius: 8px; padding: 8px 14px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.btn.primary { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
+.btn:disabled { opacity: .45; cursor: default; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { font: 600 13px var(--f-body); border: 0; background: var(--surface); color: var(--muted); padding: 7px 12px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); }
+.mono { font-family: var(--f-mono); }
+.num { font-variant-numeric: tabular-nums; }
+.big { font: 700 44px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.cap { font-size: 13px; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+/* Naive Bayes */
+.docs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.docs ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.docs li { font-size: 14px; background: var(--sunk); border-radius: 6px; padding: 4px 8px; }
+.docs .n { font-size: 13px; font-weight: 700; color: var(--teal); margin-top: 6px; }
+.input { width: 100%; font: 16px var(--f-mono); padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+.vocab { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+.vocab button { font: 13px var(--f-mono); border: 1px dashed var(--line); background: none; color: var(--text); border-radius: 999px; padding: 2px 10px; cursor: pointer; }
+.words { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; font-size: 13px; }
+.words .oov { text-decoration: line-through; color: var(--muted); }
+.calc { display: grid; gap: 14px; margin-top: 16px; }
+.calc .cls { font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+.factors { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+.f { display: grid; justify-items: center; gap: 2px; min-width: 64px; padding: 6px 8px; border-radius: 8px; background: var(--sunk); transition: opacity .35s ease, transform .35s ease; }
+.f b { font: 600 15px var(--f-mono); color: var(--ink); }
+.f span { font-size: 11px; color: var(--muted); }
+.f.zero { background: color-mix(in srgb, var(--warn) 18%, var(--surface)); }
+.f.zero b { color: var(--warn); }
+.f.res { background: none; border: 1px solid var(--line); }
+.f.pending { opacity: 0; transform: translateY(6px); }
+.probs { display: grid; gap: 10px; margin-top: 18px; }
+.pbar { display: grid; grid-template-columns: minmax(0, 128px) minmax(0, 1fr) 56px; gap: 10px; align-items: center; font-size: 14px; }
+.track { height: 16px; background: var(--sunk); border-radius: 999px; overflow: hidden; }
+.fill { height: 100%; width: 0; border-radius: 999px; transition: width .7s cubic-bezier(.2,.7,.2,1); }
+.msg { margin-top: 12px; font-size: 14px; padding: 10px 12px; border-radius: 8px; background: var(--sunk); }
+.msg.alert { background: color-mix(in srgb, var(--warn) 15%, var(--surface)); color: var(--text); }
+
+/* Kappa */
+.grid40 { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; max-width: 480px; margin: 14px 0; }
+.tile { aspect-ratio: 1 / 1; max-width: 100%; display: flex; border-radius: 6px; overflow: hidden; border: 2px solid transparent; padding: 0; cursor: pointer; background: var(--sunk); transition: opacity .35s ease, transform .2s ease; }
+.tile i { flex: 1; transition: background-color .45s ease; }
+.tile.sel { border-color: var(--ink); }
+.tile:hover { transform: scale(1.06); }
+.mode-a .tile i:last-child, .mode-b .tile i:first-child { background: var(--sunk) !important; }
+.mode-d .tile.agree { opacity: .15; }
+.kgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+@media (max-width: 560px) { .kgrid { grid-template-columns: minmax(0, 1fr); } }
+.stats { display: flex; flex-wrap: wrap; gap: 24px; }
+.scale { position: relative; height: 10px; border-radius: 999px; background: linear-gradient(90deg, var(--sunk) 0 41%, var(--gray) 41% 61%, var(--teal) 61% 81%, var(--ink) 81% 100%); margin: 14px 0 4px; }
+.scale .needle { position: absolute; top: -6px; width: 3px; height: 22px; background: var(--amber); border-radius: 2px; transition: left .5s ease; }
+.scale-l { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+table.ct { border-collapse: collapse; font-size: 14px; }
+table.ct th, table.ct td { border: 1px solid var(--line); padding: 4px 10px; text-align: center; }
+table.ct th { font-weight: 600; color: var(--muted); font-size: 12px; }
+table.ct td.diag { font-weight: 700; color: var(--ink); background: var(--sunk); }
+.detail { margin-top: 12px; padding: 12px 14px; border-radius: var(--r); background: var(--sunk); font-size: 15px; }
+.detail q { font-family: var(--f-display); font-style: italic; color: var(--ink); }
+.pill { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 999px; color: var(--on-ink); }
+
+/* Paradox */
+.waffle { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 3px; max-width: 420px; }
+.waffle i { aspect-ratio: 1 / 1; border-radius: 3px; transition: background-color .3s ease; }
+.bars { display: flex; gap: 28px; align-items: flex-end; height: 220px; border-bottom: 1px solid var(--line); padding: 0 8px; position: relative; }
+.bar { width: 86px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; }
+.bar .v { font: 700 24px var(--f-display); font-variant-numeric: tabular-nums; margin-bottom: 6px; }
+.bar .b { width: 100%; border-radius: 6px 6px 0 0; transition: height .45s cubic-bezier(.2,.7,.2,1); }
+.barlab { display: flex; gap: 28px; padding: 6px 8px 0; font-size: 13px; color: var(--muted); }
+.barlab span { width: 86px; text-align: center; }
+input[type=range] { width: 100%; accent-color: var(--amber); }
+
+/* Leakage */
+.lstage { position: relative; height: 300px; margin: 14px 0; }
+.dot { position: absolute; left: 0; top: 0; width: 11px; height: 11px; border-radius: 3px; background: var(--gray); transition: transform .9s cubic-bezier(.3,.7,.2,1), background-color .4s ease, opacity .4s ease, box-shadow .4s ease; }
+.dot.dup { box-shadow: 0 0 0 2px var(--amber); }
+.dot.copy { background: var(--amber); }
+.dot.hit { background: var(--teal); }
+.dot.miss { background: var(--warn); }
+.dot.dim { opacity: .35; }
+.rlab { position: absolute; font-size: 13px; font-weight: 700; color: var(--ink); transition: opacity .4s ease; }
+.tip { position: absolute; z-index: 5; max-width: 260px; background: var(--ink); color: var(--on-ink); font-size: 13px; padding: 6px 9px; border-radius: 6px; pointer-events: none; }
+.acc { display: grid; gap: 10px; margin-top: 8px; }
+.est { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+
+/* Concepts */
+details.concepts { margin-top: 14px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+details.concepts summary { cursor: pointer; padding: 10px 14px; font-weight: 700; color: var(--ink); font-size: 14px; }
+details.concepts dl { margin: 0; padding: 0 14px 12px; display: grid; gap: 8px; }
+details.concepts dt { font-weight: 700; color: var(--ink); font-size: 14px; }
+details.concepts dd { margin: 0; font-size: 14px; color: var(--text); }
+.gloss { display: grid; gap: 24px; }
+.gloss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 12px; }
+.gloss-item { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; min-width: 0; }
+.gloss-item b { display: block; color: var(--ink); margin-bottom: 4px; }
+.gloss-item span { font-size: 14.5px; }
+#glosario { display: block; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">FPLN · Sesión 6 · Clasificación básica de texto</div>
+    <h1>Laboratorio de clasificación</h1>
+    <p>Cuatro experimentos para manipular en clase. Usan el corpus ilustrativo del reto: 300 reseñas sintéticas, generadas con plantillas, en las que el desbalance, los temas mezclados, algunas etiquetas erróneas y los duplicados se sembraron a propósito. Los números coinciden con el notebook solución.</p>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" id="t-bayes" aria-controls="bayes" aria-selected="true">Naive Bayes a mano</button>
+    <button class="tab" role="tab" id="t-kappa" aria-controls="kappa" aria-selected="false">Acuerdo entre anotadores</button>
+    <button class="tab" role="tab" id="t-paradoja" aria-controls="paradoja" aria-selected="false">Paradoja del accuracy</button>
+    <button class="tab" role="tab" id="t-fuga" aria-controls="fuga" aria-selected="false">Fuga por duplicados</button>
+    <button class="tab" role="tab" id="t-glosario" aria-controls="glosario" aria-selected="false">Glosario</button>
+  </nav>
+
+  <!-- 1. Naive Bayes -->
+  <section class="panel" id="bayes" role="tabpanel" aria-labelledby="t-bayes">
+    <div class="explain">
+      <h2>Contar palabras por clase</h2>
+      <p>Naive Bayes multiplica la probabilidad de la clase por la probabilidad de cada palabra dentro de la clase. Gana la clase con el producto más grande.</p>
+      <p class="key mono" style="font-size:14px">P(w|c) = (count(w,c) + α) / (N<sub>c</sub> + α·|V|)</p>
+      <p>Escriban otro documento o toquen las palabras del vocabulario. Luego apaguen el suavizado (α = 0) con un documento que mezcle las dos clases.</p>
+      <p class="cap">Palabras fuera del vocabulario se ignoran, igual que en <span class="mono">MultinomialNB</span>.</p>
+      <details class="concepts" data-c="bayes" open><summary>Conceptos clave</summary><dl></dl></details>
+    </div>
+    <div class="stage">
+      <div class="docs">
+        <div><h3>comida</h3><ul id="d-comida"></ul><div class="n" id="n-comida"></div></div>
+        <div><h3>servicio</h3><ul id="d-servicio"></ul><div class="n" id="n-servicio"></div></div>
+      </div>
+      <label for="nb-input"><h3 style="margin-bottom:6px">Documento nuevo</h3></label>
+      <input class="input" id="nb-input" value="sopa deliciosa pero mesero lento" autocomplete="off">
+      <div class="vocab" id="nb-vocab" aria-label="Vocabulario"></div>
+      <div class="row" style="margin-top:12px">
+        <div class="seg" role="group" aria-label="Suavizado">
+          <button id="a1" aria-pressed="true">α = 1 (Laplace)</button>
+          <button id="a0" aria-pressed="false">α = 0</button>
+        </div>
+        <button class="btn primary" id="nb-step">Paso a paso</button>
+        <span class="cap" id="nb-v"></span>
+      </div>
+      <div class="words" id="nb-words"></div>
+      <div class="calc" id="nb-calc"></div>
+      <div class="probs" id="nb-probs"></div>
+      <div id="nb-msg"></div>
+    </div>
+  </section>
+
+  <!-- 2. Kappa -->
+  <section class="panel" id="kappa" role="tabpanel" aria-labelledby="t-kappa" hidden>
+    <div class="explain">
+      <h2>Dos personas, las mismas 40 reseñas</h2>
+      <p>Cada ficha es una reseña: la mitad izquierda es la etiqueta de A y la derecha la de B.</p>
+      <p class="key mono" style="font-size:14px">κ = (pₒ − pₑ) / (1 − pₑ)</p>
+      <p>Toquen una ficha para leer la reseña y cambiar la etiqueta de B. El kappa se recalcula al instante.</p>
+      <p class="cap">Escala de Landis y Koch (1977): 0.41–0.60 moderado, 0.61–0.80 sustancial, más de 0.80 casi perfecto.</p>
+      <details class="concepts" data-c="kappa" open><summary>Conceptos clave</summary><dl></dl></details>
+    </div>
+    <div class="stage">
+      <div class="row">
+        <div class="seg" role="group" aria-label="Vista">
+          <button data-m="mode-a" aria-pressed="false">Anotador A</button>
+          <button data-m="mode-b" aria-pressed="false">Anotador B</button>
+          <button data-m="mode-ab" aria-pressed="true">A y B</button>
+          <button data-m="mode-d" aria-pressed="false">Desacuerdos</button>
+        </div>
+        <button class="btn" id="k-reset">Restaurar etiquetas</button>
+      </div>
+      <div class="legend" style="margin-top:12px"><span><i style="background:var(--c-comida)"></i>comida</span><span><i style="background:var(--c-servicio)"></i>servicio</span><span><i style="background:var(--c-precio)"></i>precio</span></div>
+      <div class="grid40 mode-ab" id="k-grid"></div>
+      <div class="kgrid">
+        <div>
+          <div class="stats">
+            <div><div class="big num" id="k-po" style="color:var(--muted)">0.775</div><div class="cap">coincidencia simple (pₒ)</div></div>
+            <div><div class="big num" id="k-k" style="color:var(--teal)">0.649</div><div class="cap" id="k-band">kappa · sustancial</div></div>
+          </div>
+          <div class="scale" aria-hidden="true"><div class="needle" id="k-needle"></div></div>
+          <div class="scale-l"><span>0</span><span>0.41</span><span>0.61</span><span>0.81</span><span>1</span></div>
+          <p class="cap" id="k-pe" style="margin-top:8px"></p>
+        </div>
+        <div style="overflow-x:auto"><h3>A (filas) contra B (columnas)</h3><table class="ct num" id="k-ct"></table></div>
+      </div>
+      <div class="detail" id="k-detail"></div>
+    </div>
+  </section>
+
+  <!-- 3. Paradox -->
+  <section class="panel" id="paradoja" role="tabpanel" aria-labelledby="t-paradoja" hidden>
+    <div class="explain">
+      <h2>Un modelo que no lee el texto</h2>
+      <p>La línea base responde siempre la clase más frecuente. Su accuracy es exactamente la proporción de esa clase en el conjunto de prueba.</p>
+      <p>El F1 macro promedia el F1 de cada clase con el mismo peso. Las dos clases que el modelo nunca predice tienen F1 = 0.</p>
+      <p class="key">Muevan el desbalance. ¿A partir de qué punto el accuracy se ve "bueno" sin que el modelo haya aprendido nada?</p>
+      <details class="concepts" data-c="paradoja" open><summary>Conceptos clave</summary><dl></dl></details>
+    </div>
+    <div class="stage">
+      <div class="row" style="justify-content:space-between">
+        <label for="p-range"><h3 style="margin:0">Proporción de la clase mayoritaria: <span class="num" id="p-val" style="color:var(--ink)"></span></h3></label>
+        <button class="btn" id="p-course">Conjunto de prueba del curso (0.617)</button>
+      </div>
+      <input type="range" id="p-range" min="0.34" max="0.95" step="0.001" value="0.617" style="margin:10px 0 16px">
+      <div class="kgrid">
+        <div>
+          <h3>100 reseñas de prueba</h3>
+          <div class="waffle" id="p-waffle"></div>
+          <div class="legend" style="margin-top:10px"><span><i style="background:var(--c-comida)"></i>mayoritaria: el modelo acierta</span><span><i style="background:var(--gray)"></i>otras dos clases: falla</span></div>
+        </div>
+        <div>
+          <div class="bars" id="p-bars">
+            <div class="bar"><div class="v num" id="p-acc" style="color:var(--muted)"></div><div class="b" id="p-accb" style="background:var(--gray)"></div></div>
+            <div class="bar"><div class="v num" id="p-f1" style="color:var(--amber)"></div><div class="b" id="p-f1b" style="background:var(--amber)"></div></div>
+          </div>
+          <div class="barlab"><span>accuracy</span><span>F1 macro</span></div>
+          <p class="cap mono" id="p-formula" style="margin-top:12px"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Leakage -->
+  <section class="panel" id="fuga" role="tabpanel" aria-labelledby="t-fuga" hidden>
+    <div class="explain">
+      <h2>El modelo que recuerda</h2>
+      <p>Las 300 reseñas del corpus. Las que tienen borde ámbar forman parte de un grupo de duplicados: reenvíos, mayúsculas o signos extra.</p>
+      <p>Avancen por los tres pasos. La partición y los aciertos son los reales de la Regresión Logística del notebook, sin deduplicar.</p>
+      <p class="cap">Pasen el cursor por un punto para leer la reseña.</p>
+      <details class="concepts" data-c="fuga" open><summary>Conceptos clave</summary><dl></dl></details>
+    </div>
+    <div class="stage">
+      <div class="row">
+        <div class="seg" role="group" aria-label="Paso">
+          <button data-s="0" aria-pressed="true">1 · Corpus</button>
+          <button data-s="1" aria-pressed="false">2 · Partición</button>
+          <button data-s="2" aria-pressed="false">3 · Evaluación</button>
+        </div>
+        <button class="btn primary" id="l-next">Siguiente</button>
+      </div>
+      <div class="lstage" id="l-stage"></div>
+      <p class="cap" id="l-cap"></p>
+      <div class="acc" id="l-acc" hidden>
+        <div class="pbar"><span>Con copia (24)</span><div class="track"><div class="fill" id="l-a1" style="background:var(--amber)"></div></div><b class="num" id="l-v1">0.958</b></div>
+        <div class="pbar"><span>Sin copia (51)</span><div class="track"><div class="fill" id="l-a2" style="background:var(--c-comida)"></div></div><b class="num" id="l-v2">0.725</b></div>
+      </div>
+      <div class="est">
+        <h3>¿Y si hubiera más copias?</h3>
+        <label for="l-range" class="cap">Proporción de reseñas de prueba con copia en entrenamiento: <b class="num" id="l-f" style="color:var(--ink)"></b></label>
+        <input type="range" id="l-range" min="0" max="0.8" step="0.01" value="0.32">
+        <p style="margin:6px 0 0">Accuracy que se reportaría: <b class="num big" id="l-rep" style="font-size:30px;color:var(--ink)"></b></p>
+        <p class="cap">Estimación con las tasas medidas en esta partición (0.958 con copia, 0.725 sin copia). El modelo no mejora: solo cambia cuánto del examen ya había visto.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Glossary -->
+  <section id="glosario" role="tabpanel" aria-labelledby="t-glosario" hidden>
+    <div class="explain" style="margin-bottom:18px"><h2>Glosario de la sesión</h2><p>Los conceptos de la Sesión 6 con el significado que usamos en el reto y en el reporte de la Actividad 1.</p></div>
+    <div class="gloss" id="gloss"></div>
+  </section>
+</div>
+
+<script>
+const DATA = {"docs": [{"t": "La anfitriona nunca trajo la cuenta. Nadie se acercó a preguntar si todo estaba bien.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La bandeja paisa sabía a recalentado. Repetiría el plato sin dudarlo.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El administrador fue muy grosero. La receta no se parece a la de antes.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La sopa del día llegó fría. Era nuestra primera visita. La salsa de la casa es lo mejor!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El postre no tenía sabor. Llegamos sin reserva.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La mesera no sabía explicar la carta. Vinimos por un cumpleaños.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT El churrasco no tenía sabor. Fuimos en familia.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El brownie no tenía sabor. El administrador nunca trajo la cuenta.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El pedido tardó más de una hora. El valor del domicilio vale cada peso. La mesera nos ignoró media hora. Vinimos por un cumpleaños.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Los tacos venían quemados en los bordes. El chef cambió la carta y se nota. Vinimos por un cumpleaños.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT El ajiaco estaba jugoso y bien condimentado.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El precio de las bebidas tiene buena relación calidad precio.", "y": "precio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "El combo está bien para la zona. El chef cambió la carta y se nota.", "y": "precio", "test": 1, "dup": 1, "copy": 0, "hit": 0}, {"t": "RT Fuimos en familia. La limonada de coco no tenía sabor.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El menú tiene buenas opciones vegetarianas. La hamburguesa estaba fresquísima!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "LA LASAÑA LLEGÓ EN SU PUNTO. ALMORZAMOS ENTRE SEMANA. REPETIRÍA EL PLATO SIN DUDARLO.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "El brownie llegó frío. Repetiría el plato sin dudarlo.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La receta no se parece a la de antes. La bandeja paisa sabía a recalentado.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El domiciliario nos atendió con paciencia. Almorzamos entre semana. El precio de los postres no justifica lo que cuesta. Por ese valor se come mejor en otro lado.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Aceptan todas las tarjetas pero cobran recargo. Almorzamos entre semana. El pescado frito estaba seco y sin gracia.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La pasta estaba cruda por dentro. Repetiría el plato sin dudarlo.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Se nota que usan ingredientes frescos. El brownie superó lo que esperaba. Fuimos un sábado en la noche.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "EL ADMINISTRADOR SE EQUIVOCÓ CON EL PEDIDO.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La sopa del día estaba deliciosa.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "LA MESERA SE EQUIVOCÓ CON EL PEDIDO. EL CEVICHE LLEGÓ FRÍO. FUIMOS UN SÁBADO EN LA NOCHE. LA SALSA DE LA CASA ES LO MEJOR.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La receta no se parece a la de antes. La pizza estaba jugosa y bien condimentada.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El churrasco llegó frío. Almorzamos entre semana. El domiciliario nunca trajo la cuenta.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "ACEPTAN TODAS LAS TARJETAS PERO COBRAN RECARGO. EL PRECIO DE LOS POSTRES ESTÁ BIEN PARA LA ZONA.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "EL VALOR DEL DOMICILIO ESTÁ INFLADO. EL ALMUERZO EJECUTIVO CUESTA MENOS DE VEINTE MIL.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La mesera se equivocó con el pedido. El ceviche llegó frío. Fuimos un sábado en la noche. La salsa de la casa es lo mejor.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "Nos cambiaron de mesa sin avisar. La persona de la caja nos recomendó muy bien.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La receta no se parece a la de antes. Era nuestra primera visita. El brownie llegó frío.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El churrasco estaba fresquísimo. El valor del domicilio es económico. Las porciones son generosas. Vinimos por un cumpleaños.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Fuimos en familia. La limonada de coco no tenía sabor.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "El precio de los postres no justifica lo que cuesta. El ceviche estaba salado.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El pedido tardó más de una hora. La hamburguesa llegó fría.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El arroz con pollo venía bien servido y caliente. El domiciliario fue muy atento con los niños. El menú tiene buenas opciones vegetarianas.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El precio de los postres subió sin aviso. Pedimos a domicilio. La anfitriona fue muy amable.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Nos atendieron rápido a pesar de estar lleno. Pagamos el doble que la vez pasada. El personal nos ignoró media hora.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El domicilio llegó antes de lo prometido. El churrasco venía bien servido y caliente. La persona de la caja nunca trajo la cuenta.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El personal resolvió el problema de inmediato.", "y": "servicio", "test": 1, "dup": 1, "copy": 1, "hit": 0}, {"t": "La salsa de la casa es lo mejor. El brownie tenía una sazón casera.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El ceviche no tenía sabor. Cobraron el servicio sin preguntar!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La pasta estaba pasada de aceite.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La espera para que nos tomaran el pedido fue eterna. El domiciliario fue muy amable.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT Pagamos el doble que la vez pasada. Vinimos por un cumpleaños. La hamburguesa tenía una sazón casera. La receta no se parece a la de antes.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El administrador respondió de mala gana. Nos cambiaron de mesa sin avisar.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "LA HAMBURGUESA ESTABA JUGOSA Y BIEN CONDIMENTADA.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La salsa de la casa es lo mejor. Llegamos sin reserva. El ceviche venía quemado en los bordes. La cuenta subió sin aviso.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El postre no tenía sabor. El domiciliario nos atendió con paciencia!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La carta es económica.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La bandeja paisa sabía a recalentado. La espera para que nos tomaran el pedido fue eterna.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El chef cambió la carta y se nota. La pasta llegó en su punto.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Fuimos un sábado en la noche. La carne tenía una sazón casera.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El menú del día está bien para la zona. Cobraron el servicio sin preguntar.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "COBRARON EL SERVICIO SIN PREGUNTAR. LA PIZZA TENÍA UNA SAZÓN CASERA.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El administrador fue muy atento con los niños. La pizza estaba salada.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La pizza estaba pasada de aceite. La carta vale cada peso.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Pagamos el doble que la vez pasada. Vinimos por un cumpleaños. La hamburguesa tenía una sazón casera. La receta no se parece a la de antes.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "La limonada de coco no tenía sabor.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Fuimos en familia. Se nota que usan ingredientes frescos. La pizza estaba seca y sin gracia.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Las arepas estaban deliciosas!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La carne tenía una sazón casera.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El mesero nos recomendó muy bien. La cuenta es muy razonable. Pedimos a domicilio.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La receta no se parece a la de antes. El cajero resolvió el problema de inmediato. Vinimos por un cumpleaños. La carne tenía muy buen sabor.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El precio de los postres tiene buena relación calidad precio. El salmón estaba pasado de aceite. Fuimos en familia.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "RT El churrasco estaba fresquísimo. El valor del domicilio es económico. Las porciones son generosas. Vinimos por un cumpleaños.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Se nota que usan ingredientes frescos. El brownie superó lo que esperaba. Fuimos un sábado en la noche!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El domiciliario nunca trajo la cuenta. Almorzamos entre semana. El domicilio llegó antes de lo prometido.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El domiciliario estuvo pendiente de todo.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El arroz con pollo llegó en su punto. Fuimos en familia.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El administrador fue muy amable. Almorzamos entre semana.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El salmón estaba salado. El chef cambió la carta y se nota. Fuimos un sábado en la noche.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT El arroz con pollo venía bien servido y caliente. El domiciliario fue muy atento con los niños. El menú tiene buenas opciones vegetarianas.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "Vinimos por un cumpleaños. El precio de las bebidas es un robo.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT La reserva no aparecía en el sistema. Fuimos un sábado en la noche. El arroz con pollo superó lo que esperaba. Las porciones son generosas.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Llegamos sin reserva. El mesero resolvió el problema de inmediato. La hamburguesa venía bien servida y caliente. Se nota que usan ingredientes frescos.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La lasaña tenía muy buen sabor. La persona de la caja fue muy grosera.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Llegamos sin reserva. El pescado frito estaba crudo por dentro. El mesero respondió de mala gana.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "Fuimos un sábado en la noche. El mesero no sabía explicar la carta. El domicilio llegó antes de lo prometido.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La pasta estaba salada.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Le faltaba sal a todo. La carne tenía una sazón casera. Llegamos sin reserva.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "Llegamos sin reserva. La pasta estaba seca y sin gracia!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La bandeja paisa no tenía sabor. Las porciones son generosas.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Los tacos sabían a recalentado. El personal fue muy atento con los niños.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "La pizza estaba salada.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "Fuimos un sábado en la noche. El mesero nos recomendó muy bien.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El precio del plato fuerte salió carísimo. La lasaña estaba salada. Llegamos sin reserva. Aceptan todas las tarjetas pero cobran recargo.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Era nuestra primera visita. El combo vale cada peso.", "y": "precio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "El ajiaco estaba seco y sin gracia. El valor del domicilio tiene cobros que nadie explicó.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El personal nunca trajo la cuenta. El pescado frito estaba jugoso y bien condimentado.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "La persona de la caja fue muy atenta con los niños.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El arroz con pollo estaba salado. El almuerzo ejecutivo cuesta menos de veinte mil.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Era nuestra primera visita. Le faltaba sal a todo. El churrasco estaba pasado de aceite.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El valor del domicilio está inflado. El almuerzo ejecutivo cuesta menos de veinte mil.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El administrador fue muy atento con los niños. La pizza estaba salada.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La pizza llegó en su punto.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Le faltaba sal a todo. Fuimos un sábado en la noche. La lasaña estaba deliciosa.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Pedimos a domicilio. Le faltaba sal a todo. El brownie llegó en su punto.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "Era nuestra primera visita. Las arepas sabían a recalentado. Por ese valor se come mejor en otro lado. El menú tiene buenas opciones vegetarianas.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El arroz con pollo tenía muy buen sabor. Almorzamos entre semana!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Repetiría el plato sin dudarlo. Nos cambiaron de mesa sin avisar. El sancocho estaba salado.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El postre no tenía sabor. El domiciliario nos atendió con paciencia.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La carne venía quemada en los bordes. Llegamos sin reserva!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El brownie estaba delicioso. Cobraron el servicio sin preguntar. Vinimos por un cumpleaños.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "LA PIZZA ESTABA SALADA.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La ensalada estaba fresquísima. Fuimos un sábado en la noche.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El precio de los postres tiene buena relación calidad precio. El salmón estaba pasado de aceite. Fuimos en familia.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "Pedimos a domicilio. Las arepas estaban crudas por dentro.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El chef cambió la carta y se nota. El churrasco no tenía sabor.", "y": "comida", "test": 1, "dup": 1, "copy": 0, "hit": 1}, {"t": "El administrador se equivocó con el pedido.", "y": "servicio", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "La limonada de coco estaba salada. Almorzamos entre semana. Le faltaba sal a todo. El administrador respondió de mala gana.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El chef cambió la carta y se nota. La carne tenía una sazón casera.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Llegamos sin reserva. El ajiaco estaba pasado de aceite.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El menú del día subió sin aviso. Cobraron el servicio sin preguntar. Llegamos sin reserva.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT Se nota que usan ingredientes frescos. El ceviche llegó frío.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Repetiría el plato sin dudarlo. Nos atendieron rápido a pesar de estar lleno. El domiciliario nos ignoró media hora.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La receta no se parece a la de antes. Fuimos en familia. La persona de la caja estuvo pendiente de todo. El churrasco venía quemado en los bordes.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El cajero fue muy atento con los niños. Nos cambiaron de mesa sin avisar. Fuimos un sábado en la noche.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "Llegamos sin reserva. El precio de las bebidas tiene cobros que nadie explicó. Nos cambiaron de mesa sin avisar.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT El cajero fue muy atento con los niños. Pedimos a domicilio.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El personal respondió de mala gana. Era nuestra primera visita.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El ajiaco tenía una sazón casera.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT El sancocho estaba delicioso.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Era nuestra primera visita. La espera para que nos tomaran el pedido fue eterna. El personal fue muy amable. El ceviche venía bien servido y caliente.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La mesera nos atendió con paciencia. La bandeja paisa venía quemada en los bordes.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La carne venía quemada en los bordes. Llegamos sin reserva.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La hamburguesa estaba salada.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El ceviche estaba pasado de aceite.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Aceptan todas las tarjetas pero cobran recargo. La carta salió carísima. Llegamos sin reserva.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El brownie estaba delicioso. El chef cambió la carta y se nota.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Llegamos sin reserva. La carta salió carísima. La mesera fue muy atenta con los niños.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Vinimos por un cumpleaños. El ajiaco estaba delicioso.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El postre estaba pasado de aceite.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El ceviche sabía a recalentado.", "y": "precio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "El churrasco no tenía sabor. Fuimos en familia.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "El ceviche no tenía sabor. Cobraron el servicio sin preguntar.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La pizza venía quemada en los bordes. La espera para que nos tomaran el pedido fue eterna. Le faltaba sal a todo.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El pedido tardó más de una hora. El precio de los postres tiene cobros que nadie explicó.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La hamburguesa estaba jugosa y bien condimentada.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "El churrasco tenía muy buen sabor. Era nuestra primera visita.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Las arepas estaban fresquísimas. El domicilio llegó antes de lo prometido. Las porciones son generosas.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El churrasco tenía muy buen sabor.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El administrador fue muy amable. El chef cambió la carta y se nota. La espera para que nos tomaran el pedido fue eterna.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "EL BROWNIE ESTABA DELICIOSO. COBRARON EL SERVICIO SIN PREGUNTAR. VINIMOS POR UN CUMPLEAÑOS.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Pedimos a domicilio. La persona de la caja fue muy amable. La limonada de coco llegó fría.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Era nuestra primera visita. El personal se equivocó con el pedido. La espera para que nos tomaran el pedido fue eterna.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La salsa de la casa es lo mejor. Vinimos por un cumpleaños. El brownie estaba jugoso y bien condimentado.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El cajero fue muy atento con los niños. Pedimos a domicilio.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La lasaña tenía muy buen sabor. Tuvimos que pedir tres veces los cubiertos. Llegamos sin reserva. La salsa de la casa es lo mejor.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El precio de los postres es un robo. La carne venía bien servida y caliente. El menú tiene buenas opciones vegetarianas.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El arroz con pollo estaba fresquísimo. Las porciones son generosas.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Nadie se acercó a preguntar si todo estaba bien. El chef cambió la carta y se nota. La lasaña llegó en su punto.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "La ensalada no tenía sabor.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La lasaña llegó en su punto. Almorzamos entre semana. Repetiría el plato sin dudarlo.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Repetiría el plato sin dudarlo. La sopa del día estaba salada.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La pasta estaba cruda por dentro.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "LA BANDEJA PAISA SABÍA A RECALENTADO. REPETIRÍA EL PLATO SIN DUDARLO.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "RT La pizza estaba pasada de aceite. La carta vale cada peso.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "El brownie superó lo que esperaba.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "EL PRECIO DEL PLATO FUERTE ES UN ROBO. LO RECOMENDÓ UN AMIGO.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Llegamos sin reserva. El cajero fue muy amable.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El ceviche estaba salado.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Aceptan todas las tarjetas pero cobran recargo. El administrador fue muy amable.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "Se nota que usan ingredientes frescos. El arroz con pollo estaba crudo por dentro.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La limonada de coco estaba deliciosa. La salsa de la casa es lo mejor.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La salsa de la casa es lo mejor. Los tacos llegaron fríos.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Llegamos sin reserva. El arroz con pollo estaba delicioso.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El administrador respondió de mala gana.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Los tacos llegaron en su punto. Era nuestra primera visita.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La lasaña estaba deliciosa.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El salmón sabía a recalentado.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El domicilio llegó antes de lo prometido. Los tacos estaban crudos por dentro. Vinimos por un cumpleaños.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El menú del día está inflado. Hay descuento los martes.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El salmón estaba pasado de aceite.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La mesera fue muy grosera.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La sopa del día no tenía sabor. El chef cambió la carta y se nota!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Pagamos el doble que la vez pasada. Tuvimos que pedir tres veces los cubiertos. El domiciliario nunca trajo la cuenta. Vinimos por un cumpleaños.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La hamburguesa tenía muy buen sabor. La salsa de la casa es lo mejor.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Cobraron el servicio sin preguntar. El sancocho no tenía sabor.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El pedido tardó más de una hora. El salmón estaba jugoso y bien condimentado.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT La reserva no aparecía en el sistema. El administrador no sabía explicar la carta.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "RT El combo está bien para la zona. El chef cambió la carta y se nota.", "y": "precio", "test": 1, "dup": 1, "copy": 0, "hit": 0}, {"t": "El chef cambió la carta y se nota. El brownie venía quemado en los bordes.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Nos cambiaron de mesa sin avisar. La persona de la caja fue muy grosera.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La sopa del día llegó fría. Era nuestra primera visita. La salsa de la casa es lo mejor.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El combo es económico. Vinimos por un cumpleaños. Nos cambiaron de mesa sin avisar. El personal respondió de mala gana.", "y": "servicio", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "La mesera fue muy grosera. El postre tenía una sazón casera.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La salsa de la casa es lo mejor. El brownie tenía una sazón casera!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El domiciliario fue muy amable. Llegamos sin reserva. Tuvimos que pedir tres veces los cubiertos.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El sancocho estaba delicioso.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El administrador estuvo pendiente de todo. Se nota que usan ingredientes frescos. La sopa del día venía quemada en los bordes.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Cobraron el servicio sin preguntar. La pizza tenía una sazón casera.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "La hamburguesa estaba salada. Llegamos sin reserva. El menú tiene buenas opciones vegetarianas.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El precio de las bebidas está inflado.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "EL SALMÓN ESTABA PASADO DE ACEITE.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "EL ARROZ CON POLLO SUPERÓ LO QUE ESPERABA. EL VALOR DEL DOMICILIO NO JUSTIFICA LO QUE CUESTA.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Los tacos tenían una sazón casera.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La salsa de la casa es lo mejor. La carne estaba deliciosa. Vinimos por un cumpleaños.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "Pagamos el doble que la vez pasada. El ceviche sabía a recalentado.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El arroz con pollo superó lo que esperaba. El valor del domicilio no justifica lo que cuesta.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La anfitriona se equivocó con el pedido. Fuimos un sábado en la noche. El arroz con pollo superó lo que esperaba.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El ajiaco estaba jugoso y bien condimentado.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La espera para que nos tomaran el pedido fue eterna. El almuerzo ejecutivo cuesta menos de veinte mil. El valor del domicilio tiene cobros que nadie explicó.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La mesera estuvo pendiente de todo. Las arepas llegaron frías. Pedimos a domicilio.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La pasta llegó fría. El pedido tardó más de una hora. Era nuestra primera visita.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El valor del domicilio subió sin aviso.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El valor del domicilio es económico. Lo recomendó un amigo. Pagamos el doble que la vez pasada. El menú tiene buenas opciones vegetarianas.", "y": "precio", "test": 1, "dup": 1, "copy": 0, "hit": 0}, {"t": "La anfitriona se equivocó con el pedido.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "Se nota que usan ingredientes frescos. El ceviche llegó frío.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El administrador nos ignoró media hora. Llegamos sin reserva.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El churrasco tenía una sazón casera.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT Nadie se acercó a preguntar si todo estaba bien. El chef cambió la carta y se nota. La lasaña llegó en su punto.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Era nuestra primera visita. El combo está inflado.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Las arepas estaban deliciosas.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Las arepas estaban saladas. El menú tiene buenas opciones vegetarianas. Fuimos en familia.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El cajero fue muy amable.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El almuerzo ejecutivo cuesta menos de veinte mil. El ajiaco venía bien servido y caliente. Las porciones son generosas. Vinimos por un cumpleaños.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El valor del domicilio es muy razonable. El postre tenía muy buen sabor. Por ese valor se come mejor en otro lado.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Los tacos sabían a recalentado. Era nuestra primera visita. Se nota que usan ingredientes frescos.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Nadie se acercó a preguntar si todo estaba bien. La mesera fue muy amable. El postre tenía muy buen sabor.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El menú del día tiene cobros que nadie explicó.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La receta no se parece a la de antes. La pasta estaba fresquísima.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Llegamos sin reserva. La pasta estaba seca y sin gracia.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El mesero nos atendió con paciencia.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "EL CHEF CAMBIÓ LA CARTA Y SE NOTA. EL CHURRASCO NO TENÍA SABOR.", "y": "comida", "test": 1, "dup": 1, "copy": 0, "hit": 1}, {"t": "El salmón estaba delicioso. El menú tiene buenas opciones vegetarianas.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La ensalada estaba deliciosa. El chef cambió la carta y se nota. Llegamos sin reserva.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "Nos cambiaron de mesa sin avisar. La persona de la caja fue muy grosera.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Nos atendieron rápido a pesar de estar lleno. El churrasco estaba fresquísimo.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La mesera fue muy grosera.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "EL VALOR DEL DOMICILIO ES ECONÓMICO. LO RECOMENDÓ UN AMIGO. PAGAMOS EL DOBLE QUE LA VEZ PASADA. EL MENÚ TIENE BUENAS OPCIONES VEGETARIANAS.", "y": "precio", "test": 1, "dup": 1, "copy": 0, "hit": 0}, {"t": "El ceviche estaba pasado de aceite!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El arroz con pollo tenía muy buen sabor. Almorzamos entre semana.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Aceptan todas las tarjetas pero cobran recargo. La carta salió carísima. Llegamos sin reserva!!", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Fuimos en familia. El cajero estuvo pendiente de todo.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Hay descuento los martes. El precio de las bebidas está bien para la zona. Era nuestra primera visita. La anfitriona nos atendió con paciencia.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La lasaña llegó en su punto!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El precio del plato fuerte es un robo. Lo recomendó un amigo.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "RT La salsa de la casa es lo mejor. La bandeja paisa superó lo que esperaba.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La bandeja paisa no tenía sabor. Las porciones son generosas.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "Llegamos sin reserva. El cajero fue muy amable!!", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El combo tiene buena relación calidad precio.", "y": "precio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "RT La lasaña tenía muy buen sabor. La persona de la caja fue muy grosera.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La reserva no aparecía en el sistema. Fuimos un sábado en la noche. El arroz con pollo superó lo que esperaba. Las porciones son generosas.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Repetiría el plato sin dudarlo. La limonada de coco venía bien servida y caliente. Pedimos a domicilio.", "y": "precio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "Vinimos por un cumpleaños. El valor del domicilio tiene buena relación calidad precio.", "y": "precio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "Fuimos un sábado en la noche. La anfitriona fue muy atenta con los niños. Nadie se acercó a preguntar si todo estaba bien.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El domiciliario nunca trajo la cuenta.", "y": "servicio", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "La mesera fue muy amable. El pedido tardó más de una hora.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La persona de la caja resolvió el problema de inmediato.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "El domiciliario nunca trajo la cuenta.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La salsa de la casa es lo mejor. La bandeja paisa superó lo que esperaba.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "El brownie venía quemado en los bordes. Le faltaba sal a todo.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El cajero fue muy grosero. La carne venía quemada en los bordes. Fuimos un sábado en la noche.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El salmón estaba pasado de aceite. Repetiría el plato sin dudarlo.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El pescado frito estaba jugoso y bien condimentado. Por ese valor se come mejor en otro lado. El menú tiene buenas opciones vegetarianas.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Hay descuento los martes. La pasta tenía una sazón casera.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La pasta tenía una sazón casera. El administrador nos atendió con paciencia. Nos atendieron rápido a pesar de estar lleno.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El menú tiene buenas opciones vegetarianas. El ceviche tenía muy buen sabor. Fuimos en familia.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La pizza estaba pasada de aceite. Era nuestra primera visita.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La lasaña llegó en su punto.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La reserva no aparecía en el sistema. El administrador no sabía explicar la carta.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La receta no se parece a la de antes. El churrasco sabía a recalentado. Cobraron el servicio sin preguntar. Fuimos un sábado en la noche.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "Hay descuento los martes. El precio del plato fuerte tiene cobros que nadie explicó. Los tacos tenían muy buen sabor. Llegamos sin reserva.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Por ese valor se come mejor en otro lado. La sopa del día venía bien servida y caliente. Las porciones son generosas.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El cajero nos recomendó muy bien. Almorzamos entre semana.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El churrasco tenía muy buen sabor. El personal estuvo pendiente de todo.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Repetiría el plato sin dudarlo. La mesera nos atendió con paciencia.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La receta no se parece a la de antes. El cajero resolvió el problema de inmediato. Vinimos por un cumpleaños. La carne tenía muy buen sabor!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El postre sabía a recalentado. Vinimos por un cumpleaños. Se nota que usan ingredientes frescos.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La sopa del día no tenía sabor. El chef cambió la carta y se nota.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "Los tacos tenían una sazón casera!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El mesero no sabía explicar la carta.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT Fuimos un sábado en la noche. La carne tenía una sazón casera.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "LOS TACOS LLEGARON EN SU PUNTO. ERA NUESTRA PRIMERA VISITA.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Aceptan todas las tarjetas pero cobran recargo. El precio de los postres está bien para la zona.", "y": "precio", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "La anfitriona nunca trajo la cuenta. Era nuestra primera visita. Nadie se acercó a preguntar si todo estaba bien.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La persona de la caja nos atendió con paciencia.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El administrador nunca trajo la cuenta.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Lo recomendó un amigo. La sopa del día estaba seca y sin gracia.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Fuimos en familia. Nos cambiaron de mesa sin avisar. La persona de la caja estuvo pendiente de todo.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "Las arepas estaban secas y sin gracia.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La espera para que nos tomaran el pedido fue eterna. Las arepas estaban pasadas de aceite. Almorzamos entre semana.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El menú tiene buenas opciones vegetarianas. Fuimos en familia. El arroz con pollo estaba salado. Nadie se acercó a preguntar si todo estaba bien.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El cajero nunca trajo la cuenta. Vinimos por un cumpleaños.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Se nota que usan ingredientes frescos. El arroz con pollo estaba crudo por dentro.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El menú tiene buenas opciones vegetarianas. La hamburguesa estaba fresquísima.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "Fuimos un sábado en la noche. La bandeja paisa tenía muy buen sabor.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El combo es económico. Vinimos por un cumpleaños. Nos cambiaron de mesa sin avisar. El personal respondió de mala gana.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La mesera estuvo pendiente de todo. Fuimos en familia.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Hay descuento los martes. La hamburguesa llegó fría.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La espera para que nos tomaran el pedido fue eterna. El chef cambió la carta y se nota. El churrasco venía quemado en los bordes.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La anfitriona se equivocó con el pedido. Cobraron el servicio sin preguntar.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El personal resolvió el problema de inmediato!!", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La carne estaba pasada de aceite.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Era nuestra primera visita. El menú del día vale cada peso. Repetiría el plato sin dudarlo. Hay descuento los martes.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La ensalada estaba deliciosa. El chef cambió la carta y se nota. Llegamos sin reserva!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Llegamos sin reserva. La sopa del día estaba jugosa y bien condimentada. La receta no se parece a la de antes. El domicilio llegó antes de lo prometido.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El cajero estuvo pendiente de todo. El precio de las bebidas está bien para la zona. Almorzamos entre semana.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}], "kappa": [{"t": "El postre estaba pasado de aceite.", "a": "comida", "b": "comida"}, {"t": "El churrasco tenía muy buen sabor.", "a": "comida", "b": "comida"}, {"t": "El brownie estaba delicioso. Cobraron el servicio sin preguntar. Vinimos por un cumpleaños.", "a": "comida", "b": "comida"}, {"t": "El chef cambió la carta y se nota. La pasta llegó en su punto.", "a": "comida", "b": "comida"}, {"t": "El brownie no tenía sabor. El administrador nunca trajo la cuenta.", "a": "comida", "b": "comida"}, {"t": "El arroz con pollo llegó en su punto. Fuimos en familia.", "a": "comida", "b": "comida"}, {"t": "La pasta estaba salada.", "a": "comida", "b": "comida"}, {"t": "Los tacos llegaron en su punto. Era nuestra primera visita.", "a": "comida", "b": "comida"}, {"t": "La receta no se parece a la de antes. La pasta estaba fresquísima.", "a": "comida", "b": "comida"}, {"t": "La limonada de coco estaba salada. Almorzamos entre semana. Le faltaba sal a todo. El administrador respondió de mala gana.", "a": "comida", "b": "servicio"}, {"t": "El administrador estuvo pendiente de todo. Se nota que usan ingredientes frescos. La sopa del día venía quemada en los bordes.", "a": "comida", "b": "comida"}, {"t": "La carne venía quemada en los bordes. Llegamos sin reserva!!", "a": "comida", "b": "servicio"}, {"t": "La pizza venía quemada en los bordes. La espera para que nos tomaran el pedido fue eterna. Le faltaba sal a todo.", "a": "comida", "b": "comida"}, {"t": "LA MESERA SE EQUIVOCÓ CON EL PEDIDO. EL CEVICHE LLEGÓ FRÍO. FUIMOS UN SÁBADO EN LA NOCHE. LA SALSA DE LA CASA ES LO MEJOR.", "a": "comida", "b": "servicio"}, {"t": "Los tacos sabían a recalentado. El personal fue muy atento con los niños.", "a": "comida", "b": "comida"}, {"t": "La sopa del día llegó fría. Era nuestra primera visita. La salsa de la casa es lo mejor!!", "a": "comida", "b": "comida"}, {"t": "Pedimos a domicilio. La persona de la caja fue muy amable. La limonada de coco llegó fría.", "a": "comida", "b": "servicio"}, {"t": "La salsa de la casa es lo mejor. Los tacos llegaron fríos.", "a": "comida", "b": "comida"}, {"t": "Nos atendieron rápido a pesar de estar lleno. El churrasco estaba fresquísimo.", "a": "comida", "b": "servicio"}, {"t": "La persona de la caja resolvió el problema de inmediato.", "a": "servicio", "b": "servicio"}, {"t": "RT La reserva no aparecía en el sistema. El administrador no sabía explicar la carta.", "a": "servicio", "b": "servicio"}, {"t": "EL ADMINISTRADOR SE EQUIVOCÓ CON EL PEDIDO.", "a": "servicio", "b": "servicio"}, {"t": "El personal respondió de mala gana. Era nuestra primera visita.", "a": "servicio", "b": "servicio"}, {"t": "El personal nunca trajo la cuenta. El pescado frito estaba jugoso y bien condimentado.", "a": "servicio", "b": "precio"}, {"t": "El pedido tardó más de una hora. El valor del domicilio vale cada peso. La mesera nos ignoró media hora. Vinimos por un cumpleaños.", "a": "servicio", "b": "servicio"}, {"t": "Era nuestra primera visita. El personal se equivocó con el pedido. La espera para que nos tomaran el pedido fue eterna.", "a": "servicio", "b": "servicio"}, {"t": "La anfitriona se equivocó con el pedido.", "a": "servicio", "b": "servicio"}, {"t": "El administrador fue muy grosero. La receta no se parece a la de antes.", "a": "servicio", "b": "servicio"}, {"t": "RT El cajero fue muy atento con los niños. Pedimos a domicilio.", "a": "servicio", "b": "servicio"}, {"t": "Fuimos un sábado en la noche. El mesero nos recomendó muy bien.", "a": "servicio", "b": "servicio"}, {"t": "La pizza llegó en su punto.", "a": "servicio", "b": "comida"}, {"t": "El domiciliario nunca trajo la cuenta.", "a": "servicio", "b": "servicio"}, {"t": "El precio de las bebidas tiene buena relación calidad precio.", "a": "precio", "b": "precio"}, {"t": "Era nuestra primera visita. El combo está inflado.", "a": "precio", "b": "precio"}, {"t": "El ceviche sabía a recalentado.", "a": "precio", "b": "precio"}, {"t": "ACEPTAN TODAS LAS TARJETAS PERO COBRAN RECARGO. EL PRECIO DE LOS POSTRES ESTÁ BIEN PARA LA ZONA.", "a": "precio", "b": "precio"}, {"t": "El mesero nos recomendó muy bien. La cuenta es muy razonable. Pedimos a domicilio.", "a": "precio", "b": "servicio"}, {"t": "Era nuestra primera visita. El combo vale cada peso.", "a": "precio", "b": "precio"}, {"t": "El precio del plato fuerte salió carísimo. La lasaña estaba salada. Llegamos sin reserva. Aceptan todas las tarjetas pero cobran recargo.", "a": "precio", "b": "precio"}, {"t": "La espera para que nos tomaran el pedido fue eterna. El almuerzo ejecutivo cuesta menos de veinte mil. El valor del domicilio tiene cobros que nadie explicó.", "a": "precio", "b": "servicio"}]};
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const fmt3 = x => (Math.round(x * 1000) / 1000).toFixed(3);
+const SUP = { "-": "⁻", "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+const sci = x => { if (x === 0) return "0"; const [m, e] = x.toExponential(2).split("e"); return `${m} × 10${String(+e).replace(/./g, c => SUP[c])}`; };
+const CLASS_VAR = { comida: "var(--c-comida)", servicio: "var(--c-servicio)", precio: "var(--c-precio)" };
+
+/* Tabs with bare-hash deep links */
+const tabs = $$(".tab");
+function openTab(id) {
+  tabs.forEach(t => { const on = t.getAttribute("aria-controls") === id; t.setAttribute("aria-selected", on); $("#" + t.getAttribute("aria-controls")).hidden = !on; });
+  if (id === "fuga") layoutDots();
+}
+tabs.forEach(t => t.addEventListener("click", () => { openTab(t.getAttribute("aria-controls")); try { history.replaceState(null, "", "#" + t.getAttribute("aria-controls")); } catch (e) {} }));
+if (["bayes", "kappa", "paradoja", "fuga", "glosario"].includes(location.hash.slice(1))) openTab(location.hash.slice(1));
+
+/* ---------- 1. Naive Bayes ---------- */
+const NB_DOCS = { comida: ["sopa fría sin sabor", "carne deliciosa", "sopa deliciosa caliente"], servicio: ["mesero lento", "mesero grosero lento", "mesera amable"] };
+const tok = s => s.toLowerCase().split(/[^a-záéíóúñü]+/).filter(Boolean);
+const counts = {}, N = {};
+for (const c in NB_DOCS) { counts[c] = {}; N[c] = 0; for (const d of NB_DOCS[c]) for (const w of tok(d)) { counts[c][w] = (counts[c][w] || 0) + 1; N[c]++; } }
+const VOCAB = [...new Set(Object.values(NB_DOCS).flat().flatMap(tok))].sort();
+let alpha = 1, stepping = null;
+for (const c in NB_DOCS) { $("#d-" + c).innerHTML = NB_DOCS[c].map(d => `<li>${d}</li>`).join(""); $("#n-" + c).textContent = `N = ${N[c]} palabras`; }
+$("#nb-vocab").innerHTML = VOCAB.map(w => `<button type="button">${w}</button>`).join("");
+$$("#nb-vocab button").forEach(b => b.addEventListener("click", () => { const i = $("#nb-input"); i.value = (i.value.trim() + " " + b.textContent).trim(); renderNB(); }));
+
+function renderNB(animate = false) {
+  if (stepping) { clearInterval(stepping); stepping = null; }
+  const words = tok($("#nb-input").value);
+  const known = words.filter(w => VOCAB.includes(w));
+  $("#nb-v").textContent = `|V| = ${VOCAB.length}`;
+  $("#nb-words").innerHTML = words.length ? words.map(w => VOCAB.includes(w) ? `<span class="mono">${w}</span>` : `<span class="mono oov" title="Fuera del vocabulario">${w}</span>`).join("") : "";
+  const scores = {};
+  let html = "";
+  for (const c in NB_DOCS) {
+    const docsC = NB_DOCS[c].length, total = 6;
+    let p = docsC / total;
+    let chips = `<div class="f"><b>${docsC}/${total}</b><span>P(${c})</span></div>`;
+    for (const w of known) {
+      const num = (counts[c][w] || 0) + alpha, den = N[c] + alpha * VOCAB.length;
+      p *= num / den;
+      chips += `<div class="f${num === 0 ? " zero" : ""}"><b>${num}/${den}</b><span>${w}</span></div>`;
+    }
+    scores[c] = p;
+    chips += `<div class="f res"><b>${sci(p)}</b><span>producto</span></div>`;
+    html += `<div><div class="cls" style="color:${CLASS_VAR[c]}">${c}</div><div class="factors">${chips}</div></div>`;
+  }
+  $("#nb-calc").innerHTML = html;
+  const tot = scores.comida + scores.servicio;
+  $("#nb-probs").innerHTML = ["comida", "servicio"].map(c => `<div class="pbar"><span>P(${c} | doc)</span><div class="track"><div class="fill" id="pf-${c}" style="background:${CLASS_VAR[c]}"></div></div><b class="num">${tot ? fmt3(scores[c] / tot) : "—"}</b></div>`).join("");
+  let msg = "";
+  if (!known.length) msg = `<div class="msg">Ninguna palabra está en el vocabulario. Solo decide el prior: 3/6 contra 3/6.</div>`;
+  else if (!tot) msg = `<div class="msg alert">Con α = 0, cada clase tiene al menos una palabra que nunca vio: los dos productos valen 0 y el modelo no puede decidir. Para eso existe el suavizado.</div>`;
+  else if (alpha === 0 && (scores.comida === 0 || scores.servicio === 0)) msg = `<div class="msg alert">Una sola palabra ausente anula toda la clase: su probabilidad queda en 0 sin importar el resto del texto.</div>`;
+  else if (known.length && Math.abs(scores.comida / tot - 0.5) < 0.15) msg = `<div class="msg">Caso ambiguo. Con conteos parecidos, gana la clase con menos palabras (N más pequeño): cada palabra conocida pesa más.</div>`;
+  $("#nb-msg").innerHTML = msg;
+  const setBars = () => requestAnimationFrame(() => ["comida", "servicio"].forEach(c => { $("#pf-" + c).style.width = tot ? (100 * scores[c] / tot) + "%" : "0%"; }));
+  if (animate && !RM) {
+    const chips = $$("#nb-calc .f"); chips.forEach(f => f.classList.add("pending")); $("#nb-probs").style.opacity = 0; $("#nb-msg").style.opacity = 0;
+    let i = 0;
+    stepping = setInterval(() => {
+      if (i < chips.length) { chips[i++].classList.remove("pending"); return; }
+      clearInterval(stepping); stepping = null; $("#nb-probs").style.opacity = 1; $("#nb-msg").style.opacity = 1; setBars();
+    }, 650);
+  } else { $("#nb-probs").style.opacity = 1; $("#nb-msg").style.opacity = 1; setBars(); }
+}
+$("#nb-input").addEventListener("input", () => renderNB());
+$("#nb-step").addEventListener("click", () => renderNB(true));
+[["#a1", 1], ["#a0", 0]].forEach(([id, a]) => $(id).addEventListener("click", () => { alpha = a; $("#a1").setAttribute("aria-pressed", a === 1); $("#a0").setAttribute("aria-pressed", a === 0); renderNB(); }));
+renderNB();
+
+/* ---------- 2. Kappa ---------- */
+const CLS = ["comida", "servicio", "precio"];
+const K0 = DATA.kappa.map(d => ({ ...d }));
+let K = K0.map(d => ({ ...d })), ksel = K.findIndex(d => d.t.startsWith("El mesero nos recomendó"));
+if (ksel < 0) ksel = 0;
+const kgrid = $("#k-grid");
+kgrid.innerHTML = K.map((d, i) => `<button class="tile" data-i="${i}" aria-label="Reseña ${i + 1}"><i></i><i></i></button>`).join("");
+function kappaOf(a, b) {
+  const n = a.length; let po = 0; for (let i = 0; i < n; i++) po += a[i] === b[i];
+  po /= n; let pe = 0; for (const c of CLS) pe += (a.filter(x => x === c).length / n) * (b.filter(x => x === c).length / n);
+  return { po, pe, k: (po - pe) / (1 - pe) };
+}
+const band = k => k > 0.8 ? "casi perfecto" : k > 0.6 ? "sustancial" : k > 0.4 ? "moderado" : k > 0.2 ? "aceptable" : "débil";
+function tween(el, to) {
+  const from = parseFloat(el.textContent) || 0; if (RM) { el.textContent = fmt3(to); return; }
+  const t0 = performance.now(); const f = t => { const u = Math.min(1, (t - t0) / 450); el.textContent = fmt3(from + (to - from) * (1 - Math.pow(1 - u, 3))); if (u < 1) requestAnimationFrame(f); }; requestAnimationFrame(f);
+}
+function renderK() {
+  $$(".tile", kgrid).forEach((el, i) => {
+    const d = K[i]; const [l, r] = el.children;
+    l.style.backgroundColor = CLASS_VAR[d.a]; r.style.backgroundColor = CLASS_VAR[d.b];
+    el.classList.toggle("agree", d.a === d.b); el.classList.toggle("sel", i === ksel);
+    el.setAttribute("aria-label", `Reseña ${i + 1}: A ${d.a}, B ${d.b}`);
+  });
+  const { po, pe, k } = kappaOf(K.map(d => d.a), K.map(d => d.b));
+  tween($("#k-po"), po); tween($("#k-k"), k);
+  $("#k-band").textContent = "kappa · " + band(k);
+  $("#k-needle").style.left = `calc(${Math.max(0, Math.min(1, k)) * 100}% - 1px)`;
+  const dis = K.filter(d => d.a !== d.b).length;
+  $("#k-pe").textContent = `${40 - dis} de 40 coinciden · coincidencia esperada por azar pₑ = ${fmt3(pe)}`;
+  let t = `<tr><th></th>${CLS.map(c => `<th>${c}</th>`).join("")}</tr>`;
+  for (const a of CLS) t += `<tr><th>${a}</th>${CLS.map(b => `<td class="${a === b ? "diag" : ""}">${K.filter(d => d.a === a && d.b === b).length}</td>`).join("")}</tr>`;
+  $("#k-ct").innerHTML = t;
+  const d = K[ksel];
+  $("#k-detail").innerHTML = `<q>${d.t}</q><div class="row" style="margin-top:8px;gap:8px"><span class="cap">A:</span><span class="pill" style="background:${CLASS_VAR[d.a]}">${d.a}</span><span class="cap">B:</span><span class="pill" style="background:${CLASS_VAR[d.b]}">${d.b}</span><span class="cap">· Toquen de nuevo la ficha para cambiar la etiqueta de B.</span></div>`;
+}
+kgrid.addEventListener("click", e => {
+  const tile = e.target.closest(".tile"); if (!tile) return;
+  const i = +tile.dataset.i;
+  if (i === ksel) K[i].b = CLS[(CLS.indexOf(K[i].b) + 1) % 3]; else ksel = i;
+  renderK();
+});
+$$("#kappa .seg button").forEach(b => b.addEventListener("click", () => {
+  $$("#kappa .seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  kgrid.className = "grid40 " + b.dataset.m;
+}));
+$("#k-reset").addEventListener("click", () => { K = K0.map(d => ({ ...d })); renderK(); });
+renderK();
+
+/* ---------- 3. Paradox ---------- */
+$("#p-waffle").innerHTML = "<i></i>".repeat(100);
+function renderP() {
+  const p = +$("#p-range").value;
+  const f1maj = 2 * p / (1 + p), f1m = f1maj / 3;
+  $("#p-val").textContent = fmt3(p);
+  $("#p-acc").textContent = fmt3(p); $("#p-f1").textContent = fmt3(f1m);
+  $("#p-accb").style.height = (p * 100) + "%"; $("#p-f1b").style.height = (f1m * 100) + "%";
+  $$("#p-waffle i").forEach((el, i) => { el.style.backgroundColor = i < Math.round(p * 100) ? "var(--c-comida)" : "var(--gray)"; });
+  $("#p-formula").textContent = `F1 mayoritaria = 2p/(1+p) = ${fmt3(f1maj)} · F1 macro = (${fmt3(f1maj)} + 0 + 0) / 3 = ${fmt3(f1m)}`;
+}
+$("#p-range").addEventListener("input", renderP);
+$("#p-course").addEventListener("click", () => { $("#p-range").value = 0.617; renderP(); });
+renderP();
+
+
+/* ---------- Concepts and glossary ---------- */
+const GLOSSARY = [["Tarea y datos", [["Clasificación supervisada", "Aprender, a partir de textos ya etiquetados, una función que asigna una clase a un texto nuevo."], ["Corpus sintético", "Textos generados por un programa, no escritos por personas. Sirve para controlar qué fenómenos aparecen."], ["Guía de anotación", "Reglas escritas que dicen qué entra y qué no entra en cada clase, y qué hacer con los casos mixtos."], ["Acuerdo entre anotadores", "Qué tanto coinciden dos personas que etiquetan los mismos textos de forma independiente."], ["Kappa de Cohen", "Acuerdo corregido por el azar: κ = (pₒ − pₑ) / (1 − pₑ). Vale 1 si el acuerdo es perfecto y 0 si es el esperable por azar."], ["Desbalance de clases", "Una clase tiene muchos más ejemplos que las demás. Infla el accuracy de cualquier modelo que la favorezca."], ["Duplicado cercano", "Dos textos iguales salvo diferencias superficiales: mayúsculas, un \"RT\" al inicio o signos extra."], ["Fuga de datos", "Información del conjunto de prueba que llega al entrenamiento. Hace que las métricas parezcan mejores de lo que son."], ["Partición estratificada", "División entrenamiento/prueba que conserva en ambos lados la proporción de cada clase."], ["Validación cruzada", "Entrenar y evaluar en k particiones distintas y promediar. Se reporta la media y la desviación."], ["Pipeline", "Objeto de scikit-learn que encadena vectorizador y modelo, y aprende todo solo con el conjunto de entrenamiento."], ["Atajo", "Palabra que se asocia con una clase en un corpus sin describirla, como \"estaba\" o \"fue\". Falla al cambiar de corpus."]]], ["Modelos y métricas", [["Bolsa de palabras (BoW)", "Vector con el número de veces que aparece cada palabra del vocabulario en el documento."], ["TF-IDF", "El conteo de cada palabra ponderado por su rareza en el corpus. Baja el peso de las palabras muy comunes."], ["Naive Bayes multinomial", "Multiplica P(c) por P(w|c) de cada palabra y elige la clase con el producto más alto. Supone palabras independientes."], ["Prior P(c)", "Proporción de documentos de la clase c en el conjunto de entrenamiento."], ["Suavizado de Laplace", "Sumar α = 1 a cada conteo para que una palabra nunca vista en una clase no anule su probabilidad."], ["Regresión Logística", "Modelo discriminativo que aprende un peso por palabra y por clase. Los pesos se pueden inspeccionar."], ["class_weight=\"balanced\"", "Hace que los errores en clases pequeñas pesen más, en proporción inversa a su frecuencia."], ["Línea base", "Modelo trivial de referencia. Aquí: responder siempre la clase más frecuente sin leer el texto."], ["Accuracy", "Proporción de predicciones correctas sobre el total."], ["Precisión y recall", "Precisión: de lo que el modelo llamó c, cuánto era c. Recall: de lo que era c, cuánto encontró."], ["F1 y F1 macro", "F1: media armónica de precisión y recall. F1 macro: promedio del F1 de cada clase, todas con el mismo peso."], ["Matriz de confusión", "Tabla de clases reales contra clases predichas. Muestra hacia dónde se van los errores."]]]];
+const DEF = Object.fromEntries(GLOSSARY.flatMap(([, items]) => items));
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const PANEL_TERMS = {
+  bayes: ["Naive Bayes multinomial", "Prior P(c)", "Suavizado de Laplace", "Bolsa de palabras (BoW)"],
+  kappa: ["Guía de anotación", "Acuerdo entre anotadores", "Kappa de Cohen"],
+  paradoja: ["Desbalance de clases", "Línea base", "Accuracy", "Precisión y recall", "F1 y F1 macro"],
+  fuga: ["Duplicado cercano", "Fuga de datos", "Partición estratificada", "Corpus sintético"],
+};
+$$("details.concepts").forEach(d => { d.querySelector("dl").innerHTML = PANEL_TERMS[d.dataset.c].map(k => `<dt>${esc(k)}</dt><dd>${esc(DEF[k])}</dd>`).join(""); });
+$("#gloss").innerHTML = GLOSSARY.map(([g, items]) => `<div><h3>${esc(g)}</h3><div class="gloss-grid">${items.map(([k, d]) => `<div class="gloss-item"><b>${esc(k)}</b><span>${esc(d)}</span></div>`).join("")}</div></div>`).join("");
+
+/* ---------- 4. Leakage ---------- */
+const docs = DATA.docs, stage = $("#l-stage");
+let lstep = 0;
+// Order: train docs first, then test docs; within test, copies interleaved by original order.
+const order = docs.map((d, i) => i);
+const dots = order.map(i => { const el = document.createElement("div"); el.className = "dot" + (docs[i].dup ? " dup" : ""); el.dataset.i = i; stage.appendChild(el); return el; });
+const labels = ["Corpus · 300 reseñas", "Entrenamiento · 225", "Prueba · 75"].map(t => { const el = document.createElement("div"); el.className = "rlab"; el.textContent = t; stage.appendChild(el); return el; });
+const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; stage.appendChild(tip);
+function layoutDots() {
+  const W = stage.clientWidth; if (!W) return;
+  const S = 15; // pitch
+  const narrow = W < 560;
+  const pos = (col, row, x0, y0) => [x0 + col * S, y0 + row * S];
+  const place = [];
+  if (lstep === 0) {
+    const cols = Math.max(10, Math.min(25, Math.floor(W / S)));
+    let k = 0; docs.forEach((d, i) => { place[i] = pos(k % cols, Math.floor(k / cols), 0, 24); k++; });
+    labels[0].style.cssText = "left:0;top:0;opacity:1"; labels[1].style.opacity = 0; labels[2].style.opacity = 0;
+    stage.style.height = (24 + Math.ceil(300 / cols) * S + 4) + "px";
+  } else {
+    const tc = 15, trRows = 15, teRows = 5;
+    const x2 = narrow ? 0 : tc * S + 40, y2 = narrow ? 24 + trRows * S + 28 : 0;
+    let a = 0, b = 0;
+    // test: copies first so the amber block reads as one group of 24
+    const testIdx = docs.map((d, i) => i).filter(i => docs[i].test).sort((i, j) => docs[j].copy - docs[i].copy);
+    docs.forEach((d, i) => { if (!d.test) { place[i] = pos(a % tc, Math.floor(a / tc), 0, 24); a++; } });
+    testIdx.forEach(i => { place[i] = pos(b % tc, Math.floor(b / tc), x2, y2 + 24); b++; });
+    labels[0].style.opacity = 0;
+    labels[1].style.cssText = "left:0;top:0;opacity:1"; labels[2].style.cssText = `left:${x2}px;top:${y2}px;opacity:1`;
+    stage.style.height = (narrow ? y2 + 24 + teRows * S + 4 : 24 + trRows * S + 4) + "px";
+  }
+  dots.forEach((el, i) => {
+    const d = docs[i]; el.style.transform = `translate(${place[i][0]}px, ${place[i][1]}px)`;
+    el.classList.toggle("copy", lstep >= 1 && lstep < 2 && d.copy === 1);
+    el.classList.toggle("dup", lstep === 0 && d.dup === 1);
+    el.classList.toggle("hit", lstep === 2 && d.test === 1 && d.hit === 1);
+    el.classList.toggle("miss", lstep === 2 && d.test === 1 && d.hit === 0);
+    el.classList.toggle("dim", lstep === 2 && d.test === 0);
+    if (lstep === 2 && d.copy) el.style.boxShadow = "0 0 0 2px var(--amber)"; else el.style.boxShadow = "";
+  });
+}
+const CAPS = [
+  "120 reseñas pertenecen a un grupo de duplicados (60 copias). drop_duplicates() sobre el texto crudo solo encuentra 8.",
+  "Sin deduplicar, la partición 75/25 deja 24 reseñas de prueba (en ámbar) con una copia en entrenamiento.",
+  "Verde: acierto. Rojo: error. Con borde ámbar, las reseñas que tenían copia. El modelo acierta casi todas las que ya había visto.",
+];
+function setStep(s) {
+  lstep = s;
+  $$("#fuga .seg button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.s === s));
+  $("#l-next").textContent = s === 2 ? "Volver al inicio" : "Siguiente";
+  $("#l-cap").textContent = CAPS[s];
+  $("#l-acc").hidden = s !== 2;
+  $("#l-a1").style.width = "0%"; $("#l-a2").style.width = "0%";
+  layoutDots();
+  if (s === 2) setTimeout(() => { $("#l-a1").style.width = "95.8%"; $("#l-a2").style.width = "72.5%"; }, RM ? 0 : 500);
+}
+$$("#fuga .seg button").forEach(b => b.addEventListener("click", () => setStep(+b.dataset.s)));
+$("#l-next").addEventListener("click", () => setStep((lstep + 1) % 3));
+stage.addEventListener("mousemove", e => {
+  const el = e.target.closest(".dot"); if (!el) { tip.hidden = true; return; }
+  const d = docs[+el.dataset.i]; const r = stage.getBoundingClientRect();
+  tip.textContent = `${d.t}  [${d.y}]`; tip.hidden = false;
+  const x = Math.min(e.clientX - r.left + 12, r.width - 270); tip.style.left = Math.max(0, x) + "px"; tip.style.top = (e.clientY - r.top + 14) + "px";
+});
+stage.addEventListener("mouseleave", () => { tip.hidden = true; });
+addEventListener("resize", layoutDots);
+function renderEst() { const f = +$("#l-range").value; $("#l-f").textContent = Math.round(f * 100) + " %"; $("#l-rep").textContent = fmt3(f * 0.958 + (1 - f) * 0.725); }
+$("#l-range").addEventListener("input", renderEst);
+renderEst(); setStep(0);
+</script>
+
+</body>
+</html>

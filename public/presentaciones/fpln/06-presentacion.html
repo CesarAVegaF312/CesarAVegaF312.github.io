@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>Sesión 6 FPLN · Clasificación básica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: fixed 1280x720 slide canvas scaled to the window, institutional look (single visual world, same as the PPTX). */
+:root {
+  --navy: #1B2A4A; --teal: #2A9D8F; --amber: #E9A23B; --warn: #B5561B; --amber-ink: #A26A10;
+  --ink: #22303F; --muted: #5E6B7A; --tint: #EEF2F6; --teal-tint: #E3F2F0; --amber-tint: #FBF0DC;
+  --line: #C9D2DD; --gray: #9AA8B8; --white: #FFFFFF; --backdrop: #0B1220;
+  --f-display: "Source Serif 4", Cambria, Georgia, serif;
+  --f-body: "Source Sans 3", Calibri, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", "Courier New", monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--backdrop); color: var(--ink); font-family: var(--f-body); overflow: hidden; }
+#viewport { position: absolute; inset: 0 0 44px 0; display: flex; align-items: center; justify-content: center; }
+#stage { width: 1280px; height: 720px; position: relative; transform-origin: center center; flex: none; }
+.slide { position: absolute; inset: 0; background: var(--white); padding: 44px 64px 40px; display: none; overflow: hidden; }
+.slide.on { display: block; animation: enter .35s ease; }
+@keyframes enter { from { opacity: 0; } to { opacity: 1; } }
+.slide.dark { background: var(--navy); color: #D5DEEA; }
+.foot { position: absolute; right: 64px; bottom: 18px; font-size: 13px; color: var(--muted); }
+.dark .foot { color: #8C9BB3; }
+h1 { font: 700 36px/1.15 var(--f-display); color: var(--navy); margin: 0; text-wrap: balance; }
+.sub { font-size: 19px; color: var(--muted); margin: 6px 0 0; }
+.body { position: absolute; left: 64px; right: 64px; top: 140px; bottom: 56px; }
+.card { background: var(--tint); border-radius: 12px; padding: 20px 24px; }
+.card.teal { background: var(--teal-tint); } .card.amber { background: var(--amber-tint); } .card.navy { background: var(--navy); color: #fff; }
+.cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; height: 100%; }
+.mono { font-family: var(--f-mono); }
+.num { font-variant-numeric: tabular-nums; }
+.stat { font: 700 56px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.lab { font-size: 16px; color: var(--muted); }
+ul.b { margin: 0; padding-left: 22px; display: grid; gap: 10px; font-size: 19px; line-height: 1.4; }
+.k { font-weight: 700; color: var(--navy); }
+.it { font-style: italic; color: var(--navy); font-size: 19px; }
+.circle { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; color: #fff; font: 700 20px var(--f-body); flex: none; }
+.circle svg { width: 24px; height: 24px; fill: currentColor; }
+
+/* Step reveal */
+[data-s] { opacity: 0; transform: translateY(8px); transition: opacity .45s ease, transform .45s ease; }
+[data-s].in { opacity: 1; transform: none; }
+.grow { transform-origin: bottom; }
+
+/* Bar + notes */
+#bar { position: fixed; left: 0; right: 0; bottom: 0; height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 16px; padding-bottom: env(safe-area-inset-bottom, 0px); background: #111a2c; color: #C5D0E0; font-size: 14px; }
+#bar button { font: 600 13px var(--f-body); background: #1E2A42; color: #E6EDF7; border: 1px solid #2E3D5C; border-radius: 6px; padding: 5px 12px; cursor: pointer; }
+#bar button:focus-visible, .slide button:focus-visible, .slide input:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+#bar .grow1 { flex: 1; }
+#prog { height: 4px; background: #2E3D5C; border-radius: 2px; flex: 1; max-width: 360px; overflow: hidden; }
+#prog i { display: block; height: 100%; background: var(--amber); width: 0; transition: width .3s ease; }
+#notes { position: fixed; left: 16px; right: 16px; bottom: 52px; max-height: 42vh; overflow: auto; background: #111a2c; color: #D5DEEA; border: 1px solid #2E3D5C; border-radius: 10px; padding: 14px 18px; font-size: 16px; line-height: 1.5; z-index: 10; }
+#notes p { margin: 0 0 8px; opacity: .5; }
+#notes p.cur { opacity: 1; color: #fff; }
+#gpanel { position: fixed; right: 16px; bottom: 52px; width: min(440px, calc(100vw - 32px)); max-height: 70vh; overflow: auto; background: #FFFFFF; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; z-index: 11; box-shadow: 0 8px 28px rgba(11,18,32,.35); }
+#gpanel h3 { font: 700 13px var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+#gpanel dl { margin: 0; display: grid; gap: 10px; }
+#gpanel dt { font-weight: 700; color: var(--navy); }
+#gpanel dd { margin: 0; font-size: 15px; line-height: 1.4; }
+#gpanel button { margin-top: 14px; font: 600 13px var(--f-body); background: var(--navy); color: #fff; border: 0; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+#notes .hint { font-size: 12px; color: #8C9BB3; opacity: 1; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation: none !important; } }
+
+/* Concept band: definitions appear on the slide where the topic is introduced */
+.slide.has-band .body { bottom: 122px; }
+.body.cols2 { height: auto; }
+.band { position: absolute; left: 64px; right: 64px; bottom: 18px; display: grid; gap: 10px; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.band .bc { background: var(--teal-tint); border-radius: 10px; padding: 9px 14px; min-width: 0; }
+.band .bc b { display: block; font-size: 14px; color: var(--navy); margin-bottom: 2px; }
+.band .bc span { display: block; font-size: 13px; line-height: 1.32; color: var(--ink); }
+.band .bl { position: absolute; top: -20px; left: 0; font: 700 11px var(--f-body); letter-spacing: .12em; color: var(--teal); }
+
+
+/* Presenter view: this window keeps notes, preview and controls; the other window (shared) shows only slides */
+#pview, #pinfo { display: none; }
+body.presenter #bar, body.presenter #notes { display: none !important; }
+body.presenter { background: #0B1220; }
+body.presenter #viewport { inset: 16px auto auto 16px; width: 56vw; height: calc(58vh - 16px); border: 1px solid #2E3D5C; border-radius: 8px; overflow: hidden; }
+body.presenter #pview { display: flex; flex-direction: column; position: fixed; top: 16px; right: 16px; bottom: 16px; width: calc(44vw - 48px); background: #111a2c; border: 1px solid #2E3D5C; border-radius: 10px; color: #D5DEEA; }
+#pview header { padding: 14px 20px; border-bottom: 1px solid #2E3D5C; font: 700 13px var(--f-body); letter-spacing: .1em; color: var(--amber); }
+#pnotes { flex: 1; overflow: auto; padding: 18px 22px; font: 22px/1.5 var(--f-body); }
+#pnotes p { margin: 0 0 14px; opacity: .38; }
+#pnotes p.cur { opacity: 1; color: #fff; }
+body.presenter #pinfo { display: grid; position: fixed; left: 16px; top: calc(58vh + 16px); width: 56vw; gap: 12px; color: #C5D0E0; font-size: 16px; }
+#pinfo .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+#pinfo button { font: 700 18px var(--f-body); background: #1E2A42; color: #fff; border: 1px solid #2E3D5C; border-radius: 8px; padding: 12px 22px; cursor: pointer; }
+#pinfo button.big { background: var(--teal); border-color: var(--teal); }
+#pinfo .timer { font: 700 34px var(--f-mono); color: #fff; }
+#pinfo .pos { font: 700 20px var(--f-body); color: #fff; }
+#pinfo .nextt { color: #8C9BB3; }
+#pinfo .sync { font-size: 13px; color: #8C9BB3; }
+#phelp { position: fixed; right: 16px; bottom: 52px; width: min(460px, calc(100vw - 32px)); background: #fff; color: var(--ink); border-radius: 10px; padding: 16px 18px; z-index: 12; box-shadow: 0 8px 28px rgba(11,18,32,.35); font-size: 15px; line-height: 1.45; }
+#phelp ol { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 6px; }
+#phelp button { margin-top: 12px; font: 600 13px var(--f-body); background: var(--navy); color: #fff; border: 0; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+
+/* Slide-specific */
+.flow { display: flex; align-items: stretch; gap: 14px; }
+.flow .st { flex: 1; border-radius: 12px; padding: 16px 12px; text-align: center; background: var(--navy); color: #fff; }
+.flow .st b { display: block; font-size: 18px; margin-bottom: 6px; }
+.flow .st span { font-size: 15px; opacity: .85; }
+.flow .arrow { align-self: center; color: var(--teal); font-size: 24px; }
+table.t { border-collapse: collapse; font-size: 18px; width: 100%; }
+table.t th { background: var(--navy); color: #fff; font-weight: 600; padding: 8px 12px; text-align: left; }
+table.t td { border: 1px solid var(--line); padding: 8px 12px; }
+table.t td.c, table.t th.c { text-align: center; }
+table.t td.warn { background: var(--amber-tint); color: var(--warn); font-weight: 700; }
+.chip { display: grid; justify-items: center; gap: 2px; min-width: 70px; padding: 6px 10px; border-radius: 8px; background: #fff; border: 1px solid var(--line); }
+.chip b { font: 600 18px var(--f-mono); color: var(--navy); }
+.chip span { font-size: 12px; color: var(--muted); }
+.chip.zero { background: #F9E4D8; border-color: #F0C9B3; }
+.chip.zero b { color: var(--warn); }
+.chip.res { border: 2px solid var(--navy); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; min-height: 58px; }
+.nbin { width: 100%; font: 17px var(--f-mono); padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--navy); background: #fff; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { font: 600 14px var(--f-body); border: 0; background: #fff; color: var(--muted); padding: 6px 12px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--navy); color: #fff; }
+.pbar { display: grid; grid-template-columns: 150px 1fr 70px; gap: 12px; align-items: center; font-size: 16px; }
+.track { height: 18px; background: var(--tint); border-radius: 999px; overflow: hidden; }
+.fill { height: 100%; width: 0; border-radius: 999px; transition: width .8s cubic-bezier(.2,.7,.2,1); }
+.tiles { display: grid; grid-template-columns: repeat(10, 44px); gap: 8px; }
+.tile { width: 44px; height: 44px; display: flex; border-radius: 6px; overflow: hidden; border: 2px solid transparent; padding: 0; background: var(--tint); cursor: pointer; transition: opacity .45s ease; }
+.tile i { flex: 1; background: var(--tint); transition: background-color .5s ease; }
+.tile.sel { border-color: var(--navy); }
+.tiles.dimagree .tile.agree { opacity: .15; }
+.vbars { display: flex; gap: 36px; align-items: flex-end; height: 300px; border-bottom: 2px solid var(--gray); padding: 0 12px; }
+.vbar { width: 120px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+.vbar .v { font: 700 34px var(--f-display); margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+.vbar .r { width: 100%; height: 0; border-radius: 6px 6px 0 0; transition: height .8s cubic-bezier(.2,.7,.2,1); }
+.cls { display: flex; gap: 40px; align-items: flex-end; height: 330px; border-bottom: 2px solid var(--gray); padding: 0 20px; }
+.cls div { width: 90px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; }
+.cls div b { font-size: 17px; margin-bottom: 6px; }
+.cls div i { width: 100%; border-radius: 6px 6px 0 0; }
+.clslab { display: flex; gap: 40px; padding: 8px 20px 0; font-size: 16px; }
+.clslab span { width: 90px; text-align: center; }
+.lstage { position: relative; height: 240px; }
+.dot { position: absolute; left: 0; top: 0; width: 10px; height: 10px; border-radius: 2px; background: var(--line); transition: transform 1s cubic-bezier(.3,.7,.2,1), background-color .45s ease, opacity .45s ease, box-shadow .45s ease; }
+.dot.ring { box-shadow: 0 0 0 2px var(--amber); }
+.dot.copy { background: var(--amber); }
+.dot.hit { background: var(--teal); }
+.dot.miss { background: var(--warn); }
+.dot.dim { opacity: .3; }
+.rlab { position: absolute; font-size: 15px; font-weight: 700; color: var(--navy); transition: opacity .45s ease; }
+.hbars { display: grid; gap: 14px; }
+.hbar { display: grid; grid-template-columns: 250px 1fr; gap: 12px; align-items: center; font-size: 16px; }
+.hbar .tr { display: flex; align-items: center; gap: 8px; }
+.hbar .r { height: 30px; width: 0; border-radius: 0 6px 6px 0; transition: width 1s cubic-bezier(.2,.7,.2,1); }
+.hbar b { font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--amber); }
+</style>
+
+<div id="viewport"><div id="stage">
+
+<!-- 1 -->
+<section class="slide dark" data-steps="0">
+  <div style="position:absolute;left:80px;top:90px;right:80px">
+    <div style="font:700 15px var(--f-body);letter-spacing:.18em;color:var(--amber)">FUNDAMENTOS DE PROCESAMIENTO DE LENGUAJE NATURAL</div>
+    <div style="font:500 30px var(--f-display);color:#B8C4D6;margin-top:48px">Sesión 6</div>
+    <div style="font:700 60px/1.1 var(--f-display);color:#fff;margin-top:8px">Clasificación básica de texto</div>
+    <div style="font:italic 24px var(--f-body);color:#D5DEEA;margin-top:16px">Del diseño en papel a un clasificador que se puede medir</div>
+  </div>
+  <div style="position:absolute;left:80px;bottom:80px;font-size:18px;color:#B8C4D6;line-height:1.5">Módulo 3 · Arranque de la Actividad 1<br>Universidad de La Sabana · 29 de septiembre de 2026</div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-steps="0">
+  <h1>Del diseño al código</h1><p class="sub">Lo que ya hicieron, lo que hacemos hoy y lo que entregan</p>
+  <div class="body">
+    <div style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:14px;align-items:stretch;height:300px">
+      <div class="card"><div class="lab" style="font-weight:700">Módulo 2 · Actividad 3</div><div style="font:700 26px/1.2 var(--f-display);color:var(--navy);margin:14px 0">Arquitectura de clasificación en papel</div><div style="font-size:17px">Entregada el 27 de septiembre</div></div>
+      <div style="align-self:center;color:var(--teal);font-size:28px">→</div>
+      <div class="card teal"><div style="font-weight:700;color:var(--teal);font-size:16px">Hoy · Sesión 6</div><div style="font:700 26px/1.2 var(--f-display);color:var(--navy);margin:14px 0">Etiquetar, entrenar, evaluar y analizar</div><div style="font-size:17px">Reto en parejas</div></div>
+      <div style="align-self:center;color:var(--teal);font-size:28px">→</div>
+      <div class="card"><div style="font-weight:700;color:var(--amber-ink);font-size:16px">Módulo 3 · Actividad 1</div><div style="font:700 26px/1.2 var(--f-display);color:var(--navy);margin:14px 0">Clasificador: notebook + reporte de 2 páginas</div><div style="font-size:17px">20 % · entrega el 1 de noviembre</div></div>
+    </div>
+    <p class="it" style="margin-top:40px">La pregunta del día: ¿cómo sabemos que el clasificador es bueno y no solo que lo parece?</p>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-steps="0">
+  <h1>Agenda</h1><p class="sub">Martes 3:00 a 6:00 p. m.</p>
+  <div class="body" id="agenda" style="display:grid;gap:12px;align-content:start"></div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-steps="0">
+  <h1>La rúbrica que vamos a practicar</h1><p class="sub">Actividad 1 del Módulo 3 · Clasificador de texto · 5.0 puntos</p>
+  <div class="body" id="rubrica" style="display:grid;grid-template-columns:1fr 1fr;gap:22px;align-content:start"></div>
+</section>
+
+<!-- 5 -->
+<section class="slide has-band" data-terms='["Clasificación supervisada", "Pipeline"]' data-steps="0">
+  <h1>Clasificación supervisada de texto</h1><p class="sub">Aprender una función de texto a etiqueta a partir de ejemplos etiquetados</p>
+  <div class="body">
+    <div class="flow">
+      <div class="st" style="background:var(--tint);color:var(--navy)"><b>Texto crudo</b><span>"La cuenta salió carísima"</span></div><div class="arrow">→</div>
+      <div class="st"><b>Preprocesamiento</b><span>Sesiones 2 y 3</span></div><div class="arrow">→</div>
+      <div class="st"><b>Vectorización</b><span>BoW o TF-IDF</span></div><div class="arrow">→</div>
+      <div class="st"><b>Modelo</b><span>Naive Bayes o Reg. Logística</span></div><div class="arrow">→</div>
+      <div class="st" style="background:var(--amber)"><b>Etiqueta</b><span>precio</span></div>
+    </div>
+    <div style="margin:18px auto 26px;width:62%;border:2px dashed var(--teal);background:var(--teal-tint);border-radius:10px;padding:10px;text-align:center;font-weight:700;color:var(--teal);font-size:17px">sklearn.pipeline.Pipeline: vectorizador y modelo en un solo objeto</div>
+    <ul class="b">
+      <li>El vocabulario y los pesos IDF se aprenden solo con el conjunto de entrenamiento.</li>
+      <li>El mismo objeto predice textos nuevos, sin repetir pasos a mano.</li>
+      <li>Si usan su <span class="mono">pipeline_nlp()</span>: devuelve una lista de tokens y el vectorizador espera un string por documento. Únanlos con espacios antes de vectorizar.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide has-band" data-terms='["Naive Bayes multinomial", "Prior P(c)", "Suavizado de Laplace"]' data-steps="0">
+  <h1>Naive Bayes: contar palabras por clase</h1><p class="sub">Un modelo generativo que se puede calcular a mano</p>
+  <div class="body" style="display:grid;grid-template-columns:1.35fr 1fr;gap:28px">
+    <div>
+      <div class="card navy mono" style="font-size:21px;line-height:1.6">ĉ = argmax P(c) · ∏ P(w|c)<br><span style="font-size:18px;color:#D5DEEA">P(w|c) = (count(w,c) + 1) / (N<sub>c</sub> + |V|)</span></div>
+      <div style="display:grid;grid-template-columns:110px 1fr;gap:12px 16px;margin-top:24px;font-size:18px;align-items:baseline">
+        <b class="mono" style="color:var(--teal)">P(c)</b><span>Proporción de documentos de la clase: el prior.</span>
+        <b class="mono" style="color:var(--teal)">P(w|c)</b><span>Qué tan frecuente es la palabra dentro de la clase.</span>
+        <b class="mono" style="color:var(--teal)">+1</b><span>Suavizado de Laplace: sin él, una palabra ausente en la clase anula todo el producto.</span>
+        <b class="mono" style="color:var(--teal)">Naive</b><span>Supone que las palabras son independientes dada la clase. Es falso, y aun así funciona.</span>
+      </div>
+    </div>
+    <div class="card amber"><div class="k" style="font-size:19px">En scikit-learn</div><div class="mono" style="font-weight:600;margin:10px 0 16px;font-size:17px">MultinomialNB(alpha=1)</div>
+      <ul class="b" style="font-size:17px"><li>alpha=1 es exactamente el suavizado de Laplace.</li><li>Rápido y estable con pocos datos.</li><li>Pensado para conteos (BoW). Con TF-IDF también funciona, pero cambia qué significa "contar".</li></ul></div>
+  </div>
+</section>
+
+<!-- 7 NB interactive -->
+<section class="slide" data-steps="10" id="s-nb">
+  <h1>Naive Bayes a mano</h1><p class="sub">Seis documentos, dos clases, un documento ambiguo</p>
+  <div class="body" style="display:grid;grid-template-columns:400px 1fr;gap:32px;top:128px">
+    <div>
+      <table class="t" style="font-size:16px"><tr><th>comida</th><th>servicio</th></tr>
+        <tr><td>sopa fría sin sabor</td><td>mesero lento</td></tr><tr><td>carne deliciosa</td><td>mesero grosero lento</td></tr><tr><td>sopa deliciosa caliente</td><td>mesera amable</td></tr>
+        <tr><td style="color:var(--teal);font-weight:700">N = 9 palabras</td><td style="color:var(--teal);font-weight:700">N = 7 palabras</td></tr></table>
+      <label for="nb-in" style="display:block;font-weight:700;color:var(--navy);margin:20px 0 6px;font-size:16px">Documento nuevo</label>
+      <input id="nb-in" class="nbin" value="sopa deliciosa pero mesero lento" autocomplete="off">
+      <div id="nb-words" class="mono" style="font-size:14px;color:var(--muted);margin-top:8px"></div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:14px">
+        <div class="seg"><button id="nb-a1" aria-pressed="true">α = 1</button><button id="nb-a0" aria-pressed="false">α = 0</button></div>
+        <span style="font-size:14px;color:var(--muted)">|V| = 12</span>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="padding:16px 20px">
+        <div class="k" style="color:var(--navy)">comida</div><div class="chips" id="nb-comida" style="margin:6px 0 14px"></div>
+        <div class="k" style="color:var(--teal)">servicio</div><div class="chips" id="nb-servicio" style="margin-top:6px"></div>
+      </div>
+      <div id="nb-probs" style="display:grid;gap:12px;margin-top:22px"></div>
+      <div id="nb-msg" style="margin-top:14px;font-size:16px"></div>
+      <p id="nb-sk" class="it" style="font-size:16px;margin-top:10px">scikit-learn con MultinomialNB(alpha=1) da exactamente los mismos valores.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide has-band" data-terms='["Regresión Logística", "class_weight=\"balanced\""]' data-steps="0">
+  <h1>Naive Bayes y Regresión Logística</h1><p class="sub">Ya conocen la Regresión Logística: con texto, cada palabra es una variable</p>
+  <div class="body cols2" style="height:auto">
+    <div><div class="card navy" style="text-align:center;font:700 24px var(--f-display);padding:12px">Naive Bayes</div>
+      <div class="card" style="margin-top:12px"><ul class="b"><li>Generativo: modela cómo se ve el texto de cada clase.</li><li>Se entrena contando. Sin iteraciones.</li><li>Funciona bien con muy pocos datos.</li><li>Supone independencia entre palabras.</li></ul></div></div>
+    <div><div class="card" style="background:var(--teal);color:#fff;text-align:center;font:700 24px var(--f-display);padding:12px">Regresión Logística</div>
+      <div class="card" style="margin-top:12px"><ul class="b"><li>Discriminativo: aprende directamente la frontera entre clases.</li><li>Un coeficiente por palabra y por clase: se puede inspeccionar.</li><li>Necesita regularización. Con desbalance, <span class="mono">class_weight="balanced"</span>.</li><li>Suele ganar cuando hay más datos.</li></ul></div></div>
+  </div>
+  <p class="it" style="position:absolute;left:64px;bottom:130px">La guía de la actividad permite cualquiera de los dos. Lo que se evalúa es que justifiquen la elección con evidencia.</p>
+</section>
+
+<!-- 9 -->
+<section class="slide has-band" data-terms='["Guía de anotación"]' data-steps="0">
+  <h1>Sin etiquetas no hay clasificación</h1><p class="sub">Los corpus del Módulo 1 no tienen etiquetas. Dos rutas.</p>
+  <div class="body cols2">
+    <div class="card teal"><div style="font-weight:700;color:var(--teal)">Ruta A · Recomendada</div><div style="font:700 26px var(--f-display);color:var(--navy);margin:6px 0 18px">Etiquetar su propio corpus</div>
+      <ul class="b"><li>Definan 2 o 3 clases y una guía de anotación.</li><li>Cada integrante etiqueta por separado los mismos 40 documentos.</li><li>Midan el acuerdo, corrijan la guía y completen al menos 150 documentos.</li></ul></div>
+    <div class="card"><div style="font-weight:700;color:var(--navy)">Ruta B · Alternativa</div><div style="font:700 26px var(--f-display);color:var(--navy);margin:6px 0 18px">Dataset público etiquetado</div>
+      <ul class="b"><li>Solo si su corpus no admite una tarea razonable.</li><li>Sugerido: <span class="mono" style="font-size:16px">mteb/SpanishNewsClassification</span> (2.048 noticias, 12 categorías, licencia MIT).</li><li>Elijan 3 o 4 categorías y justifiquen la decisión en el reporte.</li></ul></div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide has-band" data-terms='["Acuerdo entre anotadores", "Kappa de Cohen"]' data-steps="0">
+  <h1>Etiquetar también es difícil</h1><p class="sub">Si dos personas no coinciden, ningún modelo puede ser mejor que ese acuerdo</p>
+  <div class="body cols2">
+    <div class="card"><div class="k" style="font-size:19px;margin-bottom:18px">Una buena guía de anotación dice</div>
+      <div style="display:grid;gap:22px">
+        <div><div class="k">Qué entra</div><div class="lab">servicio: trato, esperas, errores en el pedido</div></div>
+        <div><div class="k">Qué no entra</div><div class="lab">servicio: montos de la cuenta (eso es precio)</div></div>
+        <div><div class="k">Casos mixtos</div><div class="lab">Qué hacer cuando un texto habla de dos temas</div></div>
+      </div></div>
+    <div><div style="font:700 24px var(--f-display);color:var(--navy)">Kappa de Cohen</div>
+      <div class="card navy mono" style="text-align:center;font-size:24px;margin:12px 0 16px">κ = (pₒ − pₑ) / (1 − pₑ)</div>
+      <ul class="b" style="font-size:17px"><li>pₒ: proporción de documentos en que coinciden.</li><li>pₑ: coincidencia esperada por azar, Σ p<sub>A</sub>(c) · p<sub>B</sub>(c).</li><li>Corrige lo que el porcentaje simple exagera.</li></ul>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:22px;font-size:14px;text-align:center">
+        <div style="background:var(--line);color:var(--navy);padding:6px;font-weight:700">0.41–0.60</div><div style="background:var(--teal);color:#fff;padding:6px;font-weight:700">0.61–0.80</div><div style="background:var(--navy);color:#fff;padding:6px;font-weight:700">&gt; 0.80</div>
+        <div class="lab">moderado</div><div class="lab">sustancial</div><div class="lab">casi perfecto</div></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">Landis y Koch (1977)</div></div>
+  </div>
+</section>
+
+<!-- 10b Synthetic corpus -->
+<section class="slide has-band" data-terms='["Corpus sintético"]' data-steps="0">
+  <h1>El corpus de los ejemplos</h1><p class="sub">Sintético: generado con plantillas para que cada fenómeno aparezca con certeza</p>
+  <div class="body" style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
+    <div class="card">
+      <div class="k" style="font-size:19px;margin-bottom:14px">Cómo se arma una reseña</div>
+      <div style="display:grid;gap:10px">
+        <div style="display:grid;grid-template-columns:170px 1fr;gap:10px;align-items:center;background:#fff;border:1.5px solid var(--gray);border-radius:8px;padding:10px 14px"><b style="font-size:14px;color:var(--muted)">Contexto (opcional)</b><i style="font-family:var(--f-display);font-size:17px">"Fuimos en familia."</i></div>
+        <div style="display:grid;grid-template-columns:170px 1fr;gap:10px;align-items:center;background:#fff;border:1.5px solid var(--amber);border-radius:8px;padding:10px 14px"><b style="font-size:14px;color:var(--amber-ink)">Valoración del tema</b><i style="font-family:var(--f-display);font-size:17px">"La cuenta salió carísima."</i></div>
+        <div style="display:grid;grid-template-columns:170px 1fr;gap:10px;align-items:center;background:#fff;border:1.5px solid var(--teal);border-radius:8px;padding:10px 14px"><b style="font-size:14px;color:var(--teal)">Segundo tema (35 %)</b><i style="font-family:var(--f-display);font-size:17px">"El mesero fue muy amable."</i></div>
+      </div>
+      <div style="font-size:18px;margin-top:16px"><span style="color:var(--muted)">Etiqueta:</span> <b style="color:var(--amber-ink)">precio</b></div>
+      <div style="font-size:16px;margin-top:12px">300 reseñas, 240 únicas. Semilla fija: <span class="mono" style="font-size:14px">generate_synthetic_corpus.py</span> reproduce el CSV exacto.</div>
+    </div>
+    <div>
+      <div class="k" style="font-size:19px;margin-bottom:14px">Sembrado a propósito</div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:16px 20px;font-size:18px">
+        <b>Desbalance 146 / 58 / 36</b><span style="color:var(--teal)">→ paradoja del accuracy</span>
+        <b>Reseñas con dos temas</b><span style="color:var(--teal)">→ desacuerdo entre anotadores</span>
+        <b>10 etiquetas cambiadas</b><span style="color:var(--teal)">→ errores de anotación</span>
+        <b>60 duplicados (RT, MAYÚSCULAS, !!)</b><span style="color:var(--teal)">→ fuga de datos</span>
+      </div>
+      <div class="card amber" style="margin-top:28px;font-size:17px">No tiene sarcasmo, errores de ortografía, jerga ni textos largos. Con su corpus esperen métricas más bajas.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 Kappa interactive -->
+<section class="slide" data-steps="8" id="s-kappa">
+  <h1>Lo que muestra el acuerdo</h1><p class="sub">Muestra de 40 reseñas del corpus ilustrativo, dos anotadores</p>
+  <div class="body" style="display:grid;grid-template-columns:540px 1fr;gap:36px;top:124px">
+    <div>
+      <div style="display:flex;gap:18px;font-size:15px;color:var(--muted);margin-bottom:6px"><span><i style="display:inline-block;width:13px;height:13px;background:var(--navy);vertical-align:-1px"></i> comida</span><span><i style="display:inline-block;width:13px;height:13px;background:var(--teal);vertical-align:-1px"></i> servicio</span><span><i style="display:inline-block;width:13px;height:13px;background:var(--amber);vertical-align:-1px"></i> precio</span></div>
+      <div style="font-size:14px;font-style:italic;color:var(--muted);margin-bottom:12px">Cada ficha es una reseña: mitad izquierda = A, mitad derecha = B. Tóquenla para leerla y cambiar B.</div>
+      <div class="tiles" id="k-tiles"></div>
+      <div data-s="3" style="font-weight:700;color:var(--warn);margin-top:12px;font-size:17px" id="k-dis">9 desacuerdos</div>
+      <div style="display:flex;gap:40px;margin-top:10px">
+        <div data-s="4"><div class="stat" id="k-po" style="color:var(--muted)">0.775</div><div class="lab">coincidencia simple</div></div>
+        <div data-s="5"><div class="stat" id="k-k" style="color:var(--teal)">0.649</div><div class="lab" id="k-band">kappa: sustancial</div></div>
+      </div>
+    </div>
+    <div style="display:grid;gap:16px;align-content:start">
+      <div data-s="6"><div class="k" style="margin-bottom:8px;font-size:17px">8 de 9: la reseña habla de dos temas</div>
+        <div class="card amber"><div style="font:italic 20px var(--f-display);color:var(--ink)">"El mesero nos recomendó muy bien. La cuenta es muy razonable."</div><div style="font-weight:700;color:var(--amber-ink);margin-top:8px">A: precio · B: servicio</div></div></div>
+      <div data-s="7"><div class="k" style="margin-bottom:8px;font-size:17px">1 de 9: la etiqueta del corpus estaba mal</div>
+        <div class="card teal"><div style="font:italic 20px var(--f-display);color:var(--ink)">"La pizza llegó en su punto."</div><div style="font-weight:700;color:var(--teal);margin-top:8px">Corpus: servicio · B: comida</div></div></div>
+      <div id="k-detail" class="card" style="font-size:15px;min-height:70px" hidden></div>
+      <p data-s="8" class="it" style="font-size:17px;margin:0">Si dos personas coinciden en el 77 % de los casos, un accuracy del 95 % sería sospechoso.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 12 Paradox interactive -->
+<section class="slide has-band" data-terms='["Desbalance de clases", "Línea base", "Accuracy", "F1 y F1 macro"]' data-steps="3" id="s-par">
+  <h1>Trampa 1: la paradoja del accuracy</h1><p class="sub">Un modelo que nunca lee el texto: siempre responde la clase más frecuente</p>
+  <div class="body" style="display:grid;grid-template-columns:470px 1fr 290px;gap:28px">
+    <div><div class="lab" style="text-align:center;margin-bottom:6px">Corpus ilustrativo sin duplicados (240)</div>
+      <div class="cls"><div><b>146</b><i style="height:85%;background:var(--navy)"></i></div><div><b>58</b><i style="height:34%;background:var(--teal)"></i></div><div><b>36</b><i style="height:21%;background:var(--amber)"></i></div></div>
+      <div class="clslab"><span>comida</span><span>servicio</span><span>precio</span></div></div>
+    <div><div class="vbars"><div class="vbar"><div class="v" id="p-acc" style="color:var(--gray)">0.617</div><div class="r" id="p-accb" style="background:var(--gray)"></div></div>
+      <div class="vbar"><div class="v" id="p-f1" style="color:var(--amber)">0.254</div><div class="r" id="p-f1b" style="background:var(--amber)"></div></div></div>
+      <div style="display:flex;gap:36px;padding:8px 12px 0;font-size:16px"><span style="width:120px;text-align:center">accuracy</span><span style="width:120px;text-align:center">F1 macro</span></div>
+      <div data-s="3" style="margin-top:14px"><label for="p-range" style="font-size:14px;color:var(--muted)">Proporción de la clase mayoritaria en prueba: <b id="p-val" class="num" style="color:var(--navy)">0.617</b></label><input type="range" id="p-range" min="0.34" max="0.95" step="0.001" value="0.617"></div></div>
+    <div data-s="3" class="card" style="align-self:start"><div style="font-weight:700;color:var(--warn);font-size:18px">F1 = 0</div><div style="font-size:17px">en servicio y en precio.</div>
+      <p style="font-size:17px;margin:14px 0">El F1 macro promedia las clases con el mismo peso.</p><p style="font-size:17px;font-weight:700;color:var(--navy);margin:0">Toda cifra que reporten se compara con esta línea base.</p></div>
+  </div>
+</section>
+
+<!-- 13 Leakage interactive -->
+<section class="slide has-band" data-terms='["Duplicado cercano", "Fuga de datos"]' data-steps="6" id="s-leak">
+  <h1>Trampa 2: el modelo que recuerda</h1><p class="sub">Reenvíos y copias casi idénticas a ambos lados de la partición</p>
+  <div class="body" style="display:grid;grid-template-columns:470px 1fr;gap:36px">
+    <div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card" data-s="1" style="text-align:center"><div class="stat" style="color:var(--muted)">8</div><div class="lab">duplicados exactos con drop_duplicates()</div></div>
+        <div class="card" data-s="2" style="text-align:center"><div class="stat" style="color:var(--amber)">60</div><div class="lab">duplicados tras normalizar (RT, mayúsculas, signos)</div></div>
+      </div>
+      <div data-s="2" class="mono" style="font-size:13px;margin-top:18px;line-height:1.6">"Cobraron el servicio sin preguntar. La pizza tenía una sazón casera."<br>"COBRARON EL SERVICIO SIN PREGUNTAR. LA PIZZA TENÍA UNA SAZÓN CASERA."</div>
+      <p data-s="6" style="font-weight:700;color:var(--navy);font-size:21px;margin-top:40px">Se deduplica con normalización y antes de particionar.</p>
+    </div>
+    <div>
+      <div class="lstage" id="l-stage"></div>
+      <div data-s="4" id="l-copytxt" style="font-size:16px;margin:4px 0 12px"><b style="color:var(--amber-ink)">24</b> reseñas de prueba ya tienen una copia en entrenamiento</div>
+      <div data-s="5" class="hbars">
+        <div class="hbar"><span>Con copia en entrenamiento (24)</span><div class="tr"><div class="r" id="l-b1" style="background:var(--amber)"></div><b style="color:var(--amber-ink)">0.958</b></div></div>
+        <div class="hbar"><span>Sin copia en entrenamiento (51)</span><div class="tr"><div class="r" id="l-b2" style="background:var(--navy)"></div><b style="color:var(--navy)">0.725</b></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="slide has-band" data-terms='["Partición estratificada", "Precisión y recall", "Matriz de confusión"]' data-steps="0">
+  <h1>Primeros resultados: una partición</h1><p class="sub">TF-IDF, sin duplicados, 180 para entrenar y 60 para probar</p>
+  <div class="body" style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
+    <div><table class="t"><tr><th>Recall por clase</th><th class="c">Naive Bayes</th><th class="c">Reg. Logística</th></tr>
+      <tr><td>comida (37)</td><td class="c">1.000</td><td class="c">1.000</td></tr>
+      <tr><td>servicio (14)</td><td class="c">0.571</td><td class="c warn">0.357</td></tr>
+      <tr><td>precio (9)</td><td class="c warn">0.333</td><td class="c warn">0.333</td></tr>
+      <tr><td><b>F1 macro</b></td><td class="c"><b>0.696</b></td><td class="c"><b>0.610</b></td></tr></table>
+      <div class="lab" style="margin-top:12px">Línea base: F1 macro 0.254</div></div>
+    <div class="card"><div style="font:700 24px var(--f-display);color:var(--navy);margin-bottom:14px">Diagnóstico</div>
+      <ul class="b" style="font-size:18px"><li>Ante la duda, el modelo responde comida: recall 1.000.</li><li>precio: solo 27 ejemplos para entrenar, y muchos mezclan precio con comida.</li><li>Cuando dice precio, casi siempre acierta. Se atreve muy poco.</li><li>¿Qué modelo es mejor? Con 60 documentos de prueba no se puede afirmar todavía.</li></ul></div>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="slide has-band" data-terms='["Validación cruzada", "Bolsa de palabras (BoW)", "TF-IDF"]' data-steps="0" id="s-cv">
+  <h1>Tres mejoras, medidas con validación cruzada</h1><p class="sub">F1 macro, media de 5 particiones estratificadas</p>
+  <div class="body" style="display:grid;grid-template-columns:1.25fr 1fr;gap:36px">
+    <div class="hbars" id="cv-bars" style="align-content:start;gap:18px"></div>
+    <div style="display:grid;gap:22px;align-content:start">
+      <div><div class="k" style="font-size:19px">Balancear clases</div><div style="font-size:17px"><span class="mono">class_weight="balanced"</span> lleva la Reg. Logística de 0.734 a 0.806.</div></div>
+      <div><div class="k" style="font-size:19px">BoW o TF-IDF</div><div style="font-size:17px">No hay ganador fijo: con NB gana BoW; con LR, TF-IDF por un punto.</div></div>
+      <div><div class="k" style="font-size:19px">Validación cruzada</div><div style="font-size:17px">La desviación es de 4 a 8 puntos. Reporten media y desviación.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="slide has-band" data-terms='["Atajo"]' data-steps="0">
+  <h1>¿Qué aprendió el modelo?</h1><p class="sub">Coeficientes más altos por clase (Regresión Logística, TF-IDF)</p>
+  <div class="body" style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
+    <div><table class="t"><tr><th class="c">comida</th><th class="c">precio</th><th class="c">servicio</th></tr>
+      <tr><td class="c warn">estaba</td><td class="c">precio</td><td class="c warn">fue</td></tr>
+      <tr><td class="c warn">tenía</td><td class="c">del</td><td class="c">administrador</td></tr>
+      <tr><td class="c">sabor</td><td class="c">está</td><td class="c warn">nos</td></tr>
+      <tr><td class="c">churrasco</td><td class="c">bebidas</td><td class="c">cajero</td></tr>
+      <tr><td class="c">aceite</td><td class="c">domicilio</td><td class="c warn">muy</td></tr></table>
+      <p class="it" style="font-size:16px;margin-top:14px">Resaltados: palabras que no describen el tema. Son huella de las plantillas del corpus sintético: atajos que fallarían con reseñas reales.</p></div>
+    <div style="display:grid;gap:12px;align-content:start">
+      <div style="font:700 22px var(--f-display);color:var(--navy)">Tres tipos de error</div>
+      <div class="card" style="padding:14px 20px"><div class="k">Del modelo</div><div style="font-size:16px">"El domiciliario fue muy amable..." → comida</div></div>
+      <div class="card amber" style="padding:14px 20px"><div class="k" style="color:var(--amber-ink)">De la etiqueta</div><div style="font-size:16px">"La carta es económica." marcada como servicio</div></div>
+      <div class="card" style="padding:14px 20px"><div class="k">Texto ambiguo</div><div style="font-size:16px">Reseñas que mezclan precio y servicio</div></div>
+      <div style="font-weight:700;color:var(--teal);font-size:16px">La evaluación no puede ser más confiable que las etiquetas.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 17 -->
+<section class="slide dark" data-steps="0">
+  <h1 style="color:#fff">Para la Actividad 1 del Módulo 3</h1><p class="sub" style="color:var(--amber)">Notebook + reporte técnico de 2 páginas · entrega el 1 de noviembre</p>
+  <div class="body" style="display:grid;grid-template-columns:1.6fr 1fr;gap:36px">
+    <div id="todo" style="display:grid;gap:18px;align-content:start"></div>
+    <div style="background:#24375C;border-radius:12px;padding:24px;align-self:start"><div style="font-weight:700;color:var(--amber)">Sesión 7 · 13 de octubre</div><div style="font:700 24px var(--f-display);color:#fff;margin:6px 0 10px">Análisis de sentimientos</div><div style="font-size:17px">¿Dónde termina lo neutral? El mismo problema de etiquetas, ahora con opiniones.</div></div>
+  </div>
+  <p style="position:absolute;left:64px;right:64px;bottom:56px;font-style:italic;color:#B8C4D6;font-size:17px">La función entrenar_y_evaluar() de la Parte 5 del reto ya hace la mayor parte. Aplíquenla a su corpus apenas terminen de etiquetar.</p>
+</section>
+
+</div></div>
+
+<div id="bar">
+  <button id="b-prev" aria-label="Anterior">◀</button>
+  <button id="b-next" aria-label="Siguiente">▶</button>
+  <span id="b-pos" class="num"></span>
+  <div id="prog"><i></i></div>
+  <span class="grow1"></span>
+  <button id="b-pres">Modo presentador (P)</button>
+  <button id="b-gloss">Glosario (G)</button>
+  <button id="b-notes">Notas (N)</button>
+  <button id="b-full">Pantalla completa (F)</button>
+</div>
+<aside id="notes" hidden></aside>
+<aside id="phelp" hidden>
+  <b style="color:var(--navy)">Presentar sin mostrar las notas</b>
+  <ol>
+    <li>Abran este mismo enlace en una segunda ventana del navegador.</li>
+    <li>En esa segunda ventana pulsen <b>P</b> (o el botón "Modo presentador"): ahí verán las notas, la vista previa, el cronómetro y los controles.</li>
+    <li>En la videollamada compartan <b>solo la ventana de las diapositivas</b>, no la pantalla completa.</li>
+    <li>Avancen desde cualquiera de las dos ventanas: la otra las sigue.</li>
+  </ol>
+  <div style="font-size:13px;color:var(--muted);margin-top:8px">Las interacciones (escribir en Naive Bayes, tocar fichas, mover deslizadores) háganlas en la ventana compartida.</div>
+  <button id="phelp-ok">Entendido</button>
+</aside>
+<section id="pview"><header>NOTAS DE ORADOR</header><div id="pnotes"></div></section>
+<section id="pinfo">
+  <div class="row"><span class="pos" id="p-pos"></span><span class="timer num" id="p-timer">00:00</span><button id="p-reset" style="font-size:13px;padding:6px 12px">Reiniciar</button></div>
+  <div class="row"><button id="p-prev">◀ Anterior</button><button id="p-next" class="big">Siguiente ▶</button><button id="p-exit" style="font-size:13px;padding:6px 12px">Salir del modo presentador</button></div>
+  <div class="nextt" id="p-nextt"></div>
+  <div class="sync" id="p-sync">Esperando la ventana de las diapositivas…</div>
+</section>
+<aside id="gpanel" hidden></aside>
+
+<script>
+const NOTES = [["Buenas tardes. Hoy empezamos el Módulo 3. La semana pasada entregaron la arquitectura de clasificación. La diseñaron en papel. Hoy la vamos a volver código. Y, sobre todo, la vamos a medir. Lo que construyan hoy es la base de la Actividad 1 del módulo. Esa actividad vale veinte por ciento."], ["Pongamos la sesión en contexto. A la izquierda está lo que ya hicieron: la arquitectura en papel. Preprocesamiento, vectorización y modelo. A la derecha está lo que viene: la Actividad 1 del Módulo 3. Un notebook y un reporte técnico de dos páginas, para el primero de noviembre. Hoy estamos en el medio. Y la pregunta que nos va a acompañar toda la tarde es esta: ¿cómo sabemos que un clasificador es bueno, y no solo que lo parece? Vamos a ver dos trampas que hacen que un modelo parezca mejor de lo que es."], ["Así va a ser la tarde. Media hora de concepto. Vamos a calcular un Naive Bayes a mano, en el tablero. Después arrancan con el reto. Primero etiquetan su propio corpus. Después entrenan y evalúan modelos. Hacemos una pausa a las cuatro y veinte. Y cerramos con la estructura del reporte. Así se van con claro qué tienen que entregar."], ["Antes de empezar, miremos la rúbrica. Así saben para qué sirve cada parte del reto. Son cuatro criterios. Implementación técnica, uno punto cinco. Uso de la representación, uno punto cinco. Evaluación del desempeño, uno. Y análisis, uno. Cada parte del reto entrena uno de estos criterios. Y la reflexión final del notebook tiene cuatro preguntas. Una por criterio. Esas cuatro respuestas son el esqueleto de su reporte."], ["Esta es la arquitectura que ustedes diseñaron. Entra texto crudo. Se preprocesa. Se vuelve un vector. El modelo lo recibe. Y sale una etiqueta. La novedad de hoy es la caja punteada: el Pipeline de scikit-learn. Encadena el vectorizador y el modelo en un solo objeto. ¿Por qué importa? Porque así el vocabulario se aprende solo con los datos de entrenamiento. Una advertencia. Si usan la función pipeline_nlp de la Sesión 3, recuerden que devuelve una lista de tokens. El vectorizador espera un texto. Hay que unir los tokens con espacios. Es el mismo error que corregimos en la Sesión 3."], ["Empecemos con Naive Bayes. Es el modelo más sencillo que se puede calcular a mano. La idea es contar. Para cada clase, contamos qué tan frecuente es cada palabra. Para clasificar un documento nuevo, multiplicamos: la probabilidad de la clase, por la probabilidad de cada palabra dentro de la clase. Gana la clase con el producto más grande. Fíjense en el más uno. Se llama suavizado de Laplace. Sin él, basta una palabra que nunca apareció en la clase para que todo el producto sea cero. ¿Y por qué ingenuo? Porque supone que las palabras son independientes entre sí. Eso es falso. Y aun así funciona bastante bien."], ["Hagámoslo a mano. Tenemos seis documentos. Tres de comida y tres de servicio. Y llega uno nuevo: sopa deliciosa, pero mesero lento. ¿De qué clase es? Levanten la mano los que dirían comida. Ahora los que dirían servicio. Es ambiguo. Pero el modelo tiene que decidir. La palabra pero no está en el vocabulario, así que se ignora.", "Empecemos por comida. La mitad de los documentos son de comida. Ese es el prior: un medio.", "Sopa y deliciosa aparecen dos veces cada una en comida. Más uno, sobre nueve más doce. Tres veintiunavos, dos veces.", "Mesero y lento nunca aparecen en comida. Gracias al suavizado no son cero. Queda un veintiunavo para cada una.", "Multiplicamos todo. Dos punto tres por diez a la menos cinco.", "Ahora servicio. El prior también es un medio.", "Sopa y deliciosa no aparecen en servicio. Un diecinueveavo cada una. Fíjense: diecinueve, no veintiuno. Servicio tiene solo siete palabras.", "Mesero y lento aparecen dos veces. Tres diecinueveavos cada una.", "El producto da tres punto cuatro por diez a la menos cinco. Más grande que el de comida.", "Normalizamos y queda así: cero punto cuatro para comida, cero punto seis para servicio. Gana servicio. Los conteos eran simétricos, dos y dos. Gana servicio porque tiene menos palabras. Cada palabra conocida pesa más. Ese sesgo por longitud lo van a ver con sus corpus reales.", "Y en el notebook de demo comprobamos que scikit-learn da exactamente lo mismo."], ["La Regresión Logística ya la conocen del curso de aprendizaje de máquina. Con texto no cambia nada. Solo que ahora cada palabra del vocabulario es una variable. La diferencia con Naive Bayes es de enfoque. Naive Bayes modela cómo se ve el texto de cada clase. La Regresión Logística aprende directamente la frontera entre clases. Una ventaja práctica: tiene un coeficiente por palabra. Podemos mirar qué aprendió. Lo haremos en la Parte 4. La guía de la actividad permite cualquiera de los dos. Lo que les voy a evaluar es que justifiquen su elección con evidencia de su propio corpus."], ["Ahora, un problema práctico. Un clasificador supervisado necesita etiquetas. Y los corpus que recolectaron en el Módulo 1 no las tienen. Tienen dos rutas. La ruta A es la que recomiendo. Etiquetan su propio corpus. Definen dos o tres clases. Escriben una guía. Y cada uno etiqueta por separado los mismos cuarenta documentos. Después completan hasta al menos ciento cincuenta, como trabajo autónomo. La ruta B es para quien no tiene una tarea razonable en su corpus. Usan un dataset público de noticias en español. Ya viene etiquetado. Pero tienen que justificar en el reporte por qué no usaron el suyo."], ["Antes de etiquetar, una advertencia. Etiquetar parece fácil. No lo es. Una buena guía de anotación dice tres cosas por clase. Qué entra. Qué no entra. Y qué hacer con los casos mixtos. Los casos mixtos son los que más problemas dan. Para saber si la guía funciona, medimos el acuerdo entre los dos integrantes. No basta el porcentaje de coincidencia. Parte de las coincidencias ocurren por azar. El kappa de Cohen descuenta ese azar. Entre cero punto seis y cero punto ocho se considera un acuerdo sustancial. En el reto lo van a calcular a mano. Y lo comparan con scikit-learn."], ["Antes de ver resultados, una aclaración importante. Las reseñas de los ejemplos no son reales. Las generó un programa. Combina frases de plantilla: un contexto, una valoración del tema y, a veces, un segundo tema. ¿Por qué hacerlo así? Porque necesitábamos un corpus en español, etiquetado y pequeño, donde cada problema de hoy apareciera con seguridad. Y los sembramos a propósito. Desbalance, para la paradoja del accuracy. Reseñas con dos temas, para el desacuerdo. Diez etiquetas cambiadas, para los errores de anotación. Y sesenta duplicados, para la fuga. Lo que no tiene es la riqueza del lenguaje real. No hay sarcasmo, ni errores de ortografía, ni jerga. Así que con sus corpus esperen números más bajos. Y eso está bien."], ["Así se ve en el corpus de ejemplo. Dos personas etiquetaron las mismas cuarenta reseñas. Cada ficha es una reseña.", "Primero, lo que dijo la persona A. Mucha comida, bastante servicio, poco precio.", "Ahora lo que dijo la persona B, en la otra mitad de cada ficha. A primera vista parece casi lo mismo.", "Pero si apagamos las fichas donde coinciden, quedan nueve desacuerdos. En siete de ellos, la persona B eligió servicio.", "Coincidieron en el setenta y siete por ciento de las reseñas.", "El kappa, que descuenta el azar, es cero punto sesenta y cinco. Sustancial, pero lejos de perfecto.", "¿Qué tienen esos nueve textos? Ocho son reseñas que hablan de dos temas. El mesero recomendó bien, y la cuenta es razonable. ¿Servicio o precio? Las dos respuestas se pueden defender.", "El noveno es distinto. La pizza llegó en su punto. El corpus dice servicio. Es claramente comida. Era un error de etiqueta, y la segunda persona lo encontró.", "Moraleja: si los humanos coinciden en un setenta y siete por ciento, desconfíen de un modelo que diga noventa y cinco."], ["Primera trampa. Miren cómo está repartido el corpus. Ciento cuarenta y seis reseñas de comida. Cincuenta y ocho de servicio. Treinta y seis de precio. Ahora imaginen un modelo que nunca lee el texto. Siempre responde comida. ¿Qué accuracy tendrá? Apuesten.", "Cero punto sesenta y dos. Sin leer una sola palabra. Porque el sesenta por ciento del corpus es comida.", "Ahora miren el F1 macro del mismo modelo. Cero punto veinticinco.", "El F1 macro promedia las tres clases con el mismo peso. Y en servicio y en precio este modelo tiene cero. Por eso la rúbrica pide más que accuracy. Y por eso, cualquier número que reporten tiene que compararse con esta línea base."], ["Segunda trampa. Los duplicados. En redes sociales se repiten muchos textos. ¿Cuántos duplicados creen que hay en estas trescientas reseñas?", "Si le pedimos a pandas que quite duplicados, encuentra ocho.", "Pero hay reenvíos, textos en mayúsculas, copias con signos de más. Miren estos dos. Para pandas son distintos. Si normalizamos, quitamos el RT, pasamos a minúsculas y borramos la puntuación, encontramos sesenta. Un veinte por ciento del corpus.", "¿Qué pasa si no los quitamos? Partimos el corpus como siempre. Doscientas veinticinco para entrenar. Setenta y cinco para probar.", "De esas setenta y cinco, veinticuatro ya tienen una copia en entrenamiento. El modelo ya las vio.", "En esas veinticuatro, el modelo acierta el noventa y seis por ciento. En las otras, el setenta y dos. Eso no es aprender. Es recordar.", "Regla: se deduplica con normalización, y antes de particionar."], ["Ya con el corpus limpio, entrenamos los dos modelos. Con TF-IDF. Los dos superan de lejos la línea base. Buena noticia. Pero miren el recall por clase. Comida tiene uno punto cero. El modelo nunca se la pierde. ¿Por qué? Porque ante cualquier duda, responde comida. Precio se queda en cero punto treinta y tres. Encuentra tres de nueve. Hay pocas reseñas de precio para entrenar, solo veintisiete, y muchas también hablan de comida. Una pregunta para ustedes: ¿Naive Bayes es mejor que la Regresión Logística? Con sesenta documentos de prueba, todavía no lo podemos afirmar. Lo vemos en la siguiente."], ["Ahora probamos tres mejoras. Y las medimos mejor: con validación cruzada de cinco particiones. Primera mejora: balancear las clases. Con class weight balanced, los errores en precio y servicio pesan más durante el entrenamiento. La Regresión Logística sube de cero punto setenta y tres a cero punto ochenta y uno. Es la mejora más grande. Segunda: cambiar TF-IDF por Bag of Words. Aquí no hay un ganador fijo. Con Naive Bayes gana Bag of Words. Con Regresión Logística gana TF-IDF, por un punto. Recuerden su informe del Módulo 2. TF-IDF no es mejor por definición. Hay que medirlo en su corpus. Tercera: la propia validación cruzada. Entre particiones, el F1 se mueve entre cuatro y ocho puntos. Una diferencia de un punto no significa nada. En el reporte, den la media y la desviación."], ["La Regresión Logística nos deja mirar adentro. Estas son las palabras con más peso en cada clase. Algunas tienen sentido. Sabor, churrasco, administrador, cajero. Pero miren las resaltadas. Estaba. Tenía. Fue. Nos. Muy. No dicen nada del tema. Y sin embargo pesan mucho. ¿Por qué? Porque el corpus se generó con plantillas. Cada plato estaba de alguna forma. Cada mesero fue de alguna forma. El modelo aprendió las plantillas. Son atajos. Funcionan aquí. Con reseñas reales fallarían. Y cuando revisamos los errores, encontramos tres tipos. Errores del modelo. Errores de la etiqueta: la carta es económica está marcada como servicio. Y textos que de verdad son ambiguos. Parte del error medido no es culpa del modelo. La evaluación nunca es más confiable que las etiquetas."], ["Cerremos con lo que tienen que entregar. Un notebook y un reporte técnico de dos páginas. Para el primero de noviembre. Cuatro cosas no pueden faltar. Las etiquetas: una guía corregida y al menos ciento cincuenta documentos, con el kappa de su muestra. La limpieza: duplicados fuera, antes de particionar. La evaluación: línea base, F1 macro y validación cruzada. Y el análisis: qué aprendió el modelo, dónde se equivoca y dos mejoras concretas. La función de la Parte 5 del reto ya hace casi todo. Aplíquenla apenas terminen de etiquetar. En la próxima sesión, el trece de octubre, vemos análisis de sentimientos. Y van a volver a encontrar el problema de hoy. ¿Dónde termina lo neutral? Nos vemos."]];
+const DATA = {"docs": [{"t": "La anfitriona nunca trajo la cuenta. Nadie se acercó a preguntar si todo estaba bien.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La bandeja paisa sabía a recalentado. Repetiría el plato sin dudarlo.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El administrador fue muy grosero. La receta no se parece a la de antes.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La sopa del día llegó fría. Era nuestra primera visita. La salsa de la casa es lo mejor!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El postre no tenía sabor. Llegamos sin reserva.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La mesera no sabía explicar la carta. Vinimos por un cumpleaños.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT El churrasco no tenía sabor. Fuimos en familia.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El brownie no tenía sabor. El administrador nunca trajo la cuenta.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El pedido tardó más de una hora. El valor del domicilio vale cada peso. La mesera nos ignoró media hora. Vinimos por un cumpleaños.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Los tacos venían quemados en los bordes. El chef cambió la carta y se nota. Vinimos por un cumpleaños.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT El ajiaco estaba jugoso y bien condimentado.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El precio de las bebidas tiene buena relación calidad precio.", "y": "precio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "El combo está bien para la zona. El chef cambió la carta y se nota.", "y": "precio", "test": 1, "dup": 1, "copy": 0, "hit": 0}, {"t": "RT Fuimos en familia. La limonada de coco no tenía sabor.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El menú tiene buenas opciones vegetarianas. La hamburguesa estaba fresquísima!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "LA LASAÑA LLEGÓ EN SU PUNTO. ALMORZAMOS ENTRE SEMANA. REPETIRÍA EL PLATO SIN DUDARLO.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "El brownie llegó frío. Repetiría el plato sin dudarlo.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La receta no se parece a la de antes. La bandeja paisa sabía a recalentado.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El domiciliario nos atendió con paciencia. Almorzamos entre semana. El precio de los postres no justifica lo que cuesta. Por ese valor se come mejor en otro lado.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Aceptan todas las tarjetas pero cobran recargo. Almorzamos entre semana. El pescado frito estaba seco y sin gracia.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La pasta estaba cruda por dentro. Repetiría el plato sin dudarlo.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Se nota que usan ingredientes frescos. El brownie superó lo que esperaba. Fuimos un sábado en la noche.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "EL ADMINISTRADOR SE EQUIVOCÓ CON EL PEDIDO.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La sopa del día estaba deliciosa.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "LA MESERA SE EQUIVOCÓ CON EL PEDIDO. EL CEVICHE LLEGÓ FRÍO. FUIMOS UN SÁBADO EN LA NOCHE. LA SALSA DE LA CASA ES LO MEJOR.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La receta no se parece a la de antes. La pizza estaba jugosa y bien condimentada.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El churrasco llegó frío. Almorzamos entre semana. El domiciliario nunca trajo la cuenta.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "ACEPTAN TODAS LAS TARJETAS PERO COBRAN RECARGO. EL PRECIO DE LOS POSTRES ESTÁ BIEN PARA LA ZONA.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "EL VALOR DEL DOMICILIO ESTÁ INFLADO. EL ALMUERZO EJECUTIVO CUESTA MENOS DE VEINTE MIL.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La mesera se equivocó con el pedido. El ceviche llegó frío. Fuimos un sábado en la noche. La salsa de la casa es lo mejor.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "Nos cambiaron de mesa sin avisar. La persona de la caja nos recomendó muy bien.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La receta no se parece a la de antes. Era nuestra primera visita. El brownie llegó frío.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El churrasco estaba fresquísimo. El valor del domicilio es económico. Las porciones son generosas. Vinimos por un cumpleaños.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Fuimos en familia. La limonada de coco no tenía sabor.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "El precio de los postres no justifica lo que cuesta. El ceviche estaba salado.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El pedido tardó más de una hora. La hamburguesa llegó fría.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El arroz con pollo venía bien servido y caliente. El domiciliario fue muy atento con los niños. El menú tiene buenas opciones vegetarianas.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El precio de los postres subió sin aviso. Pedimos a domicilio. La anfitriona fue muy amable.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Nos atendieron rápido a pesar de estar lleno. Pagamos el doble que la vez pasada. El personal nos ignoró media hora.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El domicilio llegó antes de lo prometido. El churrasco venía bien servido y caliente. La persona de la caja nunca trajo la cuenta.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El personal resolvió el problema de inmediato.", "y": "servicio", "test": 1, "dup": 1, "copy": 1, "hit": 0}, {"t": "La salsa de la casa es lo mejor. El brownie tenía una sazón casera.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El ceviche no tenía sabor. Cobraron el servicio sin preguntar!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La pasta estaba pasada de aceite.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La espera para que nos tomaran el pedido fue eterna. El domiciliario fue muy amable.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT Pagamos el doble que la vez pasada. Vinimos por un cumpleaños. La hamburguesa tenía una sazón casera. La receta no se parece a la de antes.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El administrador respondió de mala gana. Nos cambiaron de mesa sin avisar.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "LA HAMBURGUESA ESTABA JUGOSA Y BIEN CONDIMENTADA.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La salsa de la casa es lo mejor. Llegamos sin reserva. El ceviche venía quemado en los bordes. La cuenta subió sin aviso.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El postre no tenía sabor. El domiciliario nos atendió con paciencia!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La carta es económica.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La bandeja paisa sabía a recalentado. La espera para que nos tomaran el pedido fue eterna.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El chef cambió la carta y se nota. La pasta llegó en su punto.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Fuimos un sábado en la noche. La carne tenía una sazón casera.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El menú del día está bien para la zona. Cobraron el servicio sin preguntar.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "COBRARON EL SERVICIO SIN PREGUNTAR. LA PIZZA TENÍA UNA SAZÓN CASERA.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El administrador fue muy atento con los niños. La pizza estaba salada.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La pizza estaba pasada de aceite. La carta vale cada peso.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Pagamos el doble que la vez pasada. Vinimos por un cumpleaños. La hamburguesa tenía una sazón casera. La receta no se parece a la de antes.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "La limonada de coco no tenía sabor.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Fuimos en familia. Se nota que usan ingredientes frescos. La pizza estaba seca y sin gracia.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Las arepas estaban deliciosas!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La carne tenía una sazón casera.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El mesero nos recomendó muy bien. La cuenta es muy razonable. Pedimos a domicilio.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La receta no se parece a la de antes. El cajero resolvió el problema de inmediato. Vinimos por un cumpleaños. La carne tenía muy buen sabor.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El precio de los postres tiene buena relación calidad precio. El salmón estaba pasado de aceite. Fuimos en familia.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "RT El churrasco estaba fresquísimo. El valor del domicilio es económico. Las porciones son generosas. Vinimos por un cumpleaños.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Se nota que usan ingredientes frescos. El brownie superó lo que esperaba. Fuimos un sábado en la noche!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El domiciliario nunca trajo la cuenta. Almorzamos entre semana. El domicilio llegó antes de lo prometido.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El domiciliario estuvo pendiente de todo.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El arroz con pollo llegó en su punto. Fuimos en familia.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El administrador fue muy amable. Almorzamos entre semana.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El salmón estaba salado. El chef cambió la carta y se nota. Fuimos un sábado en la noche.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT El arroz con pollo venía bien servido y caliente. El domiciliario fue muy atento con los niños. El menú tiene buenas opciones vegetarianas.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "Vinimos por un cumpleaños. El precio de las bebidas es un robo.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT La reserva no aparecía en el sistema. Fuimos un sábado en la noche. El arroz con pollo superó lo que esperaba. Las porciones son generosas.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Llegamos sin reserva. El mesero resolvió el problema de inmediato. La hamburguesa venía bien servida y caliente. Se nota que usan ingredientes frescos.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La lasaña tenía muy buen sabor. La persona de la caja fue muy grosera.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Llegamos sin reserva. El pescado frito estaba crudo por dentro. El mesero respondió de mala gana.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "Fuimos un sábado en la noche. El mesero no sabía explicar la carta. El domicilio llegó antes de lo prometido.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La pasta estaba salada.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Le faltaba sal a todo. La carne tenía una sazón casera. Llegamos sin reserva.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "Llegamos sin reserva. La pasta estaba seca y sin gracia!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La bandeja paisa no tenía sabor. Las porciones son generosas.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Los tacos sabían a recalentado. El personal fue muy atento con los niños.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "La pizza estaba salada.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "Fuimos un sábado en la noche. El mesero nos recomendó muy bien.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El precio del plato fuerte salió carísimo. La lasaña estaba salada. Llegamos sin reserva. Aceptan todas las tarjetas pero cobran recargo.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Era nuestra primera visita. El combo vale cada peso.", "y": "precio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "El ajiaco estaba seco y sin gracia. El valor del domicilio tiene cobros que nadie explicó.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El personal nunca trajo la cuenta. El pescado frito estaba jugoso y bien condimentado.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "La persona de la caja fue muy atenta con los niños.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El arroz con pollo estaba salado. El almuerzo ejecutivo cuesta menos de veinte mil.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Era nuestra primera visita. Le faltaba sal a todo. El churrasco estaba pasado de aceite.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El valor del domicilio está inflado. El almuerzo ejecutivo cuesta menos de veinte mil.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El administrador fue muy atento con los niños. La pizza estaba salada.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La pizza llegó en su punto.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Le faltaba sal a todo. Fuimos un sábado en la noche. La lasaña estaba deliciosa.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Pedimos a domicilio. Le faltaba sal a todo. El brownie llegó en su punto.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "Era nuestra primera visita. Las arepas sabían a recalentado. Por ese valor se come mejor en otro lado. El menú tiene buenas opciones vegetarianas.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El arroz con pollo tenía muy buen sabor. Almorzamos entre semana!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Repetiría el plato sin dudarlo. Nos cambiaron de mesa sin avisar. El sancocho estaba salado.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El postre no tenía sabor. El domiciliario nos atendió con paciencia.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La carne venía quemada en los bordes. Llegamos sin reserva!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El brownie estaba delicioso. Cobraron el servicio sin preguntar. Vinimos por un cumpleaños.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "LA PIZZA ESTABA SALADA.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La ensalada estaba fresquísima. Fuimos un sábado en la noche.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El precio de los postres tiene buena relación calidad precio. El salmón estaba pasado de aceite. Fuimos en familia.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "Pedimos a domicilio. Las arepas estaban crudas por dentro.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El chef cambió la carta y se nota. El churrasco no tenía sabor.", "y": "comida", "test": 1, "dup": 1, "copy": 0, "hit": 1}, {"t": "El administrador se equivocó con el pedido.", "y": "servicio", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "La limonada de coco estaba salada. Almorzamos entre semana. Le faltaba sal a todo. El administrador respondió de mala gana.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El chef cambió la carta y se nota. La carne tenía una sazón casera.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Llegamos sin reserva. El ajiaco estaba pasado de aceite.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El menú del día subió sin aviso. Cobraron el servicio sin preguntar. Llegamos sin reserva.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT Se nota que usan ingredientes frescos. El ceviche llegó frío.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Repetiría el plato sin dudarlo. Nos atendieron rápido a pesar de estar lleno. El domiciliario nos ignoró media hora.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La receta no se parece a la de antes. Fuimos en familia. La persona de la caja estuvo pendiente de todo. El churrasco venía quemado en los bordes.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El cajero fue muy atento con los niños. Nos cambiaron de mesa sin avisar. Fuimos un sábado en la noche.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "Llegamos sin reserva. El precio de las bebidas tiene cobros que nadie explicó. Nos cambiaron de mesa sin avisar.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT El cajero fue muy atento con los niños. Pedimos a domicilio.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El personal respondió de mala gana. Era nuestra primera visita.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El ajiaco tenía una sazón casera.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT El sancocho estaba delicioso.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Era nuestra primera visita. La espera para que nos tomaran el pedido fue eterna. El personal fue muy amable. El ceviche venía bien servido y caliente.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La mesera nos atendió con paciencia. La bandeja paisa venía quemada en los bordes.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La carne venía quemada en los bordes. Llegamos sin reserva.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La hamburguesa estaba salada.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El ceviche estaba pasado de aceite.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Aceptan todas las tarjetas pero cobran recargo. La carta salió carísima. Llegamos sin reserva.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El brownie estaba delicioso. El chef cambió la carta y se nota.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Llegamos sin reserva. La carta salió carísima. La mesera fue muy atenta con los niños.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Vinimos por un cumpleaños. El ajiaco estaba delicioso.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El postre estaba pasado de aceite.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El ceviche sabía a recalentado.", "y": "precio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "El churrasco no tenía sabor. Fuimos en familia.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "El ceviche no tenía sabor. Cobraron el servicio sin preguntar.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La pizza venía quemada en los bordes. La espera para que nos tomaran el pedido fue eterna. Le faltaba sal a todo.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El pedido tardó más de una hora. El precio de los postres tiene cobros que nadie explicó.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La hamburguesa estaba jugosa y bien condimentada.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "El churrasco tenía muy buen sabor. Era nuestra primera visita.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Las arepas estaban fresquísimas. El domicilio llegó antes de lo prometido. Las porciones son generosas.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El churrasco tenía muy buen sabor.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El administrador fue muy amable. El chef cambió la carta y se nota. La espera para que nos tomaran el pedido fue eterna.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "EL BROWNIE ESTABA DELICIOSO. COBRARON EL SERVICIO SIN PREGUNTAR. VINIMOS POR UN CUMPLEAÑOS.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Pedimos a domicilio. La persona de la caja fue muy amable. La limonada de coco llegó fría.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Era nuestra primera visita. El personal se equivocó con el pedido. La espera para que nos tomaran el pedido fue eterna.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La salsa de la casa es lo mejor. Vinimos por un cumpleaños. El brownie estaba jugoso y bien condimentado.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El cajero fue muy atento con los niños. Pedimos a domicilio.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La lasaña tenía muy buen sabor. Tuvimos que pedir tres veces los cubiertos. Llegamos sin reserva. La salsa de la casa es lo mejor.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El precio de los postres es un robo. La carne venía bien servida y caliente. El menú tiene buenas opciones vegetarianas.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El arroz con pollo estaba fresquísimo. Las porciones son generosas.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Nadie se acercó a preguntar si todo estaba bien. El chef cambió la carta y se nota. La lasaña llegó en su punto.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "La ensalada no tenía sabor.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La lasaña llegó en su punto. Almorzamos entre semana. Repetiría el plato sin dudarlo.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Repetiría el plato sin dudarlo. La sopa del día estaba salada.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La pasta estaba cruda por dentro.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "LA BANDEJA PAISA SABÍA A RECALENTADO. REPETIRÍA EL PLATO SIN DUDARLO.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "RT La pizza estaba pasada de aceite. La carta vale cada peso.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "El brownie superó lo que esperaba.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "EL PRECIO DEL PLATO FUERTE ES UN ROBO. LO RECOMENDÓ UN AMIGO.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Llegamos sin reserva. El cajero fue muy amable.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El ceviche estaba salado.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Aceptan todas las tarjetas pero cobran recargo. El administrador fue muy amable.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "Se nota que usan ingredientes frescos. El arroz con pollo estaba crudo por dentro.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La limonada de coco estaba deliciosa. La salsa de la casa es lo mejor.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La salsa de la casa es lo mejor. Los tacos llegaron fríos.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Llegamos sin reserva. El arroz con pollo estaba delicioso.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El administrador respondió de mala gana.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Los tacos llegaron en su punto. Era nuestra primera visita.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La lasaña estaba deliciosa.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El salmón sabía a recalentado.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El domicilio llegó antes de lo prometido. Los tacos estaban crudos por dentro. Vinimos por un cumpleaños.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El menú del día está inflado. Hay descuento los martes.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El salmón estaba pasado de aceite.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La mesera fue muy grosera.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La sopa del día no tenía sabor. El chef cambió la carta y se nota!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Pagamos el doble que la vez pasada. Tuvimos que pedir tres veces los cubiertos. El domiciliario nunca trajo la cuenta. Vinimos por un cumpleaños.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La hamburguesa tenía muy buen sabor. La salsa de la casa es lo mejor.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Cobraron el servicio sin preguntar. El sancocho no tenía sabor.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El pedido tardó más de una hora. El salmón estaba jugoso y bien condimentado.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT La reserva no aparecía en el sistema. El administrador no sabía explicar la carta.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "RT El combo está bien para la zona. El chef cambió la carta y se nota.", "y": "precio", "test": 1, "dup": 1, "copy": 0, "hit": 0}, {"t": "El chef cambió la carta y se nota. El brownie venía quemado en los bordes.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Nos cambiaron de mesa sin avisar. La persona de la caja fue muy grosera.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La sopa del día llegó fría. Era nuestra primera visita. La salsa de la casa es lo mejor.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El combo es económico. Vinimos por un cumpleaños. Nos cambiaron de mesa sin avisar. El personal respondió de mala gana.", "y": "servicio", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "La mesera fue muy grosera. El postre tenía una sazón casera.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La salsa de la casa es lo mejor. El brownie tenía una sazón casera!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El domiciliario fue muy amable. Llegamos sin reserva. Tuvimos que pedir tres veces los cubiertos.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El sancocho estaba delicioso.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El administrador estuvo pendiente de todo. Se nota que usan ingredientes frescos. La sopa del día venía quemada en los bordes.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Cobraron el servicio sin preguntar. La pizza tenía una sazón casera.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "La hamburguesa estaba salada. Llegamos sin reserva. El menú tiene buenas opciones vegetarianas.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El precio de las bebidas está inflado.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "EL SALMÓN ESTABA PASADO DE ACEITE.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "EL ARROZ CON POLLO SUPERÓ LO QUE ESPERABA. EL VALOR DEL DOMICILIO NO JUSTIFICA LO QUE CUESTA.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Los tacos tenían una sazón casera.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La salsa de la casa es lo mejor. La carne estaba deliciosa. Vinimos por un cumpleaños.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "Pagamos el doble que la vez pasada. El ceviche sabía a recalentado.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El arroz con pollo superó lo que esperaba. El valor del domicilio no justifica lo que cuesta.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La anfitriona se equivocó con el pedido. Fuimos un sábado en la noche. El arroz con pollo superó lo que esperaba.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El ajiaco estaba jugoso y bien condimentado.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La espera para que nos tomaran el pedido fue eterna. El almuerzo ejecutivo cuesta menos de veinte mil. El valor del domicilio tiene cobros que nadie explicó.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La mesera estuvo pendiente de todo. Las arepas llegaron frías. Pedimos a domicilio.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La pasta llegó fría. El pedido tardó más de una hora. Era nuestra primera visita.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El valor del domicilio subió sin aviso.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El valor del domicilio es económico. Lo recomendó un amigo. Pagamos el doble que la vez pasada. El menú tiene buenas opciones vegetarianas.", "y": "precio", "test": 1, "dup": 1, "copy": 0, "hit": 0}, {"t": "La anfitriona se equivocó con el pedido.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "Se nota que usan ingredientes frescos. El ceviche llegó frío.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El administrador nos ignoró media hora. Llegamos sin reserva.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El churrasco tenía una sazón casera.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT Nadie se acercó a preguntar si todo estaba bien. El chef cambió la carta y se nota. La lasaña llegó en su punto.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Era nuestra primera visita. El combo está inflado.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Las arepas estaban deliciosas.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Las arepas estaban saladas. El menú tiene buenas opciones vegetarianas. Fuimos en familia.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El cajero fue muy amable.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El almuerzo ejecutivo cuesta menos de veinte mil. El ajiaco venía bien servido y caliente. Las porciones son generosas. Vinimos por un cumpleaños.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El valor del domicilio es muy razonable. El postre tenía muy buen sabor. Por ese valor se come mejor en otro lado.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Los tacos sabían a recalentado. Era nuestra primera visita. Se nota que usan ingredientes frescos.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Nadie se acercó a preguntar si todo estaba bien. La mesera fue muy amable. El postre tenía muy buen sabor.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El menú del día tiene cobros que nadie explicó.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La receta no se parece a la de antes. La pasta estaba fresquísima.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Llegamos sin reserva. La pasta estaba seca y sin gracia.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El mesero nos atendió con paciencia.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "EL CHEF CAMBIÓ LA CARTA Y SE NOTA. EL CHURRASCO NO TENÍA SABOR.", "y": "comida", "test": 1, "dup": 1, "copy": 0, "hit": 1}, {"t": "El salmón estaba delicioso. El menú tiene buenas opciones vegetarianas.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La ensalada estaba deliciosa. El chef cambió la carta y se nota. Llegamos sin reserva.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "Nos cambiaron de mesa sin avisar. La persona de la caja fue muy grosera.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Nos atendieron rápido a pesar de estar lleno. El churrasco estaba fresquísimo.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La mesera fue muy grosera.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "EL VALOR DEL DOMICILIO ES ECONÓMICO. LO RECOMENDÓ UN AMIGO. PAGAMOS EL DOBLE QUE LA VEZ PASADA. EL MENÚ TIENE BUENAS OPCIONES VEGETARIANAS.", "y": "precio", "test": 1, "dup": 1, "copy": 0, "hit": 0}, {"t": "El ceviche estaba pasado de aceite!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El arroz con pollo tenía muy buen sabor. Almorzamos entre semana.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Aceptan todas las tarjetas pero cobran recargo. La carta salió carísima. Llegamos sin reserva!!", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Fuimos en familia. El cajero estuvo pendiente de todo.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Hay descuento los martes. El precio de las bebidas está bien para la zona. Era nuestra primera visita. La anfitriona nos atendió con paciencia.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La lasaña llegó en su punto!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El precio del plato fuerte es un robo. Lo recomendó un amigo.", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "RT La salsa de la casa es lo mejor. La bandeja paisa superó lo que esperaba.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La bandeja paisa no tenía sabor. Las porciones son generosas.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "Llegamos sin reserva. El cajero fue muy amable!!", "y": "precio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El combo tiene buena relación calidad precio.", "y": "precio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "RT La lasaña tenía muy buen sabor. La persona de la caja fue muy grosera.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La reserva no aparecía en el sistema. Fuimos un sábado en la noche. El arroz con pollo superó lo que esperaba. Las porciones son generosas.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Repetiría el plato sin dudarlo. La limonada de coco venía bien servida y caliente. Pedimos a domicilio.", "y": "precio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "Vinimos por un cumpleaños. El valor del domicilio tiene buena relación calidad precio.", "y": "precio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "Fuimos un sábado en la noche. La anfitriona fue muy atenta con los niños. Nadie se acercó a preguntar si todo estaba bien.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El domiciliario nunca trajo la cuenta.", "y": "servicio", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "La mesera fue muy amable. El pedido tardó más de una hora.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La persona de la caja resolvió el problema de inmediato.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 0}, {"t": "El domiciliario nunca trajo la cuenta.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La salsa de la casa es lo mejor. La bandeja paisa superó lo que esperaba.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "El brownie venía quemado en los bordes. Le faltaba sal a todo.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El cajero fue muy grosero. La carne venía quemada en los bordes. Fuimos un sábado en la noche.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El salmón estaba pasado de aceite. Repetiría el plato sin dudarlo.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El pescado frito estaba jugoso y bien condimentado. Por ese valor se come mejor en otro lado. El menú tiene buenas opciones vegetarianas.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Hay descuento los martes. La pasta tenía una sazón casera.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La pasta tenía una sazón casera. El administrador nos atendió con paciencia. Nos atendieron rápido a pesar de estar lleno.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El menú tiene buenas opciones vegetarianas. El ceviche tenía muy buen sabor. Fuimos en familia.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La pizza estaba pasada de aceite. Era nuestra primera visita.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La lasaña llegó en su punto.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La reserva no aparecía en el sistema. El administrador no sabía explicar la carta.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La receta no se parece a la de antes. El churrasco sabía a recalentado. Cobraron el servicio sin preguntar. Fuimos un sábado en la noche.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "Hay descuento los martes. El precio del plato fuerte tiene cobros que nadie explicó. Los tacos tenían muy buen sabor. Llegamos sin reserva.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Por ese valor se come mejor en otro lado. La sopa del día venía bien servida y caliente. Las porciones son generosas.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El cajero nos recomendó muy bien. Almorzamos entre semana.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El churrasco tenía muy buen sabor. El personal estuvo pendiente de todo.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Repetiría el plato sin dudarlo. La mesera nos atendió con paciencia.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La receta no se parece a la de antes. El cajero resolvió el problema de inmediato. Vinimos por un cumpleaños. La carne tenía muy buen sabor!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El postre sabía a recalentado. Vinimos por un cumpleaños. Se nota que usan ingredientes frescos.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La sopa del día no tenía sabor. El chef cambió la carta y se nota.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "Los tacos tenían una sazón casera!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El mesero no sabía explicar la carta.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "RT Fuimos un sábado en la noche. La carne tenía una sazón casera.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "LOS TACOS LLEGARON EN SU PUNTO. ERA NUESTRA PRIMERA VISITA.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Aceptan todas las tarjetas pero cobran recargo. El precio de los postres está bien para la zona.", "y": "precio", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "La anfitriona nunca trajo la cuenta. Era nuestra primera visita. Nadie se acercó a preguntar si todo estaba bien.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La persona de la caja nos atendió con paciencia.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El administrador nunca trajo la cuenta.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Lo recomendó un amigo. La sopa del día estaba seca y sin gracia.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Fuimos en familia. Nos cambiaron de mesa sin avisar. La persona de la caja estuvo pendiente de todo.", "y": "servicio", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "Las arepas estaban secas y sin gracia.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La espera para que nos tomaran el pedido fue eterna. Las arepas estaban pasadas de aceite. Almorzamos entre semana.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El menú tiene buenas opciones vegetarianas. Fuimos en familia. El arroz con pollo estaba salado. Nadie se acercó a preguntar si todo estaba bien.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El cajero nunca trajo la cuenta. Vinimos por un cumpleaños.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Se nota que usan ingredientes frescos. El arroz con pollo estaba crudo por dentro.", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "El menú tiene buenas opciones vegetarianas. La hamburguesa estaba fresquísima.", "y": "comida", "test": 1, "dup": 1, "copy": 1, "hit": 1}, {"t": "Fuimos un sábado en la noche. La bandeja paisa tenía muy buen sabor.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El combo es económico. Vinimos por un cumpleaños. Nos cambiaron de mesa sin avisar. El personal respondió de mala gana.", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La mesera estuvo pendiente de todo. Fuimos en familia.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Hay descuento los martes. La hamburguesa llegó fría.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La espera para que nos tomaran el pedido fue eterna. El chef cambió la carta y se nota. El churrasco venía quemado en los bordes.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "La anfitriona se equivocó con el pedido. Cobraron el servicio sin preguntar.", "y": "servicio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "El personal resolvió el problema de inmediato!!", "y": "servicio", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "La carne estaba pasada de aceite.", "y": "comida", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "Era nuestra primera visita. El menú del día vale cada peso. Repetiría el plato sin dudarlo. Hay descuento los martes.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}, {"t": "La ensalada estaba deliciosa. El chef cambió la carta y se nota. Llegamos sin reserva!!", "y": "comida", "test": 0, "dup": 1, "copy": 0, "hit": null}, {"t": "Llegamos sin reserva. La sopa del día estaba jugosa y bien condimentada. La receta no se parece a la de antes. El domicilio llegó antes de lo prometido.", "y": "comida", "test": 1, "dup": 0, "copy": 0, "hit": 1}, {"t": "El cajero estuvo pendiente de todo. El precio de las bebidas está bien para la zona. Almorzamos entre semana.", "y": "precio", "test": 0, "dup": 0, "copy": 0, "hit": null}], "kappa": [{"t": "El postre estaba pasado de aceite.", "a": "comida", "b": "comida"}, {"t": "El churrasco tenía muy buen sabor.", "a": "comida", "b": "comida"}, {"t": "El brownie estaba delicioso. Cobraron el servicio sin preguntar. Vinimos por un cumpleaños.", "a": "comida", "b": "comida"}, {"t": "El chef cambió la carta y se nota. La pasta llegó en su punto.", "a": "comida", "b": "comida"}, {"t": "El brownie no tenía sabor. El administrador nunca trajo la cuenta.", "a": "comida", "b": "comida"}, {"t": "El arroz con pollo llegó en su punto. Fuimos en familia.", "a": "comida", "b": "comida"}, {"t": "La pasta estaba salada.", "a": "comida", "b": "comida"}, {"t": "Los tacos llegaron en su punto. Era nuestra primera visita.", "a": "comida", "b": "comida"}, {"t": "La receta no se parece a la de antes. La pasta estaba fresquísima.", "a": "comida", "b": "comida"}, {"t": "La limonada de coco estaba salada. Almorzamos entre semana. Le faltaba sal a todo. El administrador respondió de mala gana.", "a": "comida", "b": "servicio"}, {"t": "El administrador estuvo pendiente de todo. Se nota que usan ingredientes frescos. La sopa del día venía quemada en los bordes.", "a": "comida", "b": "comida"}, {"t": "La carne venía quemada en los bordes. Llegamos sin reserva!!", "a": "comida", "b": "servicio"}, {"t": "La pizza venía quemada en los bordes. La espera para que nos tomaran el pedido fue eterna. Le faltaba sal a todo.", "a": "comida", "b": "comida"}, {"t": "LA MESERA SE EQUIVOCÓ CON EL PEDIDO. EL CEVICHE LLEGÓ FRÍO. FUIMOS UN SÁBADO EN LA NOCHE. LA SALSA DE LA CASA ES LO MEJOR.", "a": "comida", "b": "servicio"}, {"t": "Los tacos sabían a recalentado. El personal fue muy atento con los niños.", "a": "comida", "b": "comida"}, {"t": "La sopa del día llegó fría. Era nuestra primera visita. La salsa de la casa es lo mejor!!", "a": "comida", "b": "comida"}, {"t": "Pedimos a domicilio. La persona de la caja fue muy amable. La limonada de coco llegó fría.", "a": "comida", "b": "servicio"}, {"t": "La salsa de la casa es lo mejor. Los tacos llegaron fríos.", "a": "comida", "b": "comida"}, {"t": "Nos atendieron rápido a pesar de estar lleno. El churrasco estaba fresquísimo.", "a": "comida", "b": "servicio"}, {"t": "La persona de la caja resolvió el problema de inmediato.", "a": "servicio", "b": "servicio"}, {"t": "RT La reserva no aparecía en el sistema. El administrador no sabía explicar la carta.", "a": "servicio", "b": "servicio"}, {"t": "EL ADMINISTRADOR SE EQUIVOCÓ CON EL PEDIDO.", "a": "servicio", "b": "servicio"}, {"t": "El personal respondió de mala gana. Era nuestra primera visita.", "a": "servicio", "b": "servicio"}, {"t": "El personal nunca trajo la cuenta. El pescado frito estaba jugoso y bien condimentado.", "a": "servicio", "b": "precio"}, {"t": "El pedido tardó más de una hora. El valor del domicilio vale cada peso. La mesera nos ignoró media hora. Vinimos por un cumpleaños.", "a": "servicio", "b": "servicio"}, {"t": "Era nuestra primera visita. El personal se equivocó con el pedido. La espera para que nos tomaran el pedido fue eterna.", "a": "servicio", "b": "servicio"}, {"t": "La anfitriona se equivocó con el pedido.", "a": "servicio", "b": "servicio"}, {"t": "El administrador fue muy grosero. La receta no se parece a la de antes.", "a": "servicio", "b": "servicio"}, {"t": "RT El cajero fue muy atento con los niños. Pedimos a domicilio.", "a": "servicio", "b": "servicio"}, {"t": "Fuimos un sábado en la noche. El mesero nos recomendó muy bien.", "a": "servicio", "b": "servicio"}, {"t": "La pizza llegó en su punto.", "a": "servicio", "b": "comida"}, {"t": "El domiciliario nunca trajo la cuenta.", "a": "servicio", "b": "servicio"}, {"t": "El precio de las bebidas tiene buena relación calidad precio.", "a": "precio", "b": "precio"}, {"t": "Era nuestra primera visita. El combo está inflado.", "a": "precio", "b": "precio"}, {"t": "El ceviche sabía a recalentado.", "a": "precio", "b": "precio"}, {"t": "ACEPTAN TODAS LAS TARJETAS PERO COBRAN RECARGO. EL PRECIO DE LOS POSTRES ESTÁ BIEN PARA LA ZONA.", "a": "precio", "b": "precio"}, {"t": "El mesero nos recomendó muy bien. La cuenta es muy razonable. Pedimos a domicilio.", "a": "precio", "b": "servicio"}, {"t": "Era nuestra primera visita. El combo vale cada peso.", "a": "precio", "b": "precio"}, {"t": "El precio del plato fuerte salió carísimo. La lasaña estaba salada. Llegamos sin reserva. Aceptan todas las tarjetas pero cobran recargo.", "a": "precio", "b": "precio"}, {"t": "La espera para que nos tomaran el pedido fue eterna. El almuerzo ejecutivo cuesta menos de veinte mil. El valor del domicilio tiene cobros que nadie explicó.", "a": "precio", "b": "servicio"}]};
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const fmt3 = x => (Math.round(x * 1000) / 1000).toFixed(3);
+const SUP = { "-": "⁻", "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+const sci = x => { if (x === 0) return "0"; const [m, e] = x.toExponential(2).split("e"); return `${m} × 10${String(+e).replace(/./g, c => SUP[c])}`; };
+const CV = { comida: "var(--navy)", servicio: "var(--teal)", precio: "var(--amber)" };
+const check = '<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M173.9 439.4L7.5 273c-10-10-10-26.2 0-36.2l36.2-36.2c10-10 26.2-10 36.2 0L192 312.7 432.1 72.6c10-10 26.2-10 36.2 0l36.2 36.2c10 10 10 26.2 0 36.2L210.1 439.4c-10 10-26.2 10-36.2 0z"/></svg>';
+
+/* ---- Static content builders ---- */
+$("#agenda").innerHTML = [["3:00", "Apertura", "Del diseño a la implementación y rúbrica de la actividad"], ["3:15", "Concepto", "Naive Bayes a mano y repaso de Regresión Logística"], ["3:45", "Reto · Partes 1 y 2", "Definir clases, etiquetar por separado y medir el acuerdo"], ["4:20", "Pausa", ""], ["4:30", "Reto · Parte 3", "Duplicados, línea base, Naive Bayes y Regresión Logística"], ["5:20", "Reto · Parte 4", "Términos por clase, errores y validación cruzada"], ["5:45", "Cierre", "Estructura del reporte y adelanto de la Sesión 7"]]
+  .map(([h, k, d]) => `<div style="display:grid;grid-template-columns:100px 250px 1fr;gap:18px;align-items:center;font-size:19px"><span style="background:${k === "Pausa" ? "var(--line)" : "var(--navy)"};color:${k === "Pausa" ? "var(--navy)" : "#fff"};border-radius:8px;text-align:center;padding:7px 0;font-weight:700">${h}</span><b style="color:${k.startsWith("Reto") ? "var(--teal)" : "var(--navy)"}">${k}</b><span>${d}</span></div>`).join("");
+$("#rubrica").innerHTML = [["1.5", "Implementación técnica", "Modelo correcto, partición entrenamiento/prueba, ejecución sin errores", "Parte 3"], ["1.5", "Uso de la representación", "BoW o TF-IDF bien integrado con el modelo, y justificado", "Partes 3 y 4"], ["1.0", "Evaluación del desempeño", "Accuracy, precisión, recall o F1, con interpretación", "Parte 3"], ["1.0", "Análisis e interpretación", "Limitaciones y mejoras posibles del modelo", "Parte 4"]]
+  .map(([p, k, d, w]) => `<div class="card" style="display:grid;grid-template-columns:90px 1fr;gap:12px;min-height:170px"><div style="font:700 44px var(--f-display);color:var(--amber)">${p}</div><div><div class="k" style="font-size:20px">${k}</div><div style="font-size:17px;margin:6px 0 10px">${d}</div><div style="font-weight:700;color:var(--teal);font-size:15px">Reto: ${w}</div></div></div>`).join("");
+$("#todo").innerHTML = [["Etiquetas", "Guía corregida y al menos 150 documentos, con el kappa de la muestra de 40."], ["Limpieza", "Duplicados normalizados eliminados antes de particionar."], ["Evaluación", "Línea base, F1 macro y validación cruzada con media y desviación."], ["Análisis", "Términos por clase, errores clasificados por tipo y dos mejoras concretas."]]
+  .map(([k, d]) => `<div style="display:grid;grid-template-columns:52px 140px 1fr;gap:14px;align-items:center"><div class="circle" style="background:var(--teal)">${check}</div><b style="color:#fff;font-size:19px">${k}</b><span style="font-size:17px">${d}</span></div>`).join("");
+$("#cv-bars").innerHTML = [["TF-IDF + LR balanceada", .806, "var(--teal)"], ["BoW + LR balanceada", .794, "var(--teal)"], ["BoW + NB", .753, "var(--navy)"], ["TF-IDF + NB", .741, "var(--navy)"], ["TF-IDF + LR", .734, "var(--gray)"]]
+  .map(([k, v, c]) => `<div class="hbar" style="grid-template-columns:220px 1fr"><span>${k}</span><div class="tr"><div class="r cvr" data-w="${v}" style="background:${c}"></div><b>${v.toFixed(3)}</b></div></div>`).join("");
+
+/* ---- Deck engine ---- */
+const slides = $$(".slide");
+let cur = 0, step = 0;
+const hooks = {};
+function fit() {
+  const box = document.body.classList.contains("presenter") ? $("#viewport").getBoundingClientRect() : null;
+  const vw = box ? box.width : innerWidth, vh = box ? box.height : innerHeight - 44;
+  $("#stage").style.transform = `scale(${Math.min(vw / 1280, vh / 720)})`;
+}
+function show(i, s = 0) {
+  cur = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((el, k) => el.classList.toggle("on", k === cur));
+  setStep(s);
+  if (!document.body.classList.contains("presenter")) { try { history.replaceState(null, "", "#" + (cur + 1)); } catch (e) {} }
+}
+function setStep(s) {
+  const sl = slides[cur], max = +sl.dataset.steps;
+  step = Math.max(0, Math.min(max, s));
+  $$("[data-s]", sl).forEach(el => el.classList.toggle("in", +el.dataset.s <= step));
+  const id = sl.id; if (hooks[id]) hooks[id](step);
+  $("#b-pos").textContent = `${cur + 1} / ${slides.length}` + (max ? ` · paso ${step}/${max}` : "");
+  $("#prog i").style.width = ((cur + (max ? step / max : 1)) / slides.length * 100) + "%";
+  renderNotes();
+  if (typeof renderGloss === 'function') renderGloss();
+  if (typeof afterStep === 'function') afterStep();
+}
+function next() { const max = +slides[cur].dataset.steps; if (step < max) setStep(step + 1); else if (cur < slides.length - 1) show(cur + 1, 0); }
+function prev() { if (step > 0) setStep(step - 1); else if (cur > 0) show(cur - 1, +slides[cur - 1].dataset.steps); }
+function renderNotes() {
+  const n = $("#notes"); if (n.hidden) return;
+  const ps = NOTES[cur] || [];
+  n.innerHTML = ps.map((p, k) => `<p class="${ps.length === 1 || k === step ? "cur" : ""}">${p}</p>`).join("") + `<p class="hint">Flechas o espacio para avanzar · N oculta las notas · G glosario · P modo presentador · F pantalla completa</p>`;
+  const c = $("p.cur", n); if (c) c.scrollIntoView({ block: "nearest" });
+}
+addEventListener("keydown", e => {
+  if (e.target.matches("input, textarea")) return;
+  if (["ArrowRight", "PageDown", " ", "Enter"].includes(e.key)) { e.preventDefault(); next(); }
+  else if (["ArrowLeft", "PageUp", "Backspace"].includes(e.key)) { e.preventDefault(); prev(); }
+  else if (e.key === "Home") show(0); else if (e.key === "End") show(slides.length - 1);
+  else if (e.key.toLowerCase() === "n") toggleNotes(); else if (e.key.toLowerCase() === "f") full();
+});
+function toggleNotes() { $("#notes").hidden = !$("#notes").hidden; renderNotes(); }
+function full() { const d = document.documentElement; (document.fullscreenElement ? document.exitFullscreen() : d.requestFullscreen?.())?.catch?.(() => {}); }
+$("#b-next").onclick = next; $("#b-prev").onclick = prev; $("#b-notes").onclick = toggleNotes; $("#b-full").onclick = full;
+$("#viewport").addEventListener("click", e => { if (e.target.closest("button, input, .tile, label, .dot")) return; if (e.target.closest(".slide")) next(); });
+addEventListener("resize", () => { fit(); if (slides[cur].id === "s-leak") hooks["s-leak"](step); });
+
+/* ---- 7: Naive Bayes ---- */
+const NB = { comida: ["sopa fría sin sabor", "carne deliciosa", "sopa deliciosa caliente"], servicio: ["mesero lento", "mesero grosero lento", "mesera amable"] };
+const tok = s => s.toLowerCase().split(/[^a-záéíóúñü]+/).filter(Boolean);
+const cnt = {}, N = {};
+for (const c in NB) { cnt[c] = {}; N[c] = 0; for (const d of NB[c]) for (const w of tok(d)) { cnt[c][w] = (cnt[c][w] || 0) + 1; N[c]++; } }
+const VOC = [...new Set(Object.values(NB).flat().flatMap(tok))];
+let alpha = 1, nbFree = false;
+function nbRender(st) {
+  const words = tok($("#nb-in").value), known = words.filter(w => VOC.includes(w));
+  $("#nb-words").innerHTML = words.map(w => VOC.includes(w) ? w : `<s title="fuera del vocabulario">${w}</s>`).join(" ");
+  const sc = {}; let g = 0;
+  ["comida", "servicio"].forEach(c => {
+    let p = 0.5, html = `<div class="chip" data-g="${++g}"><b>3/6</b><span>P(${c})</span></div>`;
+    // group consecutive words that share presence in the class: one group per step
+    let prevPresent = null;
+    known.forEach(w => {
+      const present = (cnt[c][w] || 0) > 0; if (present !== prevPresent) { g++; prevPresent = present; }
+      const num = (cnt[c][w] || 0) + alpha, den = N[c] + alpha * VOC.length; p *= num / den;
+      html += `<div class="chip${num === 0 ? " zero" : ""}" data-g="${g}"><b>${num}/${den}</b><span>${w}</span></div>`;
+    });
+    html += `<div class="chip res" data-g="${++g}"><b>${sci(p)}</b><span>producto</span></div>`;
+    sc[c] = p; $("#nb-" + c).innerHTML = html;
+    if (c === "comida") g = Math.max(g, 4); // servicio groups start after comida's
+  });
+  // With the default document, groups are exactly steps 1-8; any other input shows everything.
+  const reveal = nbFree ? 99 : st;
+  $$("#s-nb .chip").forEach(ch => { ch.style.transition = "opacity .45s ease"; ch.style.opacity = +ch.dataset.g <= reveal ? 1 : 0; });
+  const tot = sc.comida + sc.servicio, showP = nbFree || st >= 9;
+  $("#nb-probs").innerHTML = ["comida", "servicio"].map(c => `<div class="pbar"><span>P(${c} | doc)</span><div class="track"><div class="fill" id="nbf-${c}" style="background:${CV[c]}"></div></div><b class="num" style="font-size:20px;color:${CV[c]}">${tot ? fmt3(sc[c] / tot) : "—"}</b></div>`).join("");
+  $("#nb-probs").style.opacity = showP ? 1 : 0;
+  requestAnimationFrame(() => requestAnimationFrame(() => ["comida", "servicio"].forEach(c => { $("#nbf-" + c).style.width = showP && tot ? (100 * sc[c] / tot) + "%" : "0%"; })));
+  let msg = "";
+  if (showP && !tot) msg = `<span style="color:var(--warn);font-weight:700">Con α = 0 los dos productos valen 0: el modelo no puede decidir. Para eso existe el suavizado.</span>`;
+  else if (showP && alpha === 0 && (sc.comida === 0 || sc.servicio === 0)) msg = `<span style="color:var(--warn);font-weight:700">Una sola palabra ausente anula toda la clase.</span>`;
+  $("#nb-msg").innerHTML = msg;
+  $("#nb-sk").style.opacity = (nbFree || st >= 10) && alpha === 1 ? 1 : 0;
+}
+hooks["s-nb"] = st => nbRender(st);
+$("#nb-in").addEventListener("input", () => { nbFree = true; nbRender(step); });
+[["#nb-a1", 1], ["#nb-a0", 0]].forEach(([id, a]) => $(id).addEventListener("click", () => { alpha = a; nbFree = true; $("#nb-a1").setAttribute("aria-pressed", a === 1); $("#nb-a0").setAttribute("aria-pressed", a === 0); nbRender(step); }));
+
+/* ---- 11: Kappa ---- */
+const CLS = ["comida", "servicio", "precio"];
+const K0 = DATA.kappa.map(d => ({ ...d })); let K = K0.map(d => ({ ...d })), ksel = -1, kEdited = false;
+$("#k-tiles").innerHTML = K.map((d, i) => `<button class="tile" data-i="${i}" aria-label="Reseña ${i + 1}"><i></i><i></i></button>`).join("");
+function kap() {
+  const n = K.length; let po = 0; K.forEach(d => po += d.a === d.b); po /= n; let pe = 0;
+  CLS.forEach(c => pe += (K.filter(d => d.a === c).length / n) * (K.filter(d => d.b === c).length / n));
+  return { po, k: (po - pe) / (1 - pe) };
+}
+function kRender(st) {
+  $$("#k-tiles .tile").forEach((el, i) => {
+    const d = K[i]; el.children[0].style.backgroundColor = st >= 1 ? CV[d.a] : "var(--tint)"; el.children[1].style.backgroundColor = st >= 2 ? CV[d.b] : "var(--tint)";
+    el.classList.toggle("agree", d.a === d.b); el.classList.toggle("sel", i === ksel);
+  });
+  $("#k-tiles").classList.toggle("dimagree", st >= 3);
+  const { po, k } = kap(), dis = K.filter(d => d.a !== d.b).length;
+  $("#k-dis").textContent = `${dis} desacuerdos`; $("#k-po").textContent = fmt3(po); $("#k-k").textContent = fmt3(k);
+  $("#k-band").textContent = "kappa: " + (k > 0.8 ? "casi perfecto" : k > 0.6 ? "sustancial" : k > 0.4 ? "moderado" : "débil");
+  const det = $("#k-detail");
+  if (ksel >= 0) { const d = K[ksel]; det.hidden = false; det.innerHTML = `<i style="font-family:var(--f-display);color:var(--navy)">"${d.t}"</i><div style="margin-top:6px">A: <b style="color:${CV[d.a]}">${d.a}</b> · B: <b style="color:${CV[d.b]}">${d.b}</b> <span style="color:var(--muted)">· toquen otra vez para cambiar B</span></div>`; } else det.hidden = true;
+}
+hooks["s-kappa"] = st => kRender(st);
+$("#k-tiles").addEventListener("click", e => { const t = e.target.closest(".tile"); if (!t) return; const i = +t.dataset.i; if (i === ksel && step >= 2) { K[i].b = CLS[(CLS.indexOf(K[i].b) + 1) % 3]; kEdited = true; } else ksel = i; kRender(step); });
+
+/* ---- 12: Paradox ---- */
+function pRender(st) {
+  const p = +$("#p-range").value, f1 = (2 * p / (1 + p)) / 3;
+  $("#p-val").textContent = fmt3(p); $("#p-acc").textContent = fmt3(p); $("#p-f1").textContent = fmt3(f1);
+  $("#p-accb").style.height = st >= 1 ? (p * 100) + "%" : "0"; $("#p-f1b").style.height = st >= 2 ? (f1 * 100) + "%" : "0";
+  $("#p-acc").style.opacity = st >= 1 ? 1 : 0; $("#p-f1").style.opacity = st >= 2 ? 1 : 0;
+}
+hooks["s-par"] = st => pRender(st);
+$("#p-range").addEventListener("input", () => pRender(step));
+
+/* ---- 13: Leakage ---- */
+const ld = DATA.docs, lst = $("#l-stage");
+const dots = ld.map((d, i) => { const el = document.createElement("div"); el.className = "dot"; el.title = d.t; lst.appendChild(el); return el; });
+const rl = ["Corpus · 300 reseñas", "Entrenamiento · 225", "Prueba · 75"].map(t => { const el = document.createElement("div"); el.className = "rlab"; el.textContent = t; lst.appendChild(el); return el; });
+const testOrder = ld.map((d, i) => i).filter(i => ld[i].test).sort((a, b) => ld[b].copy - ld[a].copy);
+function lRender(st) {
+  const P = 13, pos = [];
+  if (st < 3) {
+    let k = 0; ld.forEach((d, i) => { pos[i] = [(k % 30) * P, 28 + Math.floor(k / 30) * P]; k++; });
+    rl[0].style.cssText = "left:0;top:0;opacity:1"; rl[1].style.opacity = 0; rl[2].style.opacity = 0;
+  } else {
+    let a = 0; ld.forEach((d, i) => { if (!d.test) { pos[i] = [(a % 15) * P, 28 + Math.floor(a / 15) * P]; a++; } });
+    testOrder.forEach((i, b) => { pos[i] = [15 * P + 44 + (b % 15) * P, 28 + Math.floor(b / 15) * P]; });
+    rl[0].style.opacity = 0; rl[1].style.cssText = "left:0;top:0;opacity:1"; rl[2].style.cssText = `left:${15 * P + 44}px;top:0;opacity:1`;
+  }
+  dots.forEach((el, i) => {
+    const d = ld[i]; el.style.transform = `translate(${pos[i][0]}px, ${pos[i][1]}px)`;
+    el.classList.toggle("ring", (st === 2 && d.dup === 1) || (st >= 5 && d.copy === 1));
+    el.classList.toggle("copy", st === 4 && d.copy === 1);
+    el.classList.toggle("hit", st >= 5 && d.test === 1 && d.hit === 1);
+    el.classList.toggle("miss", st >= 5 && d.test === 1 && d.hit === 0);
+    el.classList.toggle("dim", st >= 5 && !d.test);
+  });
+  $("#l-b1").style.width = st >= 5 ? (0.958 * 260) + "px" : "0"; $("#l-b2").style.width = st >= 5 ? (0.725 * 260) + "px" : "0";
+}
+hooks["s-leak"] = st => lRender(st);
+
+/* ---- 15: CV bars grow on entry ---- */
+hooks["s-cv"] = () => { $$(".cvr").forEach(r => { r.style.width = "0"; }); setTimeout(() => $$(".cvr").forEach(r => { r.style.width = (+r.dataset.w * 380) + "px"; }), RM ? 0 : 120); };
+
+
+/* ---- Concepts panel (G) ---- */
+const GLOSSARY = [["Tarea y datos", [["Clasificación supervisada", "Aprender, a partir de textos ya etiquetados, una función que asigna una clase a un texto nuevo."], ["Corpus sintético", "Textos generados por un programa, no escritos por personas. Sirve para controlar qué fenómenos aparecen."], ["Guía de anotación", "Reglas escritas que dicen qué entra y qué no entra en cada clase, y qué hacer con los casos mixtos."], ["Acuerdo entre anotadores", "Qué tanto coinciden dos personas que etiquetan los mismos textos de forma independiente."], ["Kappa de Cohen", "Acuerdo corregido por el azar: κ = (pₒ − pₑ) / (1 − pₑ). Vale 1 si el acuerdo es perfecto y 0 si es el esperable por azar."], ["Desbalance de clases", "Una clase tiene muchos más ejemplos que las demás. Infla el accuracy de cualquier modelo que la favorezca."], ["Duplicado cercano", "Dos textos iguales salvo diferencias superficiales: mayúsculas, un \"RT\" al inicio o signos extra."], ["Fuga de datos", "Información del conjunto de prueba que llega al entrenamiento. Hace que las métricas parezcan mejores de lo que son."], ["Partición estratificada", "División entrenamiento/prueba que conserva en ambos lados la proporción de cada clase."], ["Validación cruzada", "Entrenar y evaluar en k particiones distintas y promediar. Se reporta la media y la desviación."], ["Pipeline", "Objeto de scikit-learn que encadena vectorizador y modelo, y aprende todo solo con el conjunto de entrenamiento."], ["Atajo", "Palabra que se asocia con una clase en un corpus sin describirla, como \"estaba\" o \"fue\". Falla al cambiar de corpus."]]], ["Modelos y métricas", [["Bolsa de palabras (BoW)", "Vector con el número de veces que aparece cada palabra del vocabulario en el documento."], ["TF-IDF", "El conteo de cada palabra ponderado por su rareza en el corpus. Baja el peso de las palabras muy comunes."], ["Naive Bayes multinomial", "Multiplica P(c) por P(w|c) de cada palabra y elige la clase con el producto más alto. Supone palabras independientes."], ["Prior P(c)", "Proporción de documentos de la clase c en el conjunto de entrenamiento."], ["Suavizado de Laplace", "Sumar α = 1 a cada conteo para que una palabra nunca vista en una clase no anule su probabilidad."], ["Regresión Logística", "Modelo discriminativo que aprende un peso por palabra y por clase. Los pesos se pueden inspeccionar."], ["class_weight=\"balanced\"", "Hace que los errores en clases pequeñas pesen más, en proporción inversa a su frecuencia."], ["Línea base", "Modelo trivial de referencia. Aquí: responder siempre la clase más frecuente sin leer el texto."], ["Accuracy", "Proporción de predicciones correctas sobre el total."], ["Precisión y recall", "Precisión: de lo que el modelo llamó c, cuánto era c. Recall: de lo que era c, cuánto encontró."], ["F1 y F1 macro", "F1: media armónica de precisión y recall. F1 macro: promedio del F1 de cada clase, todas con el mismo peso."], ["Matriz de confusión", "Tabla de clases reales contra clases predichas. Muestra hacia dónde se van los errores."]]]];
+const DEF = Object.fromEntries(GLOSSARY.flatMap(([, items]) => items));
+const escH = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const UNUSED_SLIDE_TERMS = {
+  "s-nb": ["Naive Bayes multinomial", "Prior P(c)", "Suavizado de Laplace", "Bolsa de palabras (BoW)"],
+  "s-kappa": ["Guía de anotación", "Acuerdo entre anotadores", "Kappa de Cohen"],
+  "s-par": ["Desbalance de clases", "Línea base", "Accuracy", "Precisión y recall", "F1 y F1 macro"],
+  "s-leak": ["Duplicado cercano", "Fuga de datos", "Partición estratificada", "Corpus sintético"],
+  "s-cv": ["Validación cruzada", "class_weight=\"balanced\"", "TF-IDF", "Bolsa de palabras (BoW)"],
+};
+function renderGloss() {
+  const p = $("#gpanel"); if (p.hidden) return;
+  const all = GLOSSARY.flatMap(([, it]) => it.map(([k]) => k));
+  p.innerHTML = `<h3>Glosario de la sesión</h3><dl>${all.map(k => `<dt>${escH(k)}</dt><dd>${escH(DEF[k])}</dd>`).join("")}</dl>`;
+}
+slides.forEach(sl => {
+  if (!sl.dataset.terms) return;
+  const terms = JSON.parse(sl.dataset.terms);
+  const band = document.createElement("div"); band.className = "band";
+  band.innerHTML = `<span class="bl">CONCEPTOS</span>` + terms.map(k => `<div class="bc"><b>${escH(k)}</b><span>${escH(DEF[k])}</span></div>`).join("");
+  sl.appendChild(band);
+});
+function toggleGloss() { $("#gpanel").hidden = !$("#gpanel").hidden; renderGloss(); }
+$("#b-gloss").onclick = toggleGloss;
+addEventListener("keydown", e => { if (!e.target.matches("input, textarea") && e.key.toLowerCase() === "g") toggleGloss(); });
+
+/* ---- Presenter view + sync between windows ---- */
+const WIN_ID = Math.random().toString(36).slice(2);
+const chan = ("BroadcastChannel" in window) ? new BroadcastChannel("fpln-s6-deck") : null;
+let applyingRemote = false, lastPeer = 0, t0 = Date.now();
+function broadcast() {
+  const msg = { cur, step, src: WIN_ID, presenter: document.body.classList.contains("presenter"), at: Date.now() };
+  try { chan && chan.postMessage(msg); } catch (e) {}
+  try { localStorage.setItem("fpln-s6-deck", JSON.stringify(msg)); } catch (e) {}
+}
+function receive(msg) {
+  if (!msg || msg.src === WIN_ID) return;
+  lastPeer = Date.now(); updateSync();
+  if (msg.ping) { broadcast(); return; }
+  if (msg.cur === cur && msg.step === step) return;
+  applyingRemote = true;
+  if (msg.cur !== cur) show(msg.cur, msg.step); else setStep(msg.step);
+  applyingRemote = false;
+}
+if (chan) chan.onmessage = e => receive(e.data);
+addEventListener("storage", e => { if (e.key === "fpln-s6-deck" && e.newValue) { try { receive(JSON.parse(e.newValue)); } catch (err) {} } });
+function afterStep() { if (!applyingRemote) broadcast(); renderPresenter(); }
+function updateSync() {
+  const el = $("#p-sync"); if (!el) return;
+  el.textContent = Date.now() - lastPeer < 15000 ? "Sincronizado con la ventana de las diapositivas." : "Esperando la ventana de las diapositivas… Ábranla con el mismo enlace.";
+}
+function renderPresenter() {
+  if (!document.body.classList.contains("presenter")) return;
+  const ps = NOTES[cur] || [], max = +slides[cur].dataset.steps;
+  $("#pnotes").innerHTML = ps.map((p, k) => `<p class="${ps.length === 1 || k === step ? "cur" : ""}">${p}</p>`).join("");
+  const c = $("#pnotes p.cur"); if (c && ps.length > 1) c.scrollIntoView({ block: "center", behavior: "smooth" });
+  $("#p-pos").textContent = `Diapositiva ${cur + 1} / ${slides.length}` + (max ? ` · paso ${step}/${max}` : "");
+  const nxt = step < max ? "Siguiente: paso " + (step + 1) + " de esta diapositiva" : (cur < slides.length - 1 ? "Siguiente diapositiva: " + (slides[cur + 1].querySelector("h1, [style*='60px']")?.textContent || "") : "Fin de la presentación");
+  $("#p-nextt").textContent = nxt;
+}
+function setPresenter(on) {
+  document.body.classList.toggle("presenter", on);
+  $("#notes").hidden = true; $("#phelp").hidden = true;
+  fit(); renderPresenter(); broadcast();
+}
+setInterval(() => {
+  const s = Math.floor((Date.now() - t0) / 1000);
+  const el = $("#p-timer"); if (el) el.textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+  updateSync();
+}, 1000);
+$("#b-pres").onclick = () => { if ($("#phelp").hidden) { $("#phelp").hidden = false; } else setPresenter(true); };
+$("#phelp-ok").onclick = () => { $("#phelp").hidden = true; };
+$("#p-next").onclick = next; $("#p-prev").onclick = prev;
+$("#p-exit").onclick = () => setPresenter(false);
+$("#p-reset").onclick = () => { t0 = Date.now(); };
+addEventListener("keydown", e => { if (!e.target.matches("input, textarea") && e.key.toLowerCase() === "p") setPresenter(!document.body.classList.contains("presenter")); });
+addEventListener("resize", fit);
+
+fit();
+const h = parseInt(location.hash.slice(1), 10);
+applyingRemote = true;   // do not push this window's initial slide onto an already-open window
+if (location.hash.slice(1) === "notas") document.body.classList.add("presenter");
+show(Number.isFinite(h) ? h - 1 : 0);
+fit(); renderPresenter();
+applyingRemote = false;
+try { chan && chan.postMessage({ ping: true, src: WIN_ID }); } catch (e) {}
+</script>
+
+</body>
+</html>

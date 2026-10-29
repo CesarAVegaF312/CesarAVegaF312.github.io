@@ -23,8 +23,3 @@ semilleros:
         periodo: 2026-1
       - titulo: Maratón de programación
         periodo: 2026-2
-
-  - nombre: Semillero de ciberseguridad
-    actividades:
-      - titulo: Hackathon "No muerdas el anzuelo"
-        periodo: 2026-2

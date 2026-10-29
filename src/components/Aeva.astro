@@ -1,0 +1,176 @@
+---
+// Bloque del asistente AEVA en la página de un curso: la imagen de AEVA dentro
+// de un visualizador de audio radial (barras que salen del centro y se mueven
+// como una voz) y el botón para abrir el chat. La animación es solo CSS.
+
+interface Props {
+  url: string;
+  curso: string;
+}
+
+const { url, curso } = Astro.props;
+
+// Duración y desfase distintos por barra para que el movimiento se vea natural.
+// Los valores son fijos (no aleatorios) para que el build siempre dé lo mismo.
+const BARRAS = 56;
+const barras = Array.from({ length: BARRAS }, (_, i) => ({
+  angulo: (360 / BARRAS) * i,
+  duracion: (0.8 + ((i * 37) % 7) * 0.11).toFixed(2),
+  retraso: (-((i * 53) % 13) * 0.09).toFixed(2),
+  altura: (0.55 + ((i * 29) % 5) * 0.11).toFixed(2),
+}));
+---
+
+<section class="aeva" aria-labelledby="titulo-aeva">
+  <div class="aeva__visual">
+    <div class="aeva__ondas" aria-hidden="true">
+      {
+        barras.map((b) => (
+          <span
+            style={`--angulo:${b.angulo}deg;--duracion:${b.duracion}s;--retraso:${b.retraso}s;--altura:${b.altura}`}
+          />
+        ))
+      }
+    </div>
+    <img
+      class="aeva__foto"
+      src="/aeva/aeva.webp"
+      alt="Ilustración de AEVA, la asistente del curso"
+      width="480"
+      height="480"
+      loading="lazy"
+      decoding="async"
+    />
+  </div>
+
+  <div class="aeva__cuerpo">
+    <h2 id="titulo-aeva" class="aeva__titulo">AEVA, asistente del curso</h2>
+    <p class="aeva__texto">Chat para consultar dudas sobre {curso}.</p>
+    <a class="aeva__boton" href={url}>Abrir el chat con AEVA</a>
+  </div>
+</section>
+
+<style>
+  .aeva {
+    --aeva-turquesa: #3fd6e6;
+    --aeva-fondo: #13203d;
+    --aeva-fondo-2: #1b3a52;
+    --visual: 13rem;
+    --foto: 7.5rem;
+
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5rem 2.5rem;
+    max-width: 52rem;
+    margin-bottom: 1.5rem;
+    padding: 1.5rem 2rem;
+    background: radial-gradient(circle at 20% 50%, var(--aeva-fondo-2), var(--aeva-fondo) 70%);
+    border-radius: 12px;
+    color: #f3f6fb;
+  }
+
+  .aeva__visual {
+    position: relative;
+    flex: none;
+    width: var(--visual);
+    height: var(--visual);
+    margin-inline: auto;
+  }
+
+  .aeva__foto {
+    position: absolute;
+    inset: calc((var(--visual) - var(--foto)) / 2);
+    width: var(--foto);
+    height: var(--foto);
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--aeva-turquesa);
+    box-shadow:
+      0 0 0 4px rgb(63 214 230 / 0.15),
+      0 0 28px rgb(63 214 230 / 0.45);
+  }
+
+  /* Cada barra es una varilla invisible del centro al borde, rotada en su ángulo.
+     El trazo visible es el ::before, en el extremo exterior, que cambia de alto. */
+  .aeva__ondas span {
+    position: absolute;
+    left: calc(50% - 1.5px);
+    bottom: 50%;
+    width: 3px;
+    height: calc(var(--visual) / 2);
+    transform-origin: 50% 100%;
+    transform: rotate(var(--angulo));
+  }
+
+  .aeva__ondas span::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: calc((var(--visual) - var(--foto)) / 2 - 0.6rem);
+    border-radius: 2px;
+    background: linear-gradient(to top, rgb(63 214 230 / 0.35), var(--aeva-turquesa));
+    transform-origin: 50% 100%;
+    transform: scaleY(calc(var(--altura) * 0.5));
+    animation: aeva-voz var(--duracion) ease-in-out var(--retraso) infinite alternate;
+  }
+
+  @keyframes aeva-voz {
+    from {
+      transform: scaleY(0.15);
+    }
+    to {
+      transform: scaleY(var(--altura));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .aeva__ondas span::before {
+      animation: none;
+    }
+  }
+
+  .aeva__cuerpo {
+    flex: 1 1 16rem;
+  }
+
+  .aeva__titulo {
+    font-size: 1.4rem;
+    color: #ffffff;
+    margin-bottom: 0.35rem;
+  }
+
+  .aeva__texto {
+    color: #c9d6e6;
+    margin-bottom: 1.1rem;
+  }
+
+  .aeva__boton {
+    display: inline-block;
+    padding: 0.65rem 1.2rem;
+    background: var(--aeva-turquesa);
+    color: var(--aeva-fondo);
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .aeva__boton:hover {
+    color: var(--aeva-fondo);
+    background: #8be8f1;
+    text-decoration: underline;
+  }
+
+  .aeva__boton:focus-visible {
+    outline-color: #ffffff;
+  }
+
+  @media (max-width: 30rem) {
+    .aeva {
+      padding: 1.25rem;
+      text-align: center;
+    }
+  }
+</style>

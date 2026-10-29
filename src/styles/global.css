@@ -233,3 +233,22 @@ code {
 .texto {
   max-width: var(--ancho-texto);
 }
+
+/* Recuadro de contenido pendiente */
+
+.pendiente {
+  max-width: var(--ancho-texto);
+  padding: 1rem 1.25rem;
+  border: 2px dashed var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+}
+
+.pendiente p {
+  margin: 0;
+}
+
+.pendiente__titulo {
+  font-weight: 600;
+  color: var(--acento-texto);
+}

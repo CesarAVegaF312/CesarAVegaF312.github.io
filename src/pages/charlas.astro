@@ -3,42 +3,71 @@ import Base from '../layouts/Base.astro';
 import { cargarCharlas, materialCharla } from '../lib/datos';
 
 const charlas = cargarCharlas().map((c) => ({ ...c, material: materialCharla(c) }));
+const presentadas = charlas.filter((c) => !c.propuesta);
+const propuestas = charlas.filter((c) => c.propuesta);
 ---
 
-<Base titulo="Charlas" descripcion="Charlas y conferencias de César Augusto Vega Fernández.">
+<Base titulo="Charlas" descripcion="Charlas y temas de charla de César Augusto Vega Fernández.">
   <div class="contenedor">
     <header class="encabezado-pagina">
       <h1>Charlas</h1>
-      <p>Charlas y conferencias, con el evento o contexto, el año y el material cuando está disponible.</p>
+      <p>Charlas presentadas en eventos y temas de charla disponibles.</p>
     </header>
 
-    <ul class="lista">
-      {
-        charlas.map((c) => (
-          <li class="elemento">
-            <h2 class="elemento__titulo">{c.titulo}</h2>
-            <p class="elemento__datos">
-              {c.evento ? <span>{c.evento}</span> : <span class="pendiente">Evento por completar</span>}
-              {c.lugar && <span>{c.lugar}</span>}
-              <span>{c.anio}</span>
-            </p>
-            {c.material && (
-              <p class="elemento__enlace">
-                <a href={c.material.href}>Ver material</a>
-                {c.material.formato && <span class="formato">{c.material.formato}</span>}
-              </p>
-            )}
-          </li>
-        ))
-      }
-    </ul>
+    {
+      presentadas.length > 0 && (
+        <section class="seccion" aria-labelledby="titulo-presentadas">
+          <h2 id="titulo-presentadas">Charlas presentadas</h2>
+          <ul class="lista">
+            {presentadas.map((c) => (
+              <li class="elemento">
+                <h3 class="elemento__titulo">{c.titulo}</h3>
+                <p class="elemento__datos">
+                  {c.evento ? <span>{c.evento}</span> : <span class="sin-evento">Evento por completar</span>}
+                  {c.lugar && <span>{c.lugar}</span>}
+                  {c.anio && <span>{c.anio}</span>}
+                </p>
+                {c.material && (
+                  <p class="elemento__enlace">
+                    <a href={c.material.href}>Ver material</a>
+                    {c.material.formato && <span class="formato">{c.material.formato}</span>}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      propuestas.length > 0 && (
+        <section class="seccion" aria-labelledby="titulo-propuestas">
+          <h2 id="titulo-propuestas">Temas de charla</h2>
+          <p class="suave texto">Temas disponibles para eventos, cursos y espacios académicos.</p>
+          <ul class="lista">
+            {propuestas.map((c) => (
+              <li class="elemento">
+                <h3 class="elemento__titulo">{c.titulo}</h3>
+                {c.material && (
+                  <p class="elemento__enlace">
+                    <a href={c.material.href}>Ver material</a>
+                    {c.material.formato && <span class="formato">{c.material.formato}</span>}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
   </div>
 </Base>
 
 <style>
   .lista {
     list-style: none;
-    margin: 0;
+    margin: 1rem 0 0;
     padding: 0;
     max-width: 52rem;
   }
@@ -69,7 +98,7 @@ const charlas = cargarCharlas().map((c) => ({ ...c, material: materialCharla(c) 
     margin-inline: 0.5rem;
   }
 
-  .pendiente {
+  .sin-evento {
     font-style: italic;
   }
 

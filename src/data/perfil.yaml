@@ -1,4 +1,4 @@
-# Datos generales del sitio y texto de la página de inicio.
+# Datos generales del sitio, texto de la página de inicio y de la página Sobre mí.
 
 nombre: César Augusto Vega Fernández
 
@@ -10,13 +10,54 @@ resumen: >-
   Profesor de la Facultad de Ingeniería de la Universidad de La Sabana.
   Dicta cursos de pregrado y de la Maestría en Ingeniería de Software.
 
-# Texto de presentación escrito por el profesor. Mientras esté vacío,
-# la página de inicio muestra un recuadro marcado "Texto por completar".
+# Texto de presentación de la página Sobre mí. Mientras esté vacío, la página
+# muestra un recuadro marcado "Texto por completar".
 # Cada párrafo es un elemento de la lista. Ejemplo:
 # presentacion:
 #   - Primer párrafo.
 #   - Segundo párrafo.
-presentacion: []
+presentacion:
+  - >-
+    Sus cursos cubren arquitectura empresarial, diseño y arquitectura de
+    software, estructuras de datos y algoritmos y procesamiento de lenguaje
+    natural en pregrado, y arquitectura empresarial, gestión de configuración
+    y testing de software en la maestría. Se trabajan con talleres prácticos y
+    proyectos: en Arquitectura Empresarial cada equipo lleva la arquitectura de
+    un cliente real del estado actual al estado objetivo, y en Diseño y
+    Arquitectura de Software se construye un sistema mediante retos.
+  - >-
+    Acompaña el semillero Maratonistas de Programación de la IEEE Computer
+    Society UniSabana. Las presentaciones, talleres y guías de sus cursos se
+    publican en esta página y en sus repositorios de GitHub bajo licencia
+    CC BY-NC-SA 4.0.
+
+# Áreas de trabajo que se muestran en la página Sobre mí.
+areas:
+  - Arquitectura empresarial
+  - Diseño y arquitectura de software
+  - Testing y validación de software
+  - Gestión de configuración y mantenimiento de software
+  - Estructuras de datos y algoritmos
+  - Procesamiento de lenguaje natural
+
+# Formación académica, de la más reciente a la más antigua. Ejemplo:
+# formacion:
+#   - titulo: Nombre del título
+#     institucion: Universidad
+#     anio: 2020
+formacion: []
+
+# Trayectoria profesional y académica, de la más reciente a la más antigua. Ejemplo:
+# trayectoria:
+#   - cargo: Profesor
+#     lugar: Facultad de Ingeniería, Universidad de La Sabana
+#     periodo: 2020 a la fecha
+trayectoria: []
+
+# Contacto. Los campos vacíos no se muestran. El perfil de GitHub se muestra siempre.
+contacto:
+  correo: ""
+  linkedin: ""
 
 # Cuenta de GitHub donde están los repositorios de los talleres.
 usuario_github: CesarAVegaF312

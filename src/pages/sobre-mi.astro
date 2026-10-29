@@ -1,0 +1,221 @@
+---
+import Base from '../layouts/Base.astro';
+import { cargarCursos, cargarPerfil } from '../lib/datos';
+
+const perfil = cargarPerfil();
+const cursos = cargarCursos();
+
+const grupos = [
+  { id: 'pregrado', titulo: 'Pregrado' },
+  { id: 'maestria', titulo: 'Maestría en Ingeniería de Software' },
+]
+  .map((g) => ({ ...g, cursos: cursos.filter((c) => c.nivel === g.id) }))
+  .filter((g) => g.cursos.length > 0);
+
+const sinTrayectoria = perfil.formacion.length === 0 && perfil.trayectoria.length === 0;
+const github = `https://github.com/${perfil.usuario_github}`;
+---
+
+<Base titulo="Sobre mí" descripcion={`${perfil.nombre}. ${perfil.resumen}`}>
+  <div class="contenedor">
+    <header class="encabezado-pagina">
+      <p class="etiqueta">Sobre mí</p>
+      <h1>{perfil.nombre}</h1>
+      <p>{perfil.afiliacion}</p>
+    </header>
+
+    <section class="seccion texto" aria-labelledby="titulo-presentacion">
+      <h2 id="titulo-presentacion">Presentación</h2>
+      {
+        perfil.presentacion.length > 0 ? (
+          perfil.presentacion.map((parrafo) => <p>{parrafo}</p>)
+        ) : (
+          <div class="pendiente" role="note">
+            <p class="pendiente__titulo">Texto por completar</p>
+          </div>
+        )
+      }
+    </section>
+
+    {
+      perfil.areas.length > 0 && (
+        <section class="seccion" aria-labelledby="titulo-areas">
+          <h2 id="titulo-areas">Áreas de trabajo</h2>
+          <ul class="areas">
+            {perfil.areas.map((a) => (
+              <li>{a}</li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      sinTrayectoria ? (
+        <section class="seccion" aria-labelledby="titulo-trayectoria">
+          <h2 id="titulo-trayectoria">Formación y trayectoria</h2>
+          <div class="pendiente" role="note">
+            <p class="pendiente__titulo">Por completar</p>
+          </div>
+        </section>
+      ) : (
+        <>
+          {perfil.formacion.length > 0 && (
+            <section class="seccion" aria-labelledby="titulo-formacion">
+              <h2 id="titulo-formacion">Formación académica</h2>
+              <ul class="lista">
+                {perfil.formacion.map((f) => (
+                  <li>
+                    <span class="lista__titulo">{f.titulo}</span>
+                    <span class="lista__datos">
+                      {[f.institucion, f.anio].filter(Boolean).join(' · ')}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          {perfil.trayectoria.length > 0 && (
+            <section class="seccion" aria-labelledby="titulo-trayectoria">
+              <h2 id="titulo-trayectoria">Trayectoria</h2>
+              <ul class="lista">
+                {perfil.trayectoria.map((t) => (
+                  <li>
+                    <span class="lista__titulo">{t.cargo}</span>
+                    <span class="lista__datos">
+                      {[t.lugar, t.periodo].filter(Boolean).join(' · ')}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </>
+      )
+    }
+
+    <section class="seccion" aria-labelledby="titulo-cursos">
+      <h2 id="titulo-cursos">Cursos</h2>
+      <div class="cursos">
+        {
+          grupos.map((g) => (
+            <div>
+              <h3 class="cursos__grupo">{g.titulo}</h3>
+              <ul class="cursos__lista">
+                {g.cursos.map((c) => (
+                  <li>
+                    <a href={`/cursos/${c.id}/`}>{c.nombre}</a>
+                    <span class="suave"> ({c.codigo})</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="seccion" aria-labelledby="titulo-contacto">
+      <h2 id="titulo-contacto">Contacto</h2>
+      <ul class="contacto">
+        {
+          perfil.contacto.correo && (
+            <li>
+              Correo: <a href={`mailto:${perfil.contacto.correo}`}>{perfil.contacto.correo}</a>
+            </li>
+          )
+        }
+        {
+          perfil.contacto.linkedin && (
+            <li>
+              <a href={perfil.contacto.linkedin}>LinkedIn</a>
+            </li>
+          )
+        }
+        <li>
+          GitHub: <a href={github}>{perfil.usuario_github}</a>
+        </li>
+      </ul>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .seccion {
+    padding-block: 1rem 1.5rem;
+  }
+
+  .seccion h2 {
+    font-size: 1.5rem;
+  }
+
+  .areas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: 52rem;
+  }
+
+  .areas li {
+    padding: 0.4rem 0.85rem;
+    border: 1px solid var(--borde);
+    border-left: 3px solid var(--acento);
+    border-radius: var(--radio);
+    background: var(--superficie);
+    font-size: 0.97rem;
+  }
+
+  .lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: 52rem;
+  }
+
+  .lista li {
+    display: flex;
+    flex-direction: column;
+    padding-block: 0.6rem;
+    border-top: 1px solid var(--borde);
+  }
+
+  .lista__titulo {
+    font-weight: 600;
+  }
+
+  .lista__datos {
+    color: var(--texto-suave);
+  }
+
+  .cursos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: 1rem 2rem;
+    max-width: 52rem;
+  }
+
+  .cursos__grupo {
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+    margin-bottom: 0.5rem;
+  }
+
+  .cursos__lista,
+  .contacto {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .cursos__lista li,
+  .contacto li {
+    padding-block: 0.2rem;
+  }
+</style>

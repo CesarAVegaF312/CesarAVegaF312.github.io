@@ -14,7 +14,7 @@ El sitio está hecho con [Astro](https://astro.build/) y genera páginas estáti
 6. [Agregar un curso](#6-agregar-un-curso)
 7. [Asistente del curso (AEVA)](#7-asistente-del-curso-aeva)
 8. [Charlas y semilleros](#8-charlas-y-semilleros)
-9. [Texto de la página de inicio](#9-texto-de-la-página-de-inicio)
+9. [Página de inicio y Sobre mí](#9-página-de-inicio-y-sobre-mí)
 10. [Ver el sitio en el computador](#10-ver-el-sitio-en-el-computador)
 11. [Publicación](#11-publicación)
 12. [Reglas básicas de YAML](#12-reglas-básicas-de-yaml)
@@ -153,6 +153,7 @@ Un módulo sin presentaciones visibles, talleres ni material muestra el texto "S
     descripcion: >-
       Una o dos frases sobre el curso.
     aeva: ""
+    periodo: 2026-2                 # se muestra como "Material del periodo 2026-2"
     nombre_modulos: Módulos         # opcional: Módulos, Unidades o Sesiones
     modulos:
       - titulo: Introducción
@@ -175,7 +176,7 @@ Cada curso tiene el campo `aeva`. Si está vacío (`aeva: ""`), no se muestra na
 
 ## 8. Charlas y semilleros
 
-**Charlas** (`src/data/charlas.yaml`). Cada charla tiene `titulo`, `anio` y, si se conocen, `evento` y `lugar`. Si `evento` está vacío, el sitio muestra "Evento por completar". Para enlazar el material:
+**Charlas** (`src/data/charlas.yaml`). La página tiene dos grupos: **Charlas presentadas**, con `titulo`, `anio`, `evento` y `lugar`, y **Temas de charla**, que son los marcados con `propuesta: true` (temas disponibles que todavía no se han presentado; solo necesitan `titulo`). Cuando un tema se presente, quite `propuesta: true` y agregue `evento`, `anio` y `lugar`. Para enlazar el material:
 
 - `enlace: https://...` para material publicado en otro lugar (diapositivas, video, repositorio), o
 - `archivo: nombre.pdf` para un PDF subido a `public/charlas/`. Si el archivo no existe, no se muestra el enlace y aparece en el aviso de faltantes.
@@ -196,17 +197,17 @@ Cada curso tiene el campo `aeva`. Si está vacío (`aeva: ""`), no se muestra na
         periodo: 2026-2
 ```
 
-## 9. Texto de la página de inicio
+## 9. Página de inicio y Sobre mí
 
-En `src/data/perfil.yaml`, el campo `presentacion` guarda el texto corto de presentación. Mientras esté vacío, la página de inicio muestra un recuadro "Texto por completar". Cada párrafo es un elemento de la lista:
+Todo está en `src/data/perfil.yaml`:
 
-```yaml
-presentacion:
-  - Primer párrafo.
-  - Segundo párrafo.
-```
+- `nombre`, `afiliacion` y `resumen`: lo que se ve en la página de inicio.
+- `presentacion`: los párrafos de la página **Sobre mí**. Cada párrafo es un elemento de la lista. Si queda vacía, la página muestra "Texto por completar".
+- `areas`: las áreas de trabajo de la página Sobre mí.
+- `formacion` y `trayectoria`: listas con título, institución y año, y con cargo, lugar y periodo. Mientras las dos estén vacías, la página muestra "Formación y trayectoria: por completar". El archivo trae un ejemplo comentado de cada una.
+- `contacto`: `correo` y `linkedin`. Los vacíos no se muestran; el perfil de GitHub se muestra siempre.
 
-En el mismo archivo están el nombre, la afiliación y el resumen que aparecen debajo del nombre.
+La lista de cursos de la página Sobre mí se arma sola a partir de `cursos.yaml`.
 
 ## 10. Ver el sitio en el computador
 

@@ -45,6 +45,7 @@ export interface Curso {
   programa?: string;
   descripcion: string;
   aeva?: string;
+  periodo?: string;
   nombre_modulos: string;
   modulos: Modulo[];
   talleres: Taller[];
@@ -52,7 +53,8 @@ export interface Curso {
 
 export interface Charla {
   titulo: string;
-  anio: number | string;
+  anio?: number | string;
+  propuesta: boolean;
   evento?: string;
   lugar?: string;
   enlace?: string;
@@ -73,11 +75,27 @@ export interface Semillero {
   actividades: Actividad[];
 }
 
+export interface Formacion {
+  titulo: string;
+  institucion?: string;
+  anio?: string;
+}
+
+export interface Cargo {
+  cargo: string;
+  lugar?: string;
+  periodo?: string;
+}
+
 export interface Perfil {
   nombre: string;
   afiliacion: string;
   resumen: string;
   presentacion: string[];
+  areas: string[];
+  formacion: Formacion[];
+  trayectoria: Cargo[];
+  contacto: { correo?: string; linkedin?: string };
   usuario_github: string;
 }
 
@@ -119,6 +137,25 @@ export function cargarPerfil(): Perfil {
     afiliacion: texto(datos.afiliacion),
     resumen: texto(datos.resumen),
     presentacion: lista<string>(datos.presentacion).map(texto).filter(Boolean),
+    areas: lista<string>(datos.areas).map(texto).filter(Boolean),
+    formacion: lista<any>(datos.formacion)
+      .filter((f) => texto(f?.titulo))
+      .map((f) => ({
+        titulo: texto(f.titulo),
+        institucion: texto(f.institucion) || undefined,
+        anio: texto(f.anio) || undefined,
+      })),
+    trayectoria: lista<any>(datos.trayectoria)
+      .filter((t) => texto(t?.cargo))
+      .map((t) => ({
+        cargo: texto(t.cargo),
+        lugar: texto(t.lugar) || undefined,
+        periodo: texto(t.periodo) || undefined,
+      })),
+    contacto: {
+      correo: texto(datos.contacto?.correo) || undefined,
+      linkedin: texto(datos.contacto?.linkedin) || undefined,
+    },
     usuario_github: texto(datos.usuario_github) || 'CesarAVegaF312',
   };
 }
@@ -158,6 +195,7 @@ export function cargarCursos(): Curso[] {
       programa: texto(c.programa) || undefined,
       descripcion: texto(c.descripcion),
       aeva: texto(c.aeva) || undefined,
+      periodo: texto(c.periodo) || undefined,
       nombre_modulos: texto(c.nombre_modulos) || 'Módulos',
       modulos: lista<any>(c.modulos).map((m, j) => leerModulo(m, `curso "${id}", módulo ${j + 1}`)),
       talleres: lista<any>(c.talleres).map((t, j) => leerTaller(t, `curso "${id}", taller ${j + 1}`)),
@@ -207,10 +245,12 @@ export function cargarCharlas(): Charla[] {
   return lista<any>(datos.charlas).map((c, i) => {
     const donde = `charlas.yaml, charla ${i + 1}`;
     exigir(c && texto(c.titulo), `${donde} no tiene "titulo".`);
-    exigir(texto(c.anio), `${donde} no tiene "anio".`);
+    const propuesta = c.propuesta === true;
+    exigir(propuesta || texto(c.anio), `${donde} no tiene "anio" (o "propuesta: true" si aún no se presenta).`);
     return {
       titulo: texto(c.titulo),
-      anio: c.anio,
+      anio: texto(c.anio) ? c.anio : undefined,
+      propuesta,
       evento: texto(c.evento) || undefined,
       lugar: texto(c.lugar) || undefined,
       enlace: texto(c.enlace) || undefined,

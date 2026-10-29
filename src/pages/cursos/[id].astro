@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import Aeva from '../../components/Aeva.astro';
 import {
   cargarCursos,
   cargarPerfil,
@@ -47,14 +48,10 @@ const enlaceTaller = (t: Taller) => urlTaller(t, usuario_github);
       <h1>{curso.nombre}</h1>
       {curso.programa && <p class="programa">{curso.programa}</p>}
       <p>{curso.descripcion}</p>
-      {
-        curso.aeva && (
-          <p class="aeva">
-            <a href={curso.aeva}>Asistente del curso</a>
-          </p>
-        )
-      }
+      {curso.periodo && <p class="periodo">Material del periodo {curso.periodo}</p>}
     </header>
+
+    {curso.aeva && <Aeva url={curso.aeva} curso={curso.nombre} />}
 
     <section class="seccion" aria-labelledby="titulo-modulos">
       <h2 id="titulo-modulos">{curso.nombre_modulos}</h2>
@@ -166,22 +163,14 @@ const enlaceTaller = (t: Taller) => urlTaller(t, usuario_github);
     padding-top: 1.5rem;
   }
 
+  .encabezado-pagina .periodo {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--acento-texto);
+  }
+
   .programa {
     font-size: 1rem;
-  }
-
-  .aeva a {
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--enlace);
-    border-radius: var(--radio);
-    font-size: 1rem;
-    text-decoration: none;
-  }
-
-  .aeva a:hover {
-    border-color: var(--enlace-hover);
-    text-decoration: underline;
   }
 
   .modulos {

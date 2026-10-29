@@ -13,6 +13,8 @@
 #     programa: ...                 opcional, se muestra debajo del nombre
 #     descripcion: ...
 #     aeva: ""                      URL del asistente del curso; vacío = no se muestra
+#     periodo: 2026-2               periodo académico del material; se muestra como
+#                                   "Material del periodo 2026-2". Actualícelo cada semestre.
 #     nombre_modulos: Módulos       opcional: Módulos, Unidades, Sesiones...
 #     modulos:
 #       - titulo: Introducción
@@ -46,6 +48,7 @@ cursos:
       (procesos, datos, aplicaciones, infraestructura y seguridad) mediante un
       proyecto con un cliente real que va del estado actual al estado objetivo.
     aeva: ""
+    periodo: 2026-2
     modulos:
       - titulo: Introducción
         presentaciones:
@@ -145,21 +148,10 @@ cursos:
               identifica las brechas frente al estado actual y prioriza las
               soluciones que las cierran.
 
-      - titulo: Gobierno de arquitectura
-        presentaciones:
-          - titulo: Gobierno de arquitectura
-            archivo: 10-gobierno-arquitectura.pdf
-        talleres:
-          - titulo: Taller 9. Simulación de comité de arquitectura
-            repo: AREM-Taller_9_Presentacion_Final
-            descripcion: >-
-              Presenta y defiende la solución arquitectónica final del cliente
-              ante un comité simulado, con un plan de implementación por fases.
-
-      - titulo: Riesgos arquitectónicos
+      - titulo: Integración de vistas y riesgos arquitectónicos
         presentaciones:
           - titulo: Riesgos arquitectónicos
-            archivo: 11-riesgos-arquitectonicos.pdf
+            archivo: 10-riesgos-arquitectonicos.pdf
         talleres:
           - titulo: Taller 8. Integración de vistas de arquitectura
             repo: AREM-Taller_8_Integracion_Vistas
@@ -167,6 +159,17 @@ cursos:
               Integra las vistas de negocio, información, aplicaciones,
               infraestructura y seguridad en una narrativa coherente con los
               objetivos del cliente.
+
+      - titulo: Gobierno de arquitectura
+        presentaciones:
+          - titulo: Gobierno de arquitectura
+            archivo: 11-gobierno-arquitectura.pdf
+        talleres:
+          - titulo: Taller 9. Simulación de comité de arquitectura
+            repo: AREM-Taller_9_Presentacion_Final
+            descripcion: >-
+              Presenta y defiende la solución arquitectónica final del cliente
+              ante un comité simulado, con un plan de implementación por fases.
 
     talleres:
       - titulo: Proyecto con el cliente real
@@ -195,6 +198,7 @@ cursos:
       estructuras de datos adecuadas, con análisis formal de complejidad, en
       Python.
     aeva: ""
+    periodo: 2026-2
     modulos:
       - titulo: Introducción
         presentaciones:
@@ -237,6 +241,7 @@ cursos:
       Construir un sistema profesional con los estándares actuales de la
       industria, mediante retos.
     aeva: ""
+    periodo: 2026-2
     modulos:
       - titulo: Introducción
         presentaciones:
@@ -279,19 +284,19 @@ cursos:
               Código de partida, sin refactorizar, para la primera parte del
               taller de patrones creacionales.
           - titulo: Patrón Observer
-            repo: DAYS-BehavioralPatterns-observer
+            repo: DYAS-BehavioralPatterns-observer
             descripcion: >-
               Implementa el patrón Observer para que los cambios de
               configuración del sistema se notifiquen automáticamente a los
               objetos interesados.
           - titulo: Patrón Strategy
-            repo: DAYS-BehavioralPatterns-strategy
+            repo: DYAS-BehavioralPatterns-strategy
             descripcion: >-
-              Implementa el patrón Strategy para intercambiar el método de
-              autenticación (XML, base de datos o memoria) sin modificar el
-              código que lo usa.
+              Implementa el patrón Strategy en un servicio Spring Boot que
+              elige por configuración el método de autenticación (memoria,
+              MySQL o XML), y lo despliega con Docker Compose.
           - titulo: Patrón Adapter en un reproductor de audio
-            repo: DAYS-MusicPlayer
+            repo: DYAS-MusicPlayer
             descripcion: >-
               Aplica el patrón Adapter para que un reproductor use dos
               bibliotecas de terceros incompatibles a través de una sola
@@ -322,7 +327,7 @@ cursos:
               con pruebas unitarias del dominio según el patrón AAA, clases de
               equivalencia y BDD.
           # - titulo: Pruebas unitarias con el patrón Arrange-Act-Assert
-          #   repo: DAYS-TDD-example
+          #   repo: DYAS-TDD-example
           #   descripcion: >-
           #     Ejemplos de pruebas unitarias en Java organizadas con el patrón
           #     Arrange-Act-Assert sobre un gestor de inventario.
@@ -349,7 +354,7 @@ cursos:
             archivo: 07-devops.pdf
         talleres:
           - titulo: Integración continua con GitHub Actions
-            repo: DAYS-Integracion_continua
+            repo: DYAS-Integracion_continua
             descripcion: >-
               Configura un pipeline de integración continua para un proyecto
               Java y Maven que ejecuta las pruebas, exige una cobertura mínima
@@ -418,6 +423,7 @@ cursos:
       TF-IDF, embeddings) para clasificación y análisis de sentimiento, hacia
       Transformers y modelos de lenguaje.
     aeva: ""
+    periodo: 2026-2
     nombre_modulos: Sesiones
     modulos:
       - titulo: Explorar texto con Python
@@ -463,6 +469,7 @@ cursos:
       Arquitecturas empresariales que alinean las TI con la estrategia:
       gobierno, gestión del cambio y transformación.
     aeva: ""
+    periodo: 2026-2
     nombre_modulos: Unidades
     modulos:
       - titulo: Marcos y capacidades
@@ -525,6 +532,7 @@ cursos:
       Gestión de configuración, control de cambios, versiones y mantenimiento
       para que el software no se degrade.
     aeva: ""
+    periodo: 2026-2
     nombre_modulos: Unidades
     modulos:
       - titulo: Evolución del software y mantenimiento
@@ -552,6 +560,7 @@ cursos:
       Diseñar, ejecutar y automatizar estrategias de prueba funcionales y no
       funcionales integradas en CI/CD.
     aeva: ""
+    periodo: 2026-2
     nombre_modulos: Unidades
     modulos:
       - titulo: Fundamentos de verificación y validación
@@ -593,6 +602,8 @@ cursos:
         presentaciones:
           - titulo: Integración y CI/CD
             archivo: 04-integracion-ci-cd.pdf
+          - titulo: Pruebas de integración y de sistema
+            archivo: 04-pruebas-integracion.pdf
         talleres:
           - titulo: Pruebas de integración y de sistema
             repo: TYVS-Taller_Pruebas_Integracion
@@ -616,6 +627,8 @@ cursos:
         presentaciones:
           - titulo: Rendimiento y carga
             archivo: 05-rendimiento-carga.pdf
+          - titulo: Pruebas de carga y rendimiento
+            archivo: 05-pruebas-carga-rendimiento.pdf
         talleres:
           - titulo: Pruebas de carga y rendimiento
             repo: TYVS-Taller_Pruebas_de_carga
@@ -634,6 +647,8 @@ cursos:
         presentaciones:
           - titulo: Gestión de defectos y validación final
             archivo: 06-gestion-defectos-validacion.pdf
+          - titulo: Pruebas de UI y UX
+            archivo: 06-pruebas-ui-ux.pdf
         talleres:
           - titulo: Pruebas de UI y UX
             repo: TYVS-Taller_Pruebas_de_UX

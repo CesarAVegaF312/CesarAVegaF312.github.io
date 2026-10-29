@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>REST — Las restricciones y su precio | Diplomado en Diseño y Arquitectura de Software</title>
+<style>
+  :root{
+    --navy:#1F2D4E; --navy-ink:#16223c; --terra:#C9722F; --terra-soft:#F3E2D4;
+    --paper:#FFFFFF; --surface:#F1F3F7; --line:#D5DAE4; --muted:#5A6480;
+    --ok:#2F6F4F; --warn:#9A3B2C;
+    --mono: ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+    --sans: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --serif: Georgia,"Iowan Old Style","Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--surface);color:var(--navy-ink);font-family:var(--sans);font-size:16.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+  header.hero{background:var(--navy);color:#fff;padding:64px 0 56px;position:relative;overflow:hidden}
+  header.hero .wrap{position:relative;z-index:2}
+  .kicker{font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;color:#9FB0D4;margin:0 0 14px}
+  h1{font-family:var(--serif);font-weight:700;font-size:clamp(34px,5.2vw,54px);line-height:1.08;margin:0 0 18px;max-width:22ch}
+  .lede{font-size:19px;color:#D6DEF0;max-width:64ch;margin:0}
+  .hexline{position:absolute;inset:0;opacity:.12;z-index:1}
+  main{padding:0 0 90px}
+  section{padding:54px 0 10px}
+  section + section{border-top:1px solid var(--line)}
+  h2{font-family:var(--serif);font-size:clamp(25px,3.4vw,34px);line-height:1.15;margin:0 0 6px;color:var(--navy)}
+  .sec-note{color:var(--muted);margin:0 0 26px;max-width:70ch;font-size:15.5px}
+  h3{font-size:18px;margin:30px 0 10px;color:var(--navy)}
+  h4{font-size:15px;margin:0 0 10px;color:var(--navy)}
+  p{max-width:74ch}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:22px 24px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+  figure{margin:0}
+  svg{display:block;width:100%;height:auto}
+  .lab{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:24px}
+  .lab-head{display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;justify-content:space-between;margin-bottom:16px}
+  .lab-title{font-weight:700;font-size:17px;color:var(--navy)}
+  button{font:inherit;cursor:pointer}
+  button.tab{font-size:14.5px;padding:8px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--muted)}
+  button.tab[aria-selected=true]{background:var(--navy);border-color:var(--navy);color:#fff}
+  button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--terra);outline-offset:2px}
+  table{border-collapse:collapse;width:100%;font-size:15px;background:var(--paper)}
+  caption{text-align:left;color:var(--muted);font-size:14px;padding-bottom:8px}
+  th,td{border:1px solid var(--line);padding:10px 12px;vertical-align:top;text-align:left}
+  th{background:var(--navy);color:#fff;font-weight:600}
+  tbody th{background:#EDF0F6;color:var(--navy)}
+  td.yes{color:var(--ok);font-weight:600}
+  td.no{color:var(--warn);font-weight:600}
+  code{font-family:var(--mono);font-size:13.5px;background:#EDF0F6;padding:1px 5px;border-radius:3px}
+  pre{font-family:var(--mono);font-size:13.5px;background:var(--navy-ink);color:#E6ECF8;padding:16px 18px;border-radius:8px;overflow:auto;line-height:1.55;margin:0}
+  pre code{background:none;padding:0;color:inherit}
+  pre .c{color:#8FA6CE} pre .k{color:#E7B36B} pre .g{color:#8ED9A9} pre .r{color:#F0A08E}
+  .callout{border-left:4px solid var(--terra);background:var(--terra-soft);padding:16px 20px;border-radius:0 8px 8px 0;margin:22px 0}
+  .callout strong{color:#7C441A}
+  .callout.warn{border-left-color:var(--warn);background:#F7E4E0}
+  .callout.warn strong{color:var(--warn)}
+  ul.tight{margin:8px 0;padding-left:20px}
+  ul.tight li{margin:5px 0}
+  .yesno{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  @media(max-width:820px){.yesno{grid-template-columns:1fr}}
+  .yesno > div{padding:20px 22px;background:var(--paper)}
+  .yesno > div + div{border-left:1px solid var(--line)}
+  @media(max-width:820px){.yesno > div + div{border-left:0;border-top:1px solid var(--line)}}
+  .tagline{font-family:var(--serif);font-style:italic;font-size:19px;color:var(--navy);max-width:62ch}
+  footer{background:var(--navy);color:#B9C6E2;padding:34px 0;font-size:14px}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .pill{font-family:var(--mono);font-size:11.5px;padding:3px 8px;border-radius:4px;background:#EDF0F6;color:var(--navy);border:1px solid var(--line)}
+  .levels{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .lvl-body{display:grid;grid-template-columns:1.05fr .95fr;gap:22px}
+  @media(max-width:820px){.lvl-body{grid-template-columns:1fr}}
+  .constraint{border:1px solid var(--line);border-radius:9px;background:var(--paper);padding:18px 20px}
+  .constraint h4{margin:0 0 6px}
+  .constraint .drop{margin-top:10px;font-size:14.5px;color:var(--warn);border-top:1px dashed var(--line);padding-top:10px}
+  .urlbad{color:var(--warn);font-family:var(--mono);font-size:13.5px}
+  .urlgood{color:var(--ok);font-family:var(--mono);font-size:13.5px}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg class="hexline" viewBox="0 0 1200 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g fill="none" stroke="#7E93C4" stroke-width="1.1">
+      <path d="M0 100 H1200 M0 210 H1200 M0 320 H1200"/>
+      <path d="M180 60 v300 M420 60 v300 M660 60 v300 M900 60 v300"/>
+      <circle cx="180" cy="100" r="9"/><circle cx="420" cy="210" r="9"/><circle cx="660" cy="100" r="9"/><circle cx="900" cy="320" r="9"/>
+    </g>
+  </svg>
+  <div class="wrap">
+    <p class="kicker">Diplomado en Diseño y Arquitectura de Software · Módulo 4 · Estilo 3 de 3</p>
+    <h1>REST no es «una API con JSON sobre HTTP»</h1>
+    <p class="lede">REST es un conjunto de seis restricciones que Roy Fielding derivó en el año 2000 para explicar por qué la Web escaló. Cada restricción compra una propiedad y cuesta algo. Diseñar bien exige saber cuál se está aceptando y cuál se está sacrificando.</p>
+  </div>
+</header>
+
+<main>
+
+<section id="origen"><div class="wrap">
+  <h2>1. Origen y tesis</h2>
+  <p class="sec-note">REST se formuló como una explicación, no como una receta.</p>
+  <p>Fielding trabajaba en la especificación de HTTP/1.1 y URI. Su tesis doctoral no propone un método para construir APIs: describe, mediante restricciones acumulativas, el estilo arquitectónico que hace que un sistema hipermedia distribuido a escala planetaria funcione con cachés intermedias, proxies desconocidos y clientes que evolucionan de forma independiente del servidor.</p>
+  <p>Esa diferencia importa: casi todo lo que la industria llama «API REST» es en realidad <strong>HTTP-RPC sobre recursos</strong>, y en la mayoría de los casos esa elección es correcta. Lo problemático no es apartarse de REST; es apartarse sin saberlo y luego sorprenderse porque no se obtienen las propiedades que REST prometía.</p>
+
+  <div class="lab" style="margin-top:26px">
+    <div class="lab-head">
+      <span class="lab-title">Las seis restricciones y qué se rompe si se omiten</span>
+      <span class="pill">Fielding, 2000 — cap. 5</span>
+    </div>
+    <div class="grid2" style="gap:14px">
+      <div class="constraint"><h4>1 · Cliente–servidor</h4><p style="font-size:15px;margin:0">Separa la interfaz de usuario del almacenamiento. Ambos evolucionan por separado.</p><div class="drop">Sin ella: cada cambio de UI obliga a redesplegar el servidor.</div></div>
+      <div class="constraint"><h4>2 · Sin estado (stateless)</h4><p style="font-size:15px;margin:0">Cada petición lleva todo lo necesario para ser entendida. El servidor no guarda contexto de sesión.</p><div class="drop">Sin ella: no hay balanceo trivial ni escalado horizontal; toda instancia debe conocer la sesión.</div></div>
+      <div class="constraint"><h4>3 · Cacheable</h4><p style="font-size:15px;margin:0">Las respuestas se marcan explícitamente como cacheables o no.</p><div class="drop">Sin ella: se pierde la mayor fuente de rendimiento de la Web; toda lectura llega al origen.</div></div>
+      <div class="constraint"><h4>4 · Interfaz uniforme</h4><p style="font-size:15px;margin:0">Recursos identificados por URI, manipulados por representaciones, mensajes autodescriptivos, hipermedia como motor del estado.</p><div class="drop">Sin ella: cada API es un protocolo nuevo y ninguna herramienta genérica sirve.</div></div>
+      <div class="constraint"><h4>5 · Sistema en capas</h4><p style="font-size:15px;margin:0">El cliente no sabe si habla con el origen o con un intermediario.</p><div class="drop">Sin ella: no se pueden insertar gateway, CDN, WAF ni balanceador sin cambiar clientes.</div></div>
+      <div class="constraint"><h4>6 · Código bajo demanda <em>(opcional)</em></h4><p style="font-size:15px;margin:0">El servidor puede enviar código ejecutable al cliente. Es la única restricción opcional.</p><div class="drop">Sin ella: no se pierde nada esencial; casi ninguna API la usa.</div></div>
+    </div>
+  </div>
+</div></section>
+
+<section id="richardson"><div class="wrap">
+  <h2>2. Modelo de madurez de Richardson</h2>
+  <p class="sec-note">Un instrumento de diagnóstico, no una escalera que haya que subir hasta el final.</p>
+
+  <div class="lab">
+    <div class="levels" id="rmm-tabs">
+      <button class="tab" data-lvl="0" aria-selected="true">Nivel 0 · un solo endpoint</button>
+      <button class="tab" data-lvl="1" aria-selected="false">Nivel 1 · recursos</button>
+      <button class="tab" data-lvl="2" aria-selected="false">Nivel 2 · verbos y códigos</button>
+      <button class="tab" data-lvl="3" aria-selected="false">Nivel 3 · hipermedia</button>
+    </div>
+    <div class="lvl-body">
+      <div><pre id="rmm-code"></pre></div>
+      <div>
+        <h4 id="rmm-title"></h4>
+        <p id="rmm-desc" style="font-size:15.5px"></p>
+        <div id="rmm-verdict" style="font-size:15px;border-left:4px solid var(--terra);background:var(--terra-soft);padding:12px 16px;border-radius:0 8px 8px 0"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>Postura defendible.</strong> El nivel 2 es el punto de equilibrio para la enorme mayoría de las APIs empresariales: se obtiene caché, semántica uniforme, códigos de estado interpretables por intermediarios y herramientas estándar. El nivel 3 (HATEOAS) solo se paga cuando existen clientes que no se controlan y deben adaptarse a cambios de flujo sin redesplegarse —por ejemplo, una API pública de larga vida—. Exigir HATEOAS en una API interna consumida por un único front-end es ceremonia sin beneficio, y conviene decirlo con esa franqueza en clase.
+  </div>
+</div></section>
+
+<section id="verbos"><div class="wrap">
+  <h2>3. Semántica de los métodos: seguridad e idempotencia</h2>
+  <p class="sec-note">Esta tabla es lo que hace que reintentar sea seguro. Es la parte de REST con consecuencias operativas directas.</p>
+  <table>
+    <caption><strong>Seguro</strong>: no modifica estado observable. <strong>Idempotente</strong>: ejecutarlo N veces deja el mismo estado que ejecutarlo una vez.</caption>
+    <thead><tr><th style="width:12%">Método</th><th style="width:11%">Seguro</th><th style="width:14%">Idempotente</th><th style="width:12%">Cacheable</th><th>Consecuencia práctica</th></tr></thead>
+    <tbody>
+      <tr><th>GET</th><td class="yes">Sí</td><td class="yes">Sí</td><td class="yes">Sí</td><td>Cualquier intermediario puede reintentarlo y cachearlo. Nunca use GET para operaciones con efecto.</td></tr>
+      <tr><th>HEAD</th><td class="yes">Sí</td><td class="yes">Sí</td><td class="yes">Sí</td><td>Verificación de existencia y metadatos sin transferir el cuerpo.</td></tr>
+      <tr><th>PUT</th><td class="no">No</td><td class="yes">Sí</td><td class="no">No</td><td>Reemplazo completo. Un reintento tras timeout es seguro.</td></tr>
+      <tr><th>DELETE</th><td class="no">No</td><td class="yes">Sí</td><td class="no">No</td><td>Idempotente en estado: el segundo intento devuelve 404 o 204, pero el recurso sigue borrado.</td></tr>
+      <tr><th>POST</th><td class="no">No</td><td class="no">No</td><td>Solo con <code>Cache-Control</code> explícito</td><td>Reintentar puede duplicar. Requiere clave de idempotencia si la red no es confiable.</td></tr>
+      <tr><th>PATCH</th><td class="no">No</td><td class="no">No*</td><td class="no">No</td><td>*Puede diseñarse idempotente (JSON Merge Patch) o no serlo (operación «incrementar en 1»).</td></tr>
+    </tbody>
+  </table>
+
+  <h3>El caso que aparece en todo sistema de pagos</h3>
+  <div class="grid2">
+    <div>
+<pre><span class="c"># El cliente envía un pago y la respuesta se pierde
+# por timeout de red. ¿Reintentar?</span>
+POST /v1/pagos
+Idempotency-Key: 9c1f4a2e-7b30-4d51-9e08-4f2ab7c61d55
+Content-Type: application/json
+
+{ <span class="k">"cuentaOrigen"</span>: "0011-4482",
+  <span class="k">"monto"</span>: 189900,
+  <span class="k">"moneda"</span>: "COP" }</pre>
+    </div>
+    <div>
+      <p style="font-size:15.5px;margin-top:0">El servidor almacena la clave junto con la respuesta producida. Si llega una segunda petición con la misma clave:</p>
+      <ul class="tight" style="font-size:15px">
+        <li>Devuelve la <strong>misma respuesta original</strong>, sin ejecutar el pago de nuevo.</li>
+        <li>Si el cuerpo difiere para la misma clave, responde <code>422</code>: es un error del cliente, no un pago distinto.</li>
+        <li>La clave expira (24 h es habitual) y la genera el <em>cliente</em>, no el servidor.</li>
+      </ul>
+      <p style="font-size:15px;margin-bottom:0">Sin esto, la combinación de reintentos automáticos del cliente móvil y latencia del backend produce cobros duplicados. No es un detalle de implementación: es una decisión de contrato que debe estar en el diseño.</p>
+    </div>
+  </div>
+</div></section>
+
+<section id="diseno"><div class="wrap">
+  <h2>4. Diseño de recursos: errores frecuentes</h2>
+  <p class="sec-note">Un recurso es un sustantivo con identidad estable, no una llamada a procedimiento disfrazada.</p>
+  <table>
+    <thead><tr><th style="width:44%">Diseño frecuente</th><th style="width:34%">Alternativa</th><th>Razón</th></tr></thead>
+    <tbody>
+      <tr><td class="urlbad">GET /obtenerCliente?id=44</td><td class="urlgood">GET /clientes/44</td><td>El verbo está en el método HTTP. La URI identifica, no ordena.</td></tr>
+      <tr><td class="urlbad">POST /clientes/44/borrar</td><td class="urlgood">DELETE /clientes/44</td><td>POST bloquea la idempotencia y confunde a los intermediarios.</td></tr>
+      <tr><td class="urlbad">GET /clientes/44/pedidos/todos</td><td class="urlgood">GET /clientes/44/pedidos?estado=activo</td><td>Filtros y paginación van en query string; la jerarquía en la ruta.</td></tr>
+      <tr><td class="urlbad">200 OK con <code>{"error":"no existe"}</code></td><td class="urlgood">404 + <code>application/problem+json</code></td><td>Un intermediario no puede interpretar un error escondido en un 200. RFC 9457 estandariza el cuerpo de error.</td></tr>
+      <tr><td class="urlbad">POST /transferencias/ejecutar</td><td class="urlgood">POST /transferencias</td><td>La transferencia es un recurso con identidad, estado y consulta posterior; no una acción efímera.</td></tr>
+      <tr><td class="urlbad">GET /pedidos que devuelve 40 000 filas</td><td class="urlgood">Paginación por cursor + <code>Link</code></td><td>Las colecciones sin límite superior son un incidente esperando ocurrir.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <strong>Excepción legítima.</strong> Algunas operaciones no son recursos por más que se fuerce el modelo: <code>POST /cuentas/44/cierre</code>, <code>POST /busquedas</code> con un cuerpo de consulta complejo. Modelar la acción como un recurso de proceso (con su propio identificador y estado consultable) suele ser mejor que inventar un sustantivo artificial. Diseñar bien es reconocer cuándo la restricción deja de pagar.
+  </div>
+</div></section>
+
+<section id="cache"><div class="wrap">
+  <h2>5. Caché condicional: la restricción con mayor retorno</h2>
+  <p class="sec-note">Es la parte de REST que más rendimiento entrega y la que más se ignora en APIs internas.</p>
+  <div class="grid2">
+    <div>
+<pre><span class="c">--- Primera petición ---</span>
+GET /productos/8812
+<span class="g">200 OK</span>
+ETag: "v41-9ab3"
+Cache-Control: private, max-age=60
+
+{ "nombre": "Teclado mecánico", "precio": 289900 }
+
+<span class="c">--- 3 minutos después ---</span>
+GET /productos/8812
+If-None-Match: "v41-9ab3"
+<span class="g">304 Not Modified</span>   <span class="c">← sin cuerpo</span></pre>
+    </div>
+    <div>
+      <h4>Lo que compra</h4>
+      <ul class="tight" style="font-size:15px">
+        <li>Un <code>304</code> transfiere encabezados, no el cuerpo: en catálogos grandes reduce el tráfico en más de un orden de magnitud.</li>
+        <li>El mismo <code>ETag</code> habilita <strong>concurrencia optimista</strong>: <code>PUT</code> con <code>If-Match</code> devuelve <code>412</code> si otro cliente modificó el recurso. Es control de concurrencia sin bloqueo en base de datos.</li>
+        <li>Los intermediarios (CDN, gateway) participan sin que el servicio los conozca — esa es la restricción de sistema en capas produciendo valor.</li>
+      </ul>
+      <h4 style="margin-top:16px">Lo que cuesta</h4>
+      <ul class="tight" style="font-size:15px;margin-bottom:0">
+        <li>Calcular el <code>ETag</code> requiere versión o hash estables del recurso.</li>
+        <li>Toda política de frescura es una decisión de negocio: ¿cuántos segundos de desactualización tolera el usuario? Esa pregunta se acuerda con el dueño de producto, no se decide en el código.</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="alternativas"><div class="wrap">
+  <h2>6. REST frente a las alternativas</h2>
+  <p class="sec-note">Ninguna es superior. Cada una optimiza una variable distinta y empeora otra.</p>
+  <table>
+    <thead><tr><th style="width:18%">Criterio</th><th>REST / HTTP+JSON</th><th>gRPC</th><th>GraphQL</th><th>Mensajería asíncrona</th></tr></thead>
+    <tbody>
+      <tr><th>Encaja cuando</th><td>API pública o entre equipos; lecturas cacheables</td><td>Comunicación interna de alto volumen y baja latencia</td><td>Muchos clientes con necesidades de datos distintas</td><td>Desacople temporal; el emisor no espera respuesta</td></tr>
+      <tr><th>Contrato</th><td>OpenAPI (frecuentemente escrito después del código)</td><td>Protobuf, obligatorio y verificado en compilación</td><td>Esquema tipado, introspectable</td><td>Esquema de evento (Avro/JSON Schema) en un registro</td></tr>
+      <tr><th>Rendimiento</th><td>Texto; sobrecarga de HTTP por llamada</td><td>Binario + HTTP/2 multiplexado: menor latencia y payload</td><td>Una ida y vuelta para datos que REST pediría en varias</td><td>Alto throughput; la latencia deja de ser observable por el usuario</td></tr>
+      <tr><th>Caché</th><td class="yes">Nativa en toda la infraestructura web</td><td class="no">Debe implementarse a mano</td><td class="no">Difícil: POST único y consultas variables</td><td>No aplica</td></tr>
+      <tr><th>Costo oculto</th><td>N+1 peticiones y sobre-transferencia de datos</td><td>Depuración menos accesible; soporte de navegador limitado</td><td>Consultas costosas del cliente pueden tumbar el backend; exige límites de profundidad y complejidad</td><td>Consistencia eventual, orden y duplicados a cargo del consumidor</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <strong>Regla de decisión aplicable.</strong> Contrato hacia afuera o hacia otros equipos, con lecturas repetidas: REST. Tráfico interno intensivo entre servicios propios: gRPC. Un front-end que sufre para componer datos de muchos recursos: GraphQL o un <em>Backend for Frontend</em>. Trabajo que no necesita respuesta inmediata: mensajería. La mayoría de los sistemas empresariales de 2026 usan tres de las cuatro a la vez, y eso es correcto: <strong>el estilo se elige por interacción, no por sistema.</strong>
+  </div>
+</div></section>
+
+<section id="decision"><div class="wrap">
+  <h2>7. Marco de decisión</h2>
+  <div class="yesno">
+    <div>
+      <h4 style="color:var(--ok)">REST es la elección correcta cuando</h4>
+      <ul class="tight">
+        <li>El consumidor es desconocido, externo o numeroso: HTTP es el único denominador común universal.</li>
+        <li>Predominan las lecturas y la caché entrega beneficio medible.</li>
+        <li>Se necesita atravesar infraestructura corporativa (proxies, WAF, gateway) sin negociaciones especiales.</li>
+        <li>El modelo de interacción es realmente sobre recursos con ciclo de vida.</li>
+        <li>Importa la accesibilidad de la depuración: <code>curl</code>, navegador y logs legibles.</li>
+      </ul>
+    </div>
+    <div>
+      <h4 style="color:var(--warn)">Considere otra opción cuando</h4>
+      <ul class="tight">
+        <li>Se necesita <em>streaming</em> bidireccional o notificación push: gRPC streaming, WebSocket o SSE.</li>
+        <li>La latencia por llamada domina el presupuesto de rendimiento en tráfico interno intensivo.</li>
+        <li>El cliente requiere composiciones muy variables que producen N+1 peticiones.</li>
+        <li>La operación es de larga duración: modele un recurso de proceso con <code>202 Accepted</code> y consulta de estado, o pase a mensajería.</li>
+        <li>El dominio es intrínsecamente de eventos, no de recursos (telemetría IoT, flujos de auditoría).</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Impacto sobre atributos de calidad</h3>
+  <table>
+    <thead><tr><th style="width:26%">Atributo</th><th style="width:14%">Efecto</th><th>Razón arquitectónica</th></tr></thead>
+    <tbody>
+      <tr><th>Escalabilidad horizontal</th><td style="color:var(--ok)">↑↑ mejora</td><td>La ausencia de estado permite agregar instancias sin afinidad de sesión.</td></tr>
+      <tr><th>Interoperabilidad</th><td style="color:var(--ok)">↑↑ mejora</td><td>HTTP y JSON son soportados por todo lenguaje y toda plataforma.</td></tr>
+      <tr><th>Rendimiento en lecturas</th><td style="color:var(--ok)">↑ mejora</td><td>Caché condicional e intermediarios que responden sin llegar al origen.</td></tr>
+      <tr><th>Eficiencia en llamadas internas</th><td style="color:var(--warn)">↓ empeora</td><td>Sobrecarga de texto, encabezados y conexión frente a protocolos binarios.</td></tr>
+      <tr><th>Transaccionalidad</th><td style="color:var(--warn)">↓↓ empeora</td><td>No hay transacción distribuida: exige idempotencia y compensación explícitas.</td></tr>
+      <tr><th>Tiempo real</th><td style="color:var(--warn)">↓↓ empeora</td><td>El modelo petición–respuesta no expresa notificación iniciada por el servidor.</td></tr>
+    </tbody>
+  </table>
+  <p class="tagline" style="margin-top:28px">Cumplir REST no es una virtud. Saber qué restricción se está sacrificando, y por qué, sí lo es.</p>
+</div></section>
+
+</main>
+
+<footer><div class="wrap">
+  <span>Diplomado en Diseño y Arquitectura de Software · Universidad de La Sabana</span>
+  <span>Material de apoyo — Módulo 4</span>
+</div></footer>
+
+<script>
+(function(){
+  var data = {
+    0:{
+      t:'Nivel 0 — el pantano de POX',
+      code:'POST /api/servicio\n<span class="k">Content-Type</span>: application/json\n\n{ "operacion": "consultarPedido", "pedidoId": 48120 }\n\n<span class="c">--- respuesta ---</span>\n<span class="g">200 OK</span>\n{ "estado": "ERROR", "mensaje": "pedido no existe" }',
+      d:'Un único endpoint recibe todas las operaciones. HTTP se usa como túnel de transporte: el verbo siempre es POST y el código de estado siempre es 200, sin importar el resultado.',
+      v:'<strong>Consecuencia:</strong> ningún intermediario puede cachear, reintentar ni monitorear de forma útil. Un tablero de observabilidad mostrará 100% de éxito mientras el negocio falla.'
+    },
+    1:{
+      t:'Nivel 1 — recursos identificados',
+      code:'POST /api/pedidos/48120\n{ "operacion": "consultar" }\n\n<span class="c">--- respuesta ---</span>\n<span class="g">200 OK</span>\n{ "estado": "ERROR", "mensaje": "pedido no existe" }',
+      d:'Cada entidad recibe su propia URI. Es el primer paso real: el sistema deja de ser un procedimiento único y empieza a tener un mapa de direcciones.',
+      v:'<strong>Todavía falta:</strong> el verbo sigue siendo siempre POST y los errores siguen viajando dentro de un 200. Se ganó direccionabilidad, no semántica.'
+    },
+    2:{
+      t:'Nivel 2 — verbos HTTP y códigos de estado',
+      code:'GET /api/pedidos/48120\n\n<span class="c">--- respuesta ---</span>\n<span class="r">404 Not Found</span>\n<span class="k">Content-Type</span>: application/problem+json\n\n{ "type": "https://api.ejemplo.co/errores/no-encontrado",\n  "title": "Pedido no encontrado",\n  "status": 404,\n  "instance": "/api/pedidos/48120" }',
+      d:'El método expresa la intención y el código de estado expresa el resultado. Toda la infraestructura intermedia —caché, gateway, cliente HTTP, tablero de métricas— entiende ahora lo que ocurrió sin conocer el dominio.',
+      v:'<strong>Punto de equilibrio.</strong> Aquí vive la enorme mayoría de las APIs empresariales bien diseñadas, y es una decisión defendible: se obtiene caché, reintentos seguros y observabilidad sin pagar el costo de hipermedia.'
+    },
+    3:{
+      t:'Nivel 3 — hipermedia como motor del estado (HATEOAS)',
+      code:'GET /api/pedidos/48120\n\n<span class="g">200 OK</span>\n{ "id": 48120,\n  "estado": "PENDIENTE_PAGO",\n  "total": 189900,\n  "_links": {\n    "self":     { "href": "/api/pedidos/48120" },\n    "pagar":    { "href": "/api/pedidos/48120/pagos", "method": "POST" },\n    "cancelar": { "href": "/api/pedidos/48120", "method": "DELETE" }\n  } }',
+      d:'La respuesta incluye las transiciones válidas desde el estado actual. Si el pedido ya estuviera pagado, el enlace «pagar» no aparecería: el servidor, no el cliente, es dueño de las reglas del flujo.',
+      v:'<strong>Cuándo vale la pena:</strong> clientes que no se controlan y deben adaptarse a cambios de flujo sin redesplegarse. En una API interna con un único front-end conocido, el costo de construirlo y consumirlo casi nunca se recupera.'
+    }
+  };
+  var tabs=document.querySelectorAll('#rmm-tabs .tab');
+  function show(l){
+    var d=data[l];
+    document.getElementById('rmm-code').innerHTML=d.code;
+    document.getElementById('rmm-title').textContent=d.t;
+    document.getElementById('rmm-desc').textContent=d.d;
+    document.getElementById('rmm-verdict').innerHTML=d.v;
+  }
+  tabs.forEach(function(t){
+    t.addEventListener('click',function(){
+      tabs.forEach(function(o){o.setAttribute('aria-selected','false');});
+      t.setAttribute('aria-selected','true');
+      show(t.dataset.lvl);
+    });
+  });
+  show('0');
+})();
+</script>
+</body>
+</html>

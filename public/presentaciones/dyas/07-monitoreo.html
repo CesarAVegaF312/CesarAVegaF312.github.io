@@ -1,0 +1,1908 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monitoreo y observabilidad | Diseño y Arquitectura de Software</title>
+<style>
+  :root{
+    --navy:#1F2D4E; --navy-ink:#16223c; --terra:#C9722F; --terra-soft:#F3E2D4;
+    --paper:#FFFFFF; --surface:#F1F3F7; --line:#D5DAE4; --muted:#5A6480;
+    --ok:#2F6F4F; --ok-soft:#E1EFE7; --warn:#9A3B2C; --warn-soft:#F7E4E0;
+    --ped:#2F5E9E; --inv:#C9722F;
+    --mono: ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+    --sans: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --serif: Georgia,"Iowan Old Style","Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--surface);color:var(--navy-ink);font-family:var(--sans);font-size:16.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+  @media(max-width:520px){.wrap{padding:0 16px}}
+  header.hero{background:var(--navy);color:#fff;padding:64px 0 56px;position:relative;overflow:hidden}
+  header.hero .wrap{position:relative;z-index:2}
+  .kicker{font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;color:#9FB0D4;margin:0 0 14px}
+  h1{font-family:var(--serif);font-weight:700;font-size:clamp(32px,5.2vw,54px);line-height:1.08;margin:0 0 18px;max-width:21ch}
+  .lede{font-size:19px;color:#D6DEF0;max-width:64ch;margin:0}
+  @media(max-width:520px){.lede{font-size:17px}}
+  .heroart{position:absolute;inset:0;opacity:.16;z-index:1}
+  .heroart circle{animation:pulse 3.2s ease-in-out infinite}
+  .heroart circle:nth-child(2n){animation-delay:.8s}
+  .heroart circle:nth-child(3n){animation-delay:1.6s}
+  @keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
+  main{padding:0 0 90px}
+  section{padding:54px 0 10px}
+  section + section{border-top:1px solid var(--line)}
+  h2{font-family:var(--serif);font-size:clamp(25px,3.4vw,34px);line-height:1.15;margin:0 0 6px;color:var(--navy)}
+  .sec-note{color:var(--muted);margin:0 0 26px;max-width:70ch;font-size:15.5px}
+  h3{font-size:18px;margin:30px 0 10px;color:var(--navy)}
+  h4{font-size:15px;margin:0 0 10px;color:var(--navy)}
+  p{max-width:74ch}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:22px 24px}
+  @media(max-width:520px){.card{padding:16px}}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+  .grid2 > *, .grid3 > *{min-width:0}
+  figure{margin:0}
+  @media(max-width:640px){figure.wide{overflow-x:auto;-webkit-overflow-scrolling:touch} figure.wide > svg{min-width:600px}}
+  svg{display:block;width:100%;height:auto}
+  .lab{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:24px}
+  @media(max-width:520px){.lab{padding:16px}}
+  .lab-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .lab-title{font-weight:700;font-size:17px;color:var(--navy)}
+  .tabs{display:flex;flex-wrap:wrap;gap:8px}
+  button{font:inherit;cursor:pointer}
+  button.tab{font-size:14px;padding:7px 13px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--muted)}
+  button.tab[aria-selected=true]{background:var(--navy);border-color:var(--navy);color:#fff}
+  button.go{font-size:14.5px;font-weight:600;padding:9px 18px;border-radius:8px;border:0;background:var(--terra);color:#fff}
+  button.go:disabled{opacity:.55;cursor:default}
+  button.ghost{font-size:14px;padding:8px 14px;border-radius:8px;background:#fff;border:1px solid var(--line);color:var(--navy)}
+  button.ghost:disabled{opacity:.55;cursor:default}
+  button:focus-visible{outline:3px solid var(--terra);outline-offset:2px}
+  table{border-collapse:collapse;width:100%;font-size:15px;background:var(--paper)}
+  .tablewrap{overflow-x:auto}
+  table code{overflow-wrap:normal}
+  th,td{border:1px solid var(--line);padding:10px 12px;vertical-align:top;text-align:left}
+  th{background:var(--navy);color:#fff;font-weight:600}
+  tbody th{background:#EDF0F6;color:var(--navy)}
+  code{font-family:var(--mono);font-size:13.5px;background:#EDF0F6;padding:1px 5px;border-radius:3px;overflow-wrap:anywhere}
+  pre{font-family:var(--mono);font-size:13px;background:var(--navy-ink);color:#E6ECF8;padding:16px 18px;border-radius:8px;overflow:auto;line-height:1.55;margin:0}
+  pre .c{color:#8FA6CE} pre .k{color:#E7B36B} pre .g{color:#8ED9A9} pre .r{color:#F0A08E}
+  .callout{border-left:4px solid var(--terra);background:var(--terra-soft);padding:16px 20px;border-radius:0 8px 8px 0;margin:22px 0}
+  .callout strong{color:#7C441A}
+  .callout.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .callout.warn strong{color:var(--warn)}
+  ul.tight{margin:8px 0;padding-left:20px}
+  ul.tight li{margin:5px 0}
+  footer{background:var(--navy);color:#B9C6E2;padding:34px 0;font-size:14px}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  footer a{color:#fff}
+  .pill{font-family:var(--mono);font-size:11.5px;padding:3px 8px;border-radius:4px;background:#EDF0F6;color:var(--navy);border:1px solid var(--line)}
+  .muted{color:var(--muted)}
+  .small{font-size:14px}
+  .pop{transform-box:fill-box;transform-origin:center;animation:popin .45s cubic-bezier(.2,1.4,.4,1) both}
+  @keyframes popin{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+  .fadein{animation:fadein .35s ease both}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+  @media(max-width:640px){.stats{grid-template-columns:1fr}}
+  .stat{background:var(--surface);border-radius:8px;padding:12px 14px;min-width:0}
+  .stat b{display:block;font-family:var(--serif);font-size:24px;color:var(--navy);line-height:1.15;overflow-wrap:anywhere}
+  .stat span{font-size:13.5px;color:var(--muted)}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--muted);margin:8px 0 0}
+  .legend span{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px}
+  .legend i{display:inline-block;width:16px;height:3px;border-radius:2px}
+  .legend i.dash{background:repeating-linear-gradient(90deg,currentColor 0 4px,transparent 4px 7px)!important;height:2px}
+  .note-ill{font-size:13px;color:var(--muted);margin:10px 0 0}
+  .badge{display:inline-block;font-size:11.5px;font-weight:600;letter-spacing:.02em;padding:2px 8px;border-radius:999px;background:var(--terra-soft);color:#7C441A;vertical-align:middle}
+  input[type=range]{accent-color:var(--terra);width:100%;margin:4px 0 0}
+  .slider{display:block;min-width:0}
+  .slider .lbl{display:flex;justify-content:space-between;gap:8px;font-size:14px;color:var(--navy)}
+  .slider .lbl b{font-family:var(--mono);font-size:13.5px}
+  .sliders{display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;margin-bottom:14px}
+  @media(max-width:640px){.sliders{grid-template-columns:1fr}}
+
+  /* Lab 1: scrape */
+  pre.scrape{font-size:12.5px;min-height:250px;max-height:330px}
+  pre.scrape .ln{display:block;transition:background .6s}
+  pre.scrape .ln.flash{background:rgba(201,114,47,.35)}
+  .appvals{font-family:var(--mono);font-size:12.5px;margin:0;padding:0;list-style:none}
+  .appvals li{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed var(--line)}
+  .appvals li b{transition:color .3s}
+  .appvals li span{min-width:0;overflow-wrap:anywhere}
+  .appvals li b.chg{color:var(--terra)}
+  .cardhead{font-size:13px;font-weight:600;color:var(--muted);margin:0 0 8px}
+
+  /* Lab 3: PromQL */
+  pre.pq{font-size:13px;margin-bottom:12px;white-space:pre-wrap;word-break:break-word}
+
+  /* Grafana */
+  .dash{display:grid;gap:10px}
+  .dash .row{font-size:13px;font-weight:600;color:var(--muted);margin:6px 0 0}
+  .dash .panels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .dash .panels.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+  @media(max-width:640px){.dash .panels,.dash .panels.two{grid-template-columns:1fr}}
+  button.panel{text-align:left;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--navy);font-size:14px;min-width:0}
+  button.panel svg{margin-top:6px;height:34px}
+  button.panel[aria-pressed=true]{border-color:var(--terra);box-shadow:0 0 0 2px var(--terra-soft)}
+  button.panel.wide{grid-column:1 / -1}
+  #panel-detail{margin-top:16px}
+
+  /* Trazas */
+  .row-span{cursor:pointer}
+  .row-span:focus{outline:none}
+  .row-span:focus-visible .rowbg{stroke:var(--terra);stroke-width:2}
+  .spaninfo{margin-top:12px;font-size:14.5px;min-height:48px}
+  .spaninfo table{font-size:13.5px}
+  .spaninfo td,.spaninfo th{padding:6px 10px}
+
+  /* Alertas */
+  .marker{transition:transform .6s cubic-bezier(.3,1.2,.4,1)}
+  pre.events{font-size:12.5px;min-height:120px;max-height:180px;margin-top:12px}
+  .annot{margin-top:12px;min-height:44px}
+  .banner{border-radius:8px;padding:12px 16px;font-weight:600;margin-top:8px}
+  .banner.ok{background:var(--ok-soft);color:var(--ok);border:1px solid #B9D8C6}
+  .banner.fail{background:var(--warn-soft);color:var(--warn);border:1px solid #E7C2BA}
+  .banner.pend{background:var(--terra-soft);color:#7C441A;border:1px solid #E8C7AA}
+  .banner .why{display:block;font-weight:400;color:var(--navy-ink);font-size:14.5px;margin-top:4px}
+
+  /* Correlación */
+  pre.logs{font-size:12.5px;min-height:110px;white-space:pre-wrap;word-break:break-all}
+  pre.logs button.id{font:inherit;background:transparent;border:0;padding:0 1px;color:#E7B36B;text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer;border-radius:2px}
+  pre.logs button.id.span{color:#8ED9A9}
+  pre.logs button.id.on{background:rgba(231,179,107,.3)}
+  pre.logs .cmd{color:#8FA6CE}
+  .steps3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+  @media(max-width:640px){.steps3{grid-template-columns:1fr}}
+  .step3{border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;background:#fff;transition:background .3s,border-color .3s}
+  .step3 b{display:block;color:var(--navy)}
+  .step3.on{background:var(--terra-soft);border-color:var(--terra)}
+  .step3.done{background:var(--ok-soft);border-color:#B9D8C6}
+
+  /* Quiz */
+  .quiz{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  @media(max-width:820px){.quiz{grid-template-columns:1fr}}
+  .q{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;min-width:0}
+  .q p{margin:0 0 10px;font-size:15px}
+  .q .opts{display:flex;flex-wrap:wrap;gap:6px}
+  .q .opts button{font-size:13px;padding:6px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--navy)}
+  .q .opts button.right{background:var(--ok);border-color:var(--ok);color:#fff}
+  .q .opts button.wrong{background:var(--warn);border-color:var(--warn);color:#fff}
+  .q .ans{display:none;margin-top:10px;font-size:14px;border-top:1px dashed var(--line);padding-top:10px}
+  .q.done .ans{display:block;animation:fadein .35s ease both}
+  .score{font-family:var(--mono);font-size:13px;color:var(--muted)}
+
+  /* Proyecto */
+  details.stepd{background:#fff;border:1px solid var(--line);border-radius:8px;margin:8px 0}
+  details.stepd summary{cursor:pointer;padding:12px 14px;font-weight:600;color:var(--navy);list-style-position:outside}
+  details.stepd summary:focus-visible{outline:3px solid var(--terra);outline-offset:2px}
+  details.stepd > div{padding:0 14px 14px}
+  ul.chk{list-style:none;margin:0;padding:0}
+  ul.chk li{border-top:1px solid var(--line);padding:10px 2px}
+  ul.chk li:first-child{border-top:0}
+  ul.chk label{display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:15px}
+  ul.chk input{width:18px;height:18px;margin-top:3px;accent-color:var(--ok);flex:none}
+  ul.chk li.done label span{color:var(--muted);text-decoration:line-through}
+  .progress{height:10px;background:var(--surface);border-radius:999px;overflow:hidden;margin:6px 0 14px}
+  .progress i{display:block;height:100%;width:0;background:var(--ok);transition:width .4s}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg class="heroart" viewBox="0 0 1200 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g fill="none" stroke="#7E93C4" stroke-width="2">
+      <path d="M40 300 L160 290 L260 296 L360 280 L460 288 L560 250 L640 150 L720 130 L800 240 L900 276 L1000 284 L1160 280"/>
+      <path d="M40 210 H1160" stroke-dasharray="10 8"/>
+    </g>
+    <g fill="#7E93C4">
+      <circle cx="160" cy="290" r="9"/><circle cx="360" cy="280" r="9"/><circle cx="560" cy="250" r="9"/>
+      <circle cx="640" cy="150" r="12"/><circle cx="720" cy="130" r="12"/><circle cx="800" cy="240" r="9"/>
+      <circle cx="1000" cy="284" r="9"/>
+    </g>
+  </svg>
+  <div class="wrap">
+    <p class="kicker">Diseño y Arquitectura de Software · Módulo 6</p>
+    <h1>Monitoreo y observabilidad con Prometheus, Grafana y Jaeger</h1>
+    <p class="lede">Cómo instrumentar una aplicación, recolectar sus métricas y trazas, y visualizarlas para entender qué pasa en un sistema desplegado en contenedores. Los ejemplos salen del taller <code style="background:rgba(255,255,255,.12);color:#fff">DYAS-Monitoreo</code>: una tienda con los servicios <code style="background:rgba(255,255,255,.12);color:#fff">pedidos</code> e <code style="background:rgba(255,255,255,.12);color:#fff">inventario</code>.</p>
+  </div>
+</header>
+
+<main>
+
+<!-- 1 ─────────────────────────────────────────────── -->
+<section id="observabilidad"><div class="wrap">
+  <h2>1. ¿Qué es la observabilidad?</h2>
+  <p class="sec-note">Es la capacidad de entender qué está pasando dentro de un sistema a partir de los datos que produce, incluso ante fallas que nadie anticipó. Se asume que conoces Docker y Docker Compose. En la entrega 3 del proyecto la observabilidad es una bonificación (+5): métricas con un tablero en Grafana ligado al SLO, o logs centralizados con búsqueda.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>Monitoreo</h4>
+      <p class="small" style="margin:0 0 8px">Recolectar de forma continua datos sobre el estado de un sistema y avisar cuando algo se sale de lo normal. Responde preguntas que se conocen de antemano: ¿está arriba el servicio?, ¿cuántos errores hay?</p>
+      <p class="small muted" style="margin:0">Ejemplo del taller: una alerta que avisa cuando más del 5% de las peticiones terminan en error.</p>
+    </div>
+    <div class="card">
+      <h4>Observabilidad</h4>
+      <p class="small" style="margin:0 0 8px">Permite hacer preguntas nuevas sobre el sistema, que nadie preparó de antemano: ¿por qué este pedido tardó 3 segundos?, ¿en qué servicio se perdió el tiempo?</p>
+      <p class="small muted" style="margin:0">Para responderlas se combinan métricas, logs y trazas (sección 2).</p>
+    </div>
+  </div>
+
+  <h3>La aplicación del taller</h3>
+  <p>Una tienda con dos servicios Spring Boot 4.1.1 (Java 21) que salen de la misma imagen Docker; la variable <code>SPRING_PROFILES_ACTIVE</code> decide cuál se ejecuta. <strong>pedidos</strong> recibe los pedidos y, antes de confirmarlos, llama a <strong>inventario</strong> para reservar las unidades. <strong>inventario</strong> guarda el stock en memoria y tiene un simulador de fallas que agrega latencia y errores en caliente.</p>
+  <div class="card" style="padding:16px">
+    <figure class="wide"><svg id="arch-svg" viewBox="0 0 760 300" role="img" aria-label="Arquitectura del taller: k6 llama a pedidos, pedidos llama a inventario con el encabezado traceparent, Prometheus lee las métricas de los dos servicios cada 5 segundos, los servicios envían sus spans a Jaeger por OTLP y Grafana consulta a Prometheus y a Jaeger"></svg></figure>
+  </div>
+  <p class="small muted">Las flechas indican quién inicia la comunicación: las trazas las envía cada servicio (push) y las métricas las va a buscar Prometheus (pull).</p>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Servicio</th><th>Imagen</th><th>Puerto</th><th>Para qué</th></tr></thead>
+    <tbody>
+      <tr><th><code>pedidos</code></th><td><code>dyasmonitoreo/tienda:1.0</code></td><td>8081</td><td>API de pedidos</td></tr>
+      <tr><th><code>inventario</code></th><td><code>dyasmonitoreo/tienda:1.0</code></td><td>8082</td><td>API de inventario y simulador de fallas</td></tr>
+      <tr><th><code>prometheus</code></th><td><code>prom/prometheus:v3.15.0</code></td><td>9090</td><td>Recolecta métricas y evalúa alertas</td></tr>
+      <tr><th><code>grafana</code></th><td><code>grafana/grafana:13.2.3</code></td><td>3000</td><td>Dashboards (usuario <code>admin</code>, contraseña <code>admin</code>, solo para el laboratorio local)</td></tr>
+      <tr><th><code>jaeger</code></th><td><code>jaegertracing/jaeger:2.21.0</code></td><td>16686 (UI), 4317 y 4318 (OTLP)</td><td>Recibe y muestra las trazas</td></tr>
+      <tr><th><code>k6</code></th><td><code>grafana/k6:2.3.0</code></td><td></td><td>Generador de tráfico (solo con <code>docker compose run --rm k6</code>)</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small muted">Todo el stack se levanta con <code>docker compose up -d --build</code>. El servicio <code>k6</code> tiene <code>profiles: ["trafico"]</code>, por eso no arranca con <code>up</code>.</p>
+</div></section>
+
+<!-- 2 ─────────────────────────────────────────────── -->
+<section id="pilares"><div class="wrap">
+  <h2>2. Métricas, logs y trazas</h2>
+  <p class="sec-note">Son los tres tipos de datos (o señales) con los que se observa un sistema. Cada uno responde un tipo de pregunta distinto.</p>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Señal</th><th>Qué es</th><th>Pregunta que responde</th><th>En el taller</th></tr></thead>
+    <tbody>
+      <tr><th>Métricas</th><td>Valores numéricos agregados en el tiempo (contadores, tiempos, porcentajes). Ocupan poco espacio y sirven para alertar.</td><td>¿Cuántas peticiones por segundo hay? ¿Qué porcentaje falla?</td><td>Micrometer + Prometheus + Grafana</td></tr>
+      <tr><th>Logs</th><td>Registros de texto de eventos puntuales, con fecha y nivel (INFO, WARN, ERROR).</td><td>¿Qué pasó exactamente en este momento? ¿Qué mensaje de error se produjo?</td><td>Logs de Spring Boot (<code>docker compose logs</code>)</td></tr>
+      <tr><th>Trazas</th><td>El recorrido completo de una petición a través de los servicios, con el tiempo que tomó cada paso.</td><td>¿Por qué servicios pasó esta petición y dónde se demoró?</td><td>OpenTelemetry + Jaeger</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Las tres se complementan: la métrica avisa que algo anda mal, la traza muestra en qué servicio y en qué paso, y el log explica el detalle del error.</p>
+
+  <div class="lab" style="margin-top:22px">
+    <div class="lab-head">
+      <span class="lab-title">Ejercicio: ¿qué señal responde cada pregunta?</span>
+      <span class="score" id="score">0 de 5 respondidas</span>
+    </div>
+    <div class="quiz" id="quiz"></div>
+  </div>
+
+  <h3>Qué medir en cada servicio: métodos RED y USE</h3>
+  <div class="grid2">
+    <div class="card"><h4>RED, para servicios que atienden peticiones</h4><p class="small" style="margin:0"><strong>R</strong>ate (peticiones por segundo), <strong>E</strong>rrors (peticiones que fallan) y <strong>D</strong>uration (cuánto tardan). Es la primera fila del dashboard del taller.</p></div>
+    <div class="card"><h4>USE, para recursos</h4><p class="small" style="margin:0">Para cada recurso (CPU, memoria, disco, conexiones): <strong>U</strong>tilization, <strong>S</strong>aturation (trabajo en espera) y <strong>E</strong>rrors. En el taller, la fila JVM muestra memoria heap y CPU del proceso.</p></div>
+  </div>
+</div></section>
+
+<!-- 3 ─────────────────────────────────────────────── -->
+<section id="prometheus"><div class="wrap">
+  <h2>3. Métricas con Prometheus</h2>
+  <p class="sec-note">Spring Boot Actuator y Micrometer publican las métricas de cada servicio en <code>/actuator/prometheus</code>. Prometheus va a buscarlas cada 5 segundos (<code>scrape_interval</code> del archivo <code>prometheus/prometheus.yml</code>).</p>
+
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">Modelo pull (métricas) y modelo push (trazas)</span>
+      <button class="ghost" id="scr-pause" type="button">⏸ Pausar los scrapes</button>
+    </div>
+    <div class="controls">
+      <span class="small muted">Crear un pedido:</span>
+      <button class="go" type="button" data-ped="teclado">teclado × 2 → 201</button>
+      <button class="ghost" type="button" data-ped="portatil">portatil → 409</button>
+      <button class="ghost" type="button" data-ped="tablet">tablet → 404</button>
+    </div>
+    <figure class="wide"><svg id="pull-svg" viewBox="0 0 760 300" role="img" aria-label="Prometheus hace GET a /actuator/prometheus de pedidos e inventario cada 5 segundos; los servicios envían sus spans a Jaeger por OTLP cuando atienden un pedido"></svg></figure>
+    <div class="grid2" style="margin-top:14px">
+      <div>
+        <p class="cardhead">Valores en la aplicación (ahora)</p>
+        <ul class="appvals" id="app-vals"></ul>
+        <p class="small muted" style="margin:10px 0 0">Spans recibidos por Jaeger: <b id="spans-n">0</b></p>
+      </div>
+      <div>
+        <p class="cardhead" id="scr-head">Último scrape leído por Prometheus</p>
+        <pre class="scrape" id="scr-pre" aria-live="polite"></pre>
+      </div>
+    </div>
+    <p class="note-ill">Los valores iniciales son los del paso 2 del taller (un pedido confirmado de 2 teclados, uno sin stock y uno de un producto inexistente). Cuando se crea un pedido el valor cambia en la aplicación de inmediato, pero Prometheus solo lo ve en el siguiente scrape.</p>
+  </div>
+
+  <div class="grid2" style="margin-top:22px">
+    <div>
+      <p class="cardhead">prometheus/prometheus.yml</p>
+<pre><span class="k">global</span>:
+  <span class="k">scrape_interval</span>: <span class="g">5s</span>      <span class="c"># en producción suele ser 15s - 60s</span>
+  <span class="k">evaluation_interval</span>: <span class="g">5s</span>  <span class="c"># reglas de alerta</span>
+<span class="k">rule_files</span>:
+  - /etc/prometheus/alertas.yml
+<span class="k">scrape_configs</span>:
+  - <span class="k">job_name</span>: <span class="g">tienda</span>
+    <span class="k">metrics_path</span>: /actuator/prometheus
+    <span class="k">static_configs</span>:
+      - <span class="k">targets</span>:
+          - pedidos:8081
+          - inventario:8082</pre>
+    </div>
+    <div>
+      <p class="cardhead">src/main/resources/application.properties</p>
+<pre><span class="k">management.endpoints.web.exposure.include</span>=health,info,prometheus
+<span class="c"># etiqueta application="pedidos" o "inventario"</span>
+<span class="k">management.metrics.tags.application</span>=${spring.application.name}
+<span class="c"># publica los buckets: necesarios para el p95</span>
+<span class="k">management.metrics.distribution.percentiles-histogram.http.server.requests</span>=true
+<span class="c"># Prometheus lee (pull): no se envían métricas por OTLP</span>
+<span class="k">management.otlp.metrics.export.enabled</span>=false</pre>
+    </div>
+  </div>
+  <p class="small muted">Las aplicaciones no necesitan saber dónde está Prometheus. Las trazas funcionan al revés: cada servicio las envía a Jaeger por OTLP (HTTP, puerto 4318).</p>
+
+  <h3>Tipos de métricas</h3>
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">Counter, Gauge e Histogram con las métricas del taller</span>
+      <div class="tabs" role="tablist" aria-label="Tipo de métrica">
+        <button class="tab" type="button" role="tab" data-mt="counter" aria-selected="true">Counter</button>
+        <button class="tab" type="button" role="tab" data-mt="gauge" aria-selected="false">Gauge</button>
+        <button class="tab" type="button" role="tab" data-mt="hist" aria-selected="false">Histogram</button>
+      </div>
+    </div>
+
+    <div id="mt-live">
+      <p id="mt-desc" class="small" style="margin:0 0 12px"></p>
+      <div class="controls">
+        <button class="ghost" type="button" id="mt-pause">⏸ Pausar</button>
+        <button class="go" type="button" id="mt-restart">Reiniciar el contenedor pedidos</button>
+      </div>
+      <figure class="wide"><svg id="mt-svg1" viewBox="0 0 760 200" role="img" aria-label="Primer gráfico de la métrica seleccionada"></svg></figure>
+      <div class="legend" id="mt-leg1"></div>
+      <figure class="wide" style="margin-top:14px"><svg id="mt-svg2" viewBox="0 0 760 200" role="img" aria-label="Segundo gráfico de la métrica seleccionada"></svg></figure>
+      <div class="legend" id="mt-leg2"></div>
+      <p class="note-ill" id="mt-note"></p>
+    </div>
+
+    <div id="mt-hist" hidden>
+      <p class="small" style="margin:0 0 12px">Cada petición HTTP cae en un <em>bucket</em> según su duración. Los buckets son acumulativos: <code>le</code> (<em>less or equal</em>) es el límite superior, y cada uno cuenta las peticiones que tardaron <em>hasta</em> ese valor. <code>histogram_quantile(0.95, …)</code> busca el bucket donde el conteo acumulado llega al 95% del total e interpola dentro de él. Ejemplo con 100 peticiones de <code>POST /api/pedidos</code>: las rápidas tardan 10 ms.</p>
+      <div class="sliders">
+        <label class="slider"><span class="lbl">Peticiones lentas (de 100) <b id="h-n-v">5</b></span><input type="range" id="h-n" min="0" max="20" step="1" value="5"></label>
+        <label class="slider"><span class="lbl">Duración de las lentas <b id="h-ms-v">2000 ms</b></span><input type="range" id="h-ms" min="100" max="3000" step="50" value="2000"></label>
+      </div>
+      <div class="stats">
+        <div class="stat"><b id="h-avg">110 ms</b><span>promedio</span></div>
+        <div class="stat"><b id="h-p95">11.2 ms</b><span>p95 estimado con <code>histogram_quantile</code></span></div>
+        <div class="stat"><b id="h-alert">no</b><span>¿supera los 500 ms de la alerta <code>LatenciaP95Alta</code>?</span></div>
+      </div>
+      <figure class="wide" style="margin-top:14px"><svg id="h-svg" viewBox="0 0 760 260" role="img" aria-label="Conteo acumulado de peticiones por bucket de duración, con la línea del 95 por ciento"></svg></figure>
+      <p class="small" id="h-explain" aria-live="polite" style="margin:10px 0 0"></p>
+      <pre id="h-pre" style="margin-top:12px;font-size:12px;max-height:230px"></pre>
+      <p class="note-ill">Los límites <code>le</code> son los que publica Micrometer 1.17.1 (la versión que trae Spring Boot 4.1.1) para <code>http.server.requests</code>: 68 buckets entre 1 ms y 30 s más <code>+Inf</code>. El gráfico muestra 13 de ellos; el cálculo usa todos. Con 95 peticiones de 10 ms y 5 de 2 s el promedio da unos 110 ms, que no describe a ningún usuario real.</p>
+    </div>
+  </div>
+
+  <h3>Métricas propias en el código</h3>
+  <p>Las métricas de HTTP y de la JVM las genera Spring Boot. Las métricas de negocio las escribe el equipo, porque solo el equipo sabe qué es importante medir.</p>
+  <div class="grid2">
+    <div>
+      <p class="cardhead">PedidoService.java (Counter)</p>
+<pre><span class="k">private void</span> contar(String resultado) {
+    Counter.builder(<span class="g">"pedidos"</span>)
+            .description(<span class="g">"Pedidos procesados, por resultado"</span>)
+            .tag(<span class="g">"resultado"</span>, resultado)
+            .register(registry)
+            .increment();
+}</pre>
+      <p class="small muted">Resultados: <code>confirmado</code>, <code>sin_stock</code>, <code>producto_inexistente</code>, <code>error_inventario</code>.</p>
+    </div>
+    <div>
+      <p class="cardhead">InventarioService.java (Gauge)</p>
+<pre>Gauge.builder(<span class="g">"inventario.stock"</span>, disponible, AtomicInteger::get)
+        .description(<span class="g">"Unidades disponibles por producto"</span>)
+        .tag(<span class="g">"producto"</span>, producto)
+        .register(registry);</pre>
+      <p class="small muted">Micrometer traduce los nombres a la convención de Prometheus: <code>pedidos</code> se publica como <code>pedidos_total</code> e <code>inventario.stock</code> como <code>inventario_stock</code>.</p>
+    </div>
+  </div>
+  <div class="callout warn">
+    <strong>Cardinalidad.</strong> Cada combinación de etiquetas es una serie nueva en Prometheus. Por eso nunca se usan como etiqueta valores con muchas variantes, como ids de usuario o de pedido, o correos. <code>resultado</code> tiene 4 valores posibles y <code>producto</code> tiene 5.
+  </div>
+</div></section>
+
+<!-- 4 ─────────────────────────────────────────────── -->
+<section id="promql"><div class="wrap">
+  <h2>4. Consultas PromQL</h2>
+  <p class="sec-note">PromQL es el lenguaje de consultas de Prometheus. Estas son las nueve consultas del paso 3 del taller; se ejecutan en <code>http://localhost:9090/query</code>.</p>
+
+  <div class="lab">
+    <div class="lab-head" style="margin-bottom:12px">
+      <div class="tabs" role="tablist" aria-label="Consulta PromQL" id="pq-tabs">
+        <button class="tab" type="button" role="tab" data-pq="1" aria-selected="false">1 · up</button>
+        <button class="tab" type="button" role="tab" data-pq="2" aria-selected="false">2 · contador crudo</button>
+        <button class="tab" type="button" role="tab" data-pq="3" aria-selected="true">3 · rate</button>
+        <button class="tab" type="button" role="tab" data-pq="4" aria-selected="false">4 · por código</button>
+        <button class="tab" type="button" role="tab" data-pq="5" aria-selected="false">5 · errores 5xx</button>
+        <button class="tab" type="button" role="tab" data-pq="6" aria-selected="false">6 · latencia p95</button>
+        <button class="tab" type="button" role="tab" data-pq="7" aria-selected="false">7 · pedidos_total</button>
+        <button class="tab" type="button" role="tab" data-pq="8" aria-selected="false">8 · inventario_stock</button>
+        <button class="tab" type="button" role="tab" data-pq="9" aria-selected="false">9 · memoria heap</button>
+      </div>
+    </div>
+    <pre class="pq" id="pq-query"></pre>
+    <p id="pq-what" style="margin:0 0 10px"></p>
+    <figure class="wide"><svg id="pq-svg" viewBox="0 0 760 250" role="img" aria-label="Gráfico ilustrativo del resultado de la consulta seleccionada"></svg></figure>
+    <div class="legend" id="pq-leg"></div>
+    <p class="note-ill" id="pq-note"></p>
+  </div>
+
+  <h3>Cómo leer estas consultas</h3>
+  <ul class="tight">
+    <li><code>rate(x[1m])</code> calcula cuánto creció por segundo un contador en el último minuto. Los contadores siempre se consultan con <code>rate</code> o <code>increase</code>: el valor crudo depende de cuándo arrancó el servicio y por sí solo no dice nada.</li>
+    <li><code>sum by (application)</code> suma todas las series y deja solo la etiqueta <code>application</code>.</li>
+    <li><code>{uri!~"/actuator.*"}</code> excluye las series cuyo <code>uri</code> empieza por <code>/actuator</code> (<code>!~</code> significa «no coincide con la expresión regular»). Así no se cuentan las peticiones de Prometheus y de Docker.</li>
+    <li><code>histogram_quantile(0.95, …)</code> estima el percentil 95 a partir de los buckets; por eso se agrupa también por <code>le</code>.</li>
+  </ul>
+  <div class="callout">
+    <strong>Para discutir en clase.</strong> En la consulta 4 aparecen códigos 404 y 409. ¿Deberían contar como errores para la alerta? ¿Por qué la consulta 5 solo cuenta los 5xx? Pista: <code>portatil</code> sin stock y <code>tablet</code> inexistente son respuestas correctas del servicio a una solicitud que no se puede cumplir.
+  </div>
+</div></section>
+
+<!-- 5 ─────────────────────────────────────────────── -->
+<section id="grafana"><div class="wrap">
+  <h2>5. Dashboards en Grafana</h2>
+  <p class="sec-note">Grafana grafica consultas PromQL en paneles. El dashboard del taller, <strong>Tienda - Observabilidad</strong>, aparece como página de inicio en <code>http://localhost:3000</code>, muestra los últimos 15 minutos y se actualiza cada 5 segundos.</p>
+
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">Paneles del dashboard y la consulta de cada uno</span>
+      <span class="small muted">Seleccione un panel</span>
+    </div>
+    <div class="dash" id="dash"></div>
+    <div id="panel-detail" aria-live="polite"></div>
+  </div>
+
+  <h3>Aprovisionamiento: el dashboard vive en el repositorio</h3>
+  <p>Nada de esto se configuró a mano. Grafana lo aprovisiona al arrancar a partir de archivos del repositorio, así que el dashboard queda versionado en Git y cualquier integrante obtiene el mismo resultado con <code>docker compose up</code>.</p>
+  <div class="grid2">
+    <div>
+      <p class="cardhead">grafana/provisioning/datasources/datasources.yml</p>
+<pre><span class="k">datasources</span>:
+  - <span class="k">name</span>: Prometheus
+    <span class="k">uid</span>: prometheus
+    <span class="k">type</span>: prometheus
+    <span class="k">url</span>: <span class="g">http://prometheus:9090</span>
+    <span class="k">isDefault</span>: true
+  - <span class="k">name</span>: Jaeger
+    <span class="k">uid</span>: jaeger
+    <span class="k">type</span>: jaeger
+    <span class="k">url</span>: <span class="g">http://jaeger:16686</span></pre>
+    </div>
+    <div>
+      <p class="cardhead">grafana/provisioning/dashboards/dashboards.yml</p>
+<pre><span class="k">providers</span>:
+  - <span class="k">name</span>: tienda
+    <span class="k">folder</span>: Taller DYAS
+    <span class="k">type</span>: file
+    <span class="k">allowUiUpdates</span>: true
+    <span class="k">options</span>:
+      <span class="k">path</span>: /var/lib/grafana/dashboards</pre>
+      <p class="small muted" style="margin-top:10px">El dashboard es <code>grafana/dashboards/tienda.json</code>. Para conservar un panel nuevo se exporta el dashboard como JSON y se reemplaza ese archivo; al recrear el stack con <code>docker compose down -v</code> y <code>up -d</code> el panel debe seguir ahí.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- 6 ─────────────────────────────────────────────── -->
+<section id="jaeger"><div class="wrap">
+  <h2>6. Trazas distribuidas con Jaeger</h2>
+  <p class="sec-note">Un <strong>span</strong> es una operación con inicio y fin, por ejemplo «atender <code>POST /api/pedidos</code>» o «llamar a inventario». Una <strong>traza</strong> es el árbol de spans de una misma petición, identificada por un <strong>traceId</strong>. Cada span tiene su propio spanId y conoce el span que lo originó.</p>
+
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">Traza de <code>POST /api/pedidos</code> en Jaeger</span>
+      <div class="tabs" role="tablist" aria-label="Escenario de la traza">
+        <button class="tab" type="button" role="tab" data-tr="normal" aria-selected="true">Normal</button>
+        <button class="tab" type="button" role="tab" data-tr="lento" aria-selected="false">Latencia 800 ms</button>
+        <button class="tab" type="button" role="tab" data-tr="error" aria-selected="false">Error 30%</button>
+        <button class="tab" type="button" role="tab" data-tr="sinprop" aria-selected="false">Sin traceparent</button>
+      </div>
+    </div>
+    <p id="tr-desc" class="small" style="margin:0 0 12px"></p>
+    <div class="controls" style="margin-bottom:8px"><button class="ghost" type="button" id="tr-replay">↻ Repetir la animación</button></div>
+    <figure class="wide"><svg id="tr-svg" viewBox="0 0 760 200" role="img" aria-label="Diagrama de cascada con los spans de la traza seleccionada"></svg></figure>
+    <div class="spaninfo" id="tr-info" aria-live="polite"><span class="muted">Seleccione un span (clic o Enter) para ver sus etiquetas.</span></div>
+    <h4 style="margin-top:18px">Propagación del contexto</h4>
+    <figure class="wide"><svg id="prop-svg" viewBox="0 0 760 120" role="img" aria-label="La llamada de pedidos a inventario lleva el encabezado traceparent con el traceId"></svg></figure>
+    <pre id="prop-pre" style="margin-top:10px;font-size:12.5px"></pre>
+    <p class="note-ill" id="tr-note"></p>
+  </div>
+
+  <div class="tablewrap" style="margin-top:22px">
+  <table>
+    <thead><tr><th>Span</th><th>Servicio</th><th>Qué representa</th></tr></thead>
+    <tbody>
+      <tr><th><code>http post /api/pedidos</code></th><td>pedidos</td><td>La petición que recibió el servicio de pedidos (span raíz).</td></tr>
+      <tr><th><code>http post</code></th><td>pedidos</td><td>La llamada saliente a inventario hecha con <code>RestClient</code>.</td></tr>
+      <tr><th><code>http post /api/inventario/{producto}/reservas</code></th><td>inventario</td><td>La petición que llegó a inventario. Es hija de la anterior porque viajó con el encabezado <code>traceparent</code>.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>La diferencia entre la duración del span <code>http post</code> (la llamada vista desde pedidos) y la del span de inventario (la misma petición vista desde inventario) es el tiempo que se pierde en la red y en el manejo HTTP entre los dos contenedores.</p>
+
+  <div class="grid2">
+    <div>
+      <p class="cardhead">InventarioClienteHttp.java</p>
+<pre><span class="k">public</span> InventarioClienteHttp(RestClient.Builder builder,
+        @Value(<span class="g">"${inventario.url}"</span>) String inventarioUrl) {
+    <span class="k">this</span>.restClient = builder.baseUrl(inventarioUrl).build();
+}</pre>
+      <p class="small muted">El <code>RestClient.Builder</code> que inyecta Spring Boot ya trae la instrumentación de Micrometer, que agrega el encabezado <code>traceparent</code> a cada llamada saliente.</p>
+    </div>
+    <div>
+      <p class="cardhead">application.properties (trazas)</p>
+<pre><span class="c"># 1.0 = se trazan todas las peticiones (por defecto, 10%)</span>
+<span class="k">management.tracing.sampling.probability</span>=1.0
+<span class="c"># en Docker Compose: http://jaeger:4318/v1/traces</span>
+<span class="k">management.opentelemetry.tracing.export.otlp.endpoint</span>=
+    ${OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}</pre>
+      <p class="small muted">OpenTelemetry es el estándar abierto de la CNCF para generar métricas, trazas y logs; OTLP es su protocolo de envío (HTTP en 4318, gRPC en 4317).</p>
+    </div>
+  </div>
+  <div class="callout">
+    <strong>Detalles del taller.</strong> En Jaeger no aparecen trazas de <code>/actuator/prometheus</code> ni de <code>/actuator/health</code>: la clase <code>TrazasConfig</code> filtra esos spans antes de enviarlos, aunque sus métricas sí se publican. Además, con Jaeger 2.21 Grafana solo permite abrir una traza a partir de su traceId (<em>Explore → Jaeger → TraceID</em>); la búsqueda por servicio u operación se hace en la interfaz de Jaeger, <code>http://localhost:16686</code>.
+  </div>
+</div></section>
+
+<!-- 7 ─────────────────────────────────────────────── -->
+<section id="alertas"><div class="wrap">
+  <h2>7. Alertas</h2>
+  <p class="sec-note">Una regla de alerta es una consulta PromQL que Prometheus evalúa periódicamente (cada 5 s en el taller, <code>evaluation_interval</code>). Si la condición se cumple, la alerta pasa a <strong>Pending</strong>; si se sigue cumpliendo durante el tiempo indicado en <code>for</code>, pasa a <strong>Firing</strong>.</p>
+
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">Ciclo de vida de una alerta</span>
+      <div class="tabs" role="tablist" aria-label="Regla de alerta">
+        <button class="tab" type="button" role="tab" data-al="err" aria-selected="true">TasaDeErroresAlta</button>
+        <button class="tab" type="button" role="tab" data-al="lat" aria-selected="false">LatenciaP95Alta</button>
+      </div>
+    </div>
+    <pre id="al-rule" style="font-size:12.5px;margin-bottom:14px"></pre>
+    <div class="sliders" style="grid-template-columns:1fr">
+      <label class="slider" id="al-sl-err"><span class="lbl"><span>Tasa de error del simulador de inventario (<code>tasaError</code>)</span> <b id="al-err-v">0%</b></span><input type="range" id="al-err" min="0" max="0.5" step="0.01" value="0"></label>
+      <label class="slider" id="al-sl-lat" hidden><span class="lbl"><span>Latencia del simulador de inventario (<code>latenciaMs</code>)</span> <b id="al-lat-v">0 ms</b></span><input type="range" id="al-lat" min="0" max="2000" step="50" value="0"></label>
+    </div>
+    <div class="controls">
+      <button class="go" type="button" id="al-preset"></button>
+      <button class="ghost" type="button" id="al-delete">curl -X DELETE …/api/fallas</button>
+      <button class="ghost" type="button" id="al-pause">⏸ Pausar</button>
+      <button class="ghost" type="button" id="al-reset">↺ Reiniciar</button>
+      <span class="tabs" role="tablist" aria-label="Velocidad de la simulación">
+        <button class="tab" type="button" role="tab" data-spd="1" aria-selected="false">×1</button>
+        <button class="tab" type="button" role="tab" data-spd="5" aria-selected="true">×5</button>
+      </span>
+      <span class="pill" id="al-clock">t = 0 s</span>
+    </div>
+    <figure class="wide"><svg id="al-states" viewBox="0 0 760 206" role="img" aria-label="Estados de la alerta: Inactive, Pending, Firing y Resolved, con la posición actual de la instancia de pedidos y la de inventario"></svg></figure>
+    <figure class="wide" style="margin-top:8px"><svg id="al-chart" viewBox="0 0 760 220" role="img" aria-label="Valor de la expresión de la alerta en los últimos 3 minutos para pedidos e inventario, con la línea del umbral"></svg></figure>
+    <div class="legend" id="al-leg"></div>
+    <div class="annot" id="al-annot" aria-live="polite"></div>
+    <pre class="events" id="al-log" aria-label="Registro de cambios de estado"></pre>
+    <p class="note-ill">Simulación en el navegador con el tráfico de k6 del taller (unas 20 peticiones por segundo en inventario). Prometheus lee los contadores cada 5 s, calcula <code>rate(…[1m])</code> con las muestras del último minuto y evalúa la regla cada 5 s. En el taller real, <code>TasaDeErroresAlta</code> pasó a Pending unos 20 s después de activar los errores y a Firing 30 s después, con la anotación «30.79% de las peticiones terminan en error 5xx (umbral: 5%).»</p>
+  </div>
+
+  <div class="grid2" style="margin-top:22px">
+    <div class="card"><h4>Por qué existe <code>for: 30s</code></h4><p class="small" style="margin:0">Evita avisar por picos de pocos segundos. Si la condición deja de cumplirse antes de los 30 s, la alerta vuelve a Inactive sin llegar a Firing. Pruebe a subir la tasa de error y bajarla de nuevo antes de que se dispare.</p></div>
+    <div class="card"><h4>Por qué tarda en volver a Inactive</h4><p class="small" style="margin:0">Después de <code>DELETE /api/fallas</code> la ventana <code>[1m]</code> de la consulta tarda en «olvidar» los datos anteriores. En el taller las alertas vuelven a Inactive después de uno o dos minutos.</p></div>
+  </div>
+  <div class="callout">
+    <strong>Alertmanager.</strong> En el taller las alertas solo se ven en <code>http://localhost:9090/alerts</code>. En un entorno real Prometheus las envía a Alertmanager, que notifica por correo, Slack o Teams, agrupa alertas repetidas, las silencia durante un mantenimiento y avisa cuando una alerta se resuelve. Agregarlo es el reto opcional 1 del taller. Se recomienda alertar sobre síntomas que afectan al usuario (errores, latencia) y no sobre cada causa posible (CPU, memoria); cada alerta debe tener una acción clara.
+  </div>
+</div></section>
+
+<!-- 8 ─────────────────────────────────────────────── -->
+<section id="correlacion"><div class="wrap">
+  <h2>8. Correlación entre logs y trazas</h2>
+  <p class="sec-note">Mientras hay una traza activa, Spring Boot agrega a cada línea de log el bloque <code>[traceId-spanId]</code>. Con ese traceId se encuentra la misma petición en los logs del otro servicio y en Jaeger. Las líneas de este ejemplo son las del paso 7 del taller, con <code>tasaError=0.3</code>.</p>
+
+  <div class="lab">
+    <div class="steps3" id="co-steps">
+      <div class="step3" data-st="0"><b>1. La métrica avisa</b>La alerta <code>TasaDeErroresAlta</code> está en Firing.</div>
+      <div class="step3" data-st="1"><b>2. El log dice qué pasó</b>Las líneas ERROR de pedidos e inventario, con el mismo traceId.</div>
+      <div class="step3" data-st="2"><b>3. La traza muestra el recorrido</b>La petición completa por los dos servicios en Jaeger.</div>
+    </div>
+    <div class="controls">
+      <button class="go" type="button" id="co-next">▶ docker compose logs pedidos | grep ERROR</button>
+      <button class="ghost" type="button" id="co-reset">↺ Empezar de nuevo</button>
+    </div>
+    <div id="co-alert"></div>
+    <pre class="logs" id="co-logs" aria-live="polite"></pre>
+    <figure class="wide" style="margin-top:14px"><svg id="co-svg" viewBox="0 0 760 60" role="img" aria-label="Traza del traceId 1b742b56410a5d2017f63301e04d0478 en Jaeger, con sus tres spans marcados con error"></svg></figure>
+    <div class="spaninfo" id="co-info" aria-live="polite"></div>
+    <p class="note-ill">En los logs, el traceId (amarillo) y el spanId (verde) se pueden seleccionar. El traceId es el mismo en los dos servicios; el spanId cambia porque cada servicio registra su propio span. Las duraciones de las barras son las de la traza con error de la captura del README, que es otra petición del mismo escenario.</p>
+  </div>
+
+  <div class="grid2" style="margin-top:22px">
+    <div class="card"><h4>Errores marcados en la métrica y en la traza</h4><p class="small" style="margin:0">La clase <code>ManejadorErrores</code> traduce las excepciones a códigos HTTP con <code>@ExceptionHandler</code>. Como la excepción no llega hasta Spring, para los errores 5xx el manejador escribe el log ERROR y registra la excepción a mano en la observación HTTP y en el span actual. Sin esas dos líneas la traza no quedaría marcada con error y la etiqueta <code>exception</code> de la métrica diría <code>none</code>.</p></div>
+    <div class="card"><h4>Centralización de logs</h4><p class="small" style="margin:0"><code>docker compose logs</code> sirve para pocos contenedores en una máquina. Con varios servidores se necesita un sistema que reciba los logs de todos los servicios y permita buscarlos, como Grafana Loki o Elasticsearch/OpenSearch. No hace parte del stack base: es el reto opcional 2 del taller (Loki con el agente Grafana Alloy, buscando los logs por traceId) y una de las dos vías para obtener la bonificación de observabilidad de la entrega 3.</p></div>
+  </div>
+  <div class="callout warn">
+    <strong>Datos sensibles.</strong> Los logs llevan traceId, pero nunca contraseñas, tokens ni datos personales. En producción, además, <code>/actuator</code> no se expone a Internet y Grafana no usa <code>admin</code>/<code>admin</code>.
+  </div>
+</div></section>
+
+<!-- 9 ─────────────────────────────────────────────── -->
+<section id="proyecto"><div class="wrap">
+  <h2>9. Observabilidad en el Proyecto 3</h2>
+  <p class="sec-note">En la entrega 3 la observabilidad es una bonificación (+5): métricas con un tablero en Grafana con latencia p95, tasa de error y throughput ligados al SLO, o logs centralizados con búsqueda. Estos son los pasos para llevar lo del taller al proyecto de cada equipo.</p>
+
+  <div class="grid2">
+    <div>
+      <h4>Pasos</h4>
+      <details class="stepd">
+        <summary>1. Agregar las dependencias a cada servicio</summary>
+        <div>
+<pre style="font-size:12px">&lt;<span class="k">dependency</span>&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;<span class="g">spring-boot-starter-actuator</span>&lt;/artifactId&gt;
+&lt;/<span class="k">dependency</span>&gt;
+&lt;<span class="k">dependency</span>&gt;
+  &lt;groupId&gt;io.micrometer&lt;/groupId&gt;
+  &lt;artifactId&gt;<span class="g">micrometer-registry-prometheus</span>&lt;/artifactId&gt;
+&lt;/<span class="k">dependency</span>&gt;
+&lt;<span class="k">dependency</span>&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;<span class="g">spring-boot-starter-opentelemetry</span>&lt;/artifactId&gt;
+&lt;/<span class="k">dependency</span>&gt;</pre>
+          <p class="small muted" style="margin:8px 0 0">En otros lenguajes: el SDK de OpenTelemetry y un cliente de Prometheus, por ejemplo <code>prom-client</code> en Node.js o <code>prometheus-client</code> en Python.</p>
+        </div>
+      </details>
+      <details class="stepd">
+        <summary>2. Copiar las propiedades de observabilidad</summary>
+        <div><p class="small" style="margin:0">Las de <code>application.properties</code> del taller (exposición de <code>prometheus</code>, etiqueta <code>application</code>, histograma de <code>http.server.requests</code>, muestreo y endpoint OTLP), ajustando el nombre de cada servicio con <code>spring.application.name</code>.</p></div>
+      </details>
+      <details class="stepd">
+        <summary>3. Usar los clientes HTTP autoconfigurados</summary>
+        <div><p class="small" style="margin:0"><code>RestClient.Builder</code> o <code>WebClient.Builder</code> inyectados por Spring Boot en las llamadas entre servicios, para que viaje el encabezado <code>traceparent</code> y la traza no se corte.</p></div>
+      </details>
+      <details class="stepd">
+        <summary>4. Agregar Prometheus, Grafana y Jaeger al Compose</summary>
+        <div>
+<pre style="font-size:12px"><span class="k">prometheus</span>:
+  <span class="k">image</span>: <span class="g">prom/prometheus:v3.15.0</span>
+  <span class="k">volumes</span>:
+    - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    - ./prometheus/alertas.yml:/etc/prometheus/alertas.yml:ro
+  <span class="k">ports</span>: ["9090:9090"]
+<span class="k">grafana</span>:
+  <span class="k">image</span>: <span class="g">grafana/grafana:13.2.3</span>
+  <span class="k">volumes</span>:
+    - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+  <span class="k">ports</span>: ["3000:3000"]
+<span class="k">jaeger</span>:
+  <span class="k">image</span>: <span class="g">jaegertracing/jaeger:2.21.0</span>
+  <span class="k">ports</span>: ["16686:16686", "4317:4317", "4318:4318"]</pre>
+          <p class="small muted" style="margin:8px 0 0">Se copian también las carpetas <code>prometheus/</code> y <code>grafana/</code>, y se cambian los <em>targets</em> de <code>prometheus.yml</code> por los servicios del proyecto. Cada servicio recibe <code>OTLP_TRACES_ENDPOINT: http://jaeger:4318/v1/traces</code>.</p>
+        </div>
+      </details>
+      <details class="stepd">
+        <summary>5. Definir al menos una métrica de negocio</summary>
+        <div><p class="small" style="margin:0">Propia del dominio del proyecto: reservas creadas, pagos rechazados, mensajes procesados… Un <code>Counter</code> con una etiqueta de pocos valores suele bastar.</p></div>
+      </details>
+      <details class="stepd">
+        <summary>6. Centralizar los logs</summary>
+        <div><p class="small" style="margin:0">Con Loki, Elasticsearch/OpenSearch u otro sistema. Es el punto de la entrega 3 que el stack del taller no cubre.</p></div>
+      </details>
+    </div>
+    <div>
+      <h4>Checklist para el proyecto</h4>
+      <div class="progress" aria-hidden="true"><i id="chk-bar"></i></div>
+      <p class="small muted" id="chk-count" style="margin:-6px 0 8px" aria-live="polite">0 de 6</p>
+      <ul class="chk" id="chk"></ul>
+    </div>
+  </div>
+
+  <h3>Buenas prácticas</h3>
+  <div class="grid3">
+    <div class="card"><h4>Instrumentar desde el inicio</h4><p class="small" style="margin:0">Métricas, trazas y logs se configuran con el proyecto, no cuando ya hay un incidente. RED para cada servicio y USE para cada recurso es un buen punto de partida.</p></div>
+    <div class="card"><h4>Percentiles y <code>for:</code></h4><p class="small" style="margin:0">Las alertas de latencia se definen sobre p95 o p99, no sobre el promedio, y llevan un tiempo mínimo (<code>for</code>) para no avisar por picos.</p></div>
+    <div class="card"><h4>Configuración como código</h4><p class="small" style="margin:0">Dashboards, fuentes de datos y reglas de alerta versionados en el repositorio, igual que el código y el pipeline.</p></div>
+  </div>
+  <p style="margin-top:22px">Guía paso a paso y entregables del taller: <a href="https://github.com/CesarAVegaF312/DYAS-Monitoreo">github.com/CesarAVegaF312/DYAS-Monitoreo</a>.</p>
+</div></section>
+
+</main>
+
+<footer><div class="wrap">
+  <span>Diseño y Arquitectura de Software · Universidad de La Sabana</span>
+  <span>Material de apoyo — Módulo 6</span>
+</div></footer>
+
+<script>
+(function(){
+  'use strict';
+  var NS = 'http://www.w3.org/2000/svg';
+  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var FONT = '-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif';
+  var MONO = 'ui-monospace,Cascadia Mono,Consolas,monospace';
+  var C = {navy:'#1F2D4E', ink:'#16223c', terra:'#C9722F', muted:'#5A6480', line:'#D5DAE4', ok:'#2F6F4F', warn:'#9A3B2C',
+           grid:'#E3E7EF', ice:'#EDF0F6', ped:'#2F5E9E', inv:'#C9722F', soft:'#F3E2D4'};
+  var clipSeq = 0;
+
+  function el(tag, attrs, text){
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs){ if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]); }
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function clear(node){ while (node.firstChild) node.removeChild(node.firstChild); }
+  function sleep(ms){ return new Promise(function(r){ setTimeout(r, REDUCED ? 0 : ms); }); }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function tween(ms, fn){
+    return new Promise(function(res){
+      if (REDUCED || ms <= 0 || document.hidden){ fn(1); res(); return; }
+      var t0 = performance.now();
+      function step(now){
+        var p = Math.min(1, (now - t0) / ms);
+        fn(p);
+        if (p < 1) requestAnimationFrame(step); else res();
+      }
+      requestAnimationFrame(step);
+    });
+  }
+  function ease(p){ return p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; }
+  function tabGroup(selector, attr, onSelect){
+    var tabs = document.querySelectorAll(selector);
+    tabs.forEach(function(t){
+      t.addEventListener('click', function(){
+        tabs.forEach(function(o){ o.setAttribute('aria-selected', 'false'); });
+        t.setAttribute('aria-selected', 'true');
+        onSelect(t.getAttribute(attr));
+      });
+    });
+  }
+  function mulberry(seed){
+    return function(){
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function visibleFlag(node){
+    var st = {on: true};
+    if ('IntersectionObserver' in window){
+      new IntersectionObserver(function(es){ es.forEach(function(e){ st.on = e.isIntersecting; }); }, {rootMargin:'120px'}).observe(node);
+    }
+    return st;
+  }
+  function legendHTML(series){
+    return series.filter(function(s){ return !s.noLegend; }).map(function(s){
+      return '<span style="color:' + s.color + '"><i class="' + (s.dash ? 'dash' : '') + '" style="background:' + s.color + '"></i><span style="color:#5A6480">' + esc(s.name) + '</span></span>';
+    }).join('');
+  }
+  function fmtNum(v){
+    var a = Math.abs(v);
+    if (a >= 1e6) return (v / 1e6).toFixed(1).replace(/\.0$/, '') + ' M';
+    if (a >= 1e3) return (v / 1e3).toFixed(a >= 1e4 ? 0 : 1).replace(/\.0$/, '') + ' K';
+    if (a >= 10 || v === 0) return Math.round(v) + '';
+    return v.toFixed(1).replace(/\.0$/, '');
+  }
+  function fmtDur(s){
+    if (s >= 1) return parseFloat(s.toFixed(2)) + ' s';
+    return parseFloat((s * 1000).toPrecision(3)) + ' ms';
+  }
+  function humanizePercentage(v){ return parseFloat((v * 100).toPrecision(4)) + '%'; }
+  function humanizeDuration(v){ return v >= 1 ? parseFloat(v.toPrecision(4)) + 's' : parseFloat((v * 1000).toPrecision(4)) + 'ms'; }
+
+  /* Gráfico de líneas genérico */
+  function lineChart(svg, o){
+    clear(svg);
+    var W = o.W || 760, H = o.H || 240;
+    var L = o.left == null ? 62 : o.left, R = W - 14, T = 20, B = H - 30;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    var y0 = o.yMin || 0, y1 = o.yMax;
+    function X(v){ return L + (v - o.x0) / (o.x1 - o.x0) * (R - L); }
+    function Y(v){ return B - (v - y0) / (y1 - y0) * (B - T); }
+    (o.bands || []).forEach(function(b){
+      var bx = Math.max(L, X(b.from)), bw = Math.min(R, X(b.to)) - bx;
+      if (bw <= 0) return;
+      svg.appendChild(el('rect', {x:bx, y:T, width:bw, height:B - T, fill:b.fill || C.soft, opacity:b.opacity == null ? .55 : b.opacity}));
+      if (b.label) svg.appendChild(el('text', {x:bx + 4, y:T + 12, 'font-size':10.5, fill:b.color || '#7C441A', 'font-family':FONT}, b.label));
+    });
+    var n = o.yTicks || 4;
+    for (var i = 0; i <= n; i++){
+      var v = y0 + (y1 - y0) * i / n, yy = Y(v);
+      svg.appendChild(el('line', {x1:L, y1:yy, x2:R, y2:yy, stroke: i === 0 ? '#C8D0DE' : C.grid}));
+      svg.appendChild(el('text', {x:L - 8, y:yy + 4, 'text-anchor':'end', 'font-size':11, fill:C.muted, 'font-family':FONT}, o.yFmt ? o.yFmt(v) : fmtNum(v)));
+    }
+    (o.xTicks || []).forEach(function(t){
+      svg.appendChild(el('text', {x:X(t.v), y:B + 19, 'text-anchor':'middle', 'font-size':11, fill:C.muted, 'font-family':FONT}, t.label));
+    });
+    if (o.threshold){
+      var ty = Y(o.threshold.v);
+      svg.appendChild(el('line', {x1:L, y1:ty, x2:R, y2:ty, stroke:C.warn, 'stroke-width':1.5, 'stroke-dasharray':'6 4'}));
+      svg.appendChild(el('text', {x:R - 4, y:ty - 6, 'text-anchor':'end', 'font-size':11, fill:C.warn, 'font-family':FONT}, o.threshold.label));
+    }
+    var cid = 'clip' + (++clipSeq);
+    var defs = el('defs', {}), cp = el('clipPath', {id:cid});
+    var anim = o.animate && !REDUCED;
+    var cr = el('rect', {x:L - 2, y:0, width: anim ? 0 : (R - L + 6), height:H});
+    cp.appendChild(cr); defs.appendChild(cp); svg.appendChild(defs);
+    var g = el('g', {'clip-path':'url(#' + cid + ')'});
+    o.series.forEach(function(s){
+      var d = '', pen = false;
+      s.pts.forEach(function(p){
+        if (p[1] == null || isNaN(p[1])){ pen = false; return; }
+        var xx = X(p[0]).toFixed(1), yy = Y(Math.max(y0, Math.min(y1, p[1]))).toFixed(1);
+        if (!pen) d += 'M' + xx + ' ' + yy;
+        else if (s.step) d += 'H' + xx + 'V' + yy;
+        else d += 'L' + xx + ' ' + yy;
+        pen = true;
+      });
+      if (d) g.appendChild(el('path', {d:d, fill:'none', stroke:s.color, 'stroke-width':s.width || 2.2, 'stroke-linejoin':'round', 'stroke-linecap':'round', 'stroke-dasharray':s.dash || null}));
+    });
+    svg.appendChild(g);
+    (o.notes || []).forEach(function(nt){
+      svg.appendChild(el('text', {x:X(nt.x), y:Y(nt.y), 'text-anchor':nt.anchor || 'middle', 'font-size':11.5, fill:nt.color || C.muted, 'font-family':FONT, 'font-style':'italic'}, nt.text));
+    });
+    if (anim) tween(o.dur || 900, function(p){ cr.setAttribute('width', (R - L + 6) * ease(p)); });
+    if (o.legend) o.legend.innerHTML = legendHTML(o.series);
+    return {X:X, Y:Y, L:L, R:R, T:T, B:B};
+  }
+
+  /* Gráfico de barras agrupadas */
+  function barChart(svg, o){
+    clear(svg);
+    var W = o.W || 760, H = o.H || 240, L = 62, R = W - 14, T = 20, B = H - 34;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    function Y(v){ return B - v / o.yMax * (B - T); }
+    var n = o.yTicks || 4;
+    for (var i = 0; i <= n; i++){
+      var v = o.yMax * i / n;
+      svg.appendChild(el('line', {x1:L, y1:Y(v), x2:R, y2:Y(v), stroke: i === 0 ? '#C8D0DE' : C.grid}));
+      svg.appendChild(el('text', {x:L - 8, y:Y(v) + 4, 'text-anchor':'end', 'font-size':11, fill:C.muted, 'font-family':FONT}, o.yFmt ? o.yFmt(v) : fmtNum(v)));
+    }
+    var nc = o.cats.length, ns = o.series.length, slot = (R - L) / nc, bw = Math.min(70, slot * .78 / ns);
+    var bars = [];
+    o.cats.forEach(function(c, ci){
+      var cx = L + slot * ci + slot / 2;
+      svg.appendChild(el('text', {x:cx, y:B + 18, 'text-anchor':'middle', 'font-size':o.catSize || 11.5, fill:C.navy, 'font-family':o.catFont || MONO}, c));
+      o.series.forEach(function(s, si){
+        var val = s.vals[ci];
+        if (val == null) return;
+        var x = cx - bw * ns / 2 + si * bw + 2;
+        var r = el('rect', {x:x, y:B, width:bw - 4, height:0, rx:3, fill:s.color});
+        svg.appendChild(r);
+        var t = el('text', {x:x + (bw - 4) / 2, y:B - 6, 'text-anchor':'middle', 'font-size':11, fill:C.navy, 'font-family':FONT, opacity:0}, o.valFmt ? o.valFmt(val) : fmtNum(val));
+        svg.appendChild(t);
+        bars.push({r:r, t:t, v:val});
+      });
+    });
+    tween(o.animate === false ? 0 : 700, function(p){
+      bars.forEach(function(b){
+        var h = (B - Y(b.v)) * ease(p);
+        b.r.setAttribute('y', B - h); b.r.setAttribute('height', Math.max(0, h));
+        b.t.setAttribute('y', B - h - 6); b.t.setAttribute('opacity', p);
+      });
+    });
+    if (o.legend) o.legend.innerHTML = legendHTML(o.series);
+  }
+
+  /* Buckets reales de Micrometer 1.17.1 para http.server.requests (segundos) */
+  var BOUNDS = [0.001, 0.001048576, 0.001398101, 0.001747626, 0.002097151, 0.002446676, 0.002796201, 0.003145726, 0.003495251, 0.003844776, 0.004194304, 0.005592405, 0.006990506, 0.008388607, 0.009786708, 0.011184809, 0.01258291, 0.013981011, 0.015379112, 0.016777216, 0.022369621, 0.027962026, 0.033554431, 0.039146836, 0.044739241, 0.050331646, 0.055924051, 0.061516456, 0.067108864, 0.089478485, 0.111848106, 0.134217727, 0.156587348, 0.178956969, 0.20132659, 0.223696211, 0.246065832, 0.268435456, 0.357913941, 0.447392426, 0.536870911, 0.626349396, 0.715827881, 0.805306366, 0.894784851, 0.984263336, 1.073741824, 1.431655765, 1.789569706, 2.147483647, 2.505397588, 2.863311529, 3.22122547, 3.579139411, 3.937053352, 4.294967296, 5.726623061, 7.158278826, 8.589934591, 10.021590356, 11.453246121, 12.884901886, 14.316557651, 15.748213416, 17.179869184, 22.906492245, 28.633115306, 30.0, Infinity];
+  function bucketIndex(v){ for (var i = 0; i < BOUNDS.length; i++){ if (v <= BOUNDS[i]) return i; } return BOUNDS.length - 1; }
+  function cumulative(per){ var c = [], s = 0; for (var i = 0; i < per.length; i++){ s += per[i]; c.push(s); } return c; }
+  // Mismo algoritmo que histogram_quantile de Prometheus (interpolación lineal dentro del bucket)
+  function histQuantile(q, cum){
+    var total = cum[cum.length - 1];
+    if (!total) return NaN;
+    var rank = q * total, b = 0;
+    while (b < cum.length - 1 && cum[b] < rank) b++;
+    if (BOUNDS[b] === Infinity) return BOUNDS[b - 1];
+    var lo = b === 0 ? 0 : BOUNDS[b - 1], prev = b === 0 ? 0 : cum[b - 1], cnt = cum[b] - prev;
+    if (cnt === 0) return BOUNDS[b];
+    return lo + (BOUNDS[b] - lo) * ((rank - prev) / cnt);
+  }
+
+  /* ── Sección 1: arquitectura ───────────────────────────── */
+  (function(){
+    var svg = document.getElementById('arch-svg');
+    var defs = el('defs', {});
+    [['aN', C.navy], ['aT', C.terra], ['aM', C.muted]].forEach(function(m){
+      var mk = el('marker', {id:m[0], markerWidth:9, markerHeight:9, refX:7, refY:3, orient:'auto'});
+      mk.appendChild(el('path', {d:'M0,0 L7,3 L0,6 Z', fill:m[1]})); defs.appendChild(mk);
+    });
+    svg.appendChild(defs);
+    function box(x, y, w, h, t1, t2, fill, stroke, tc){
+      svg.appendChild(el('rect', {x:x, y:y, width:w, height:h, rx:8, fill:fill, stroke:stroke, 'stroke-width':1.5}));
+      svg.appendChild(el('text', {x:x + w / 2, y:y + 22, 'text-anchor':'middle', 'font-size':14, 'font-weight':700, fill:tc, 'font-family':FONT}, t1));
+      svg.appendChild(el('text', {x:x + w / 2, y:y + 40, 'text-anchor':'middle', 'font-size':11.5, fill:tc === '#fff' ? '#B9C6E2' : C.muted, 'font-family':MONO}, t2));
+    }
+    function arrow(d, color, mk, dash){ svg.appendChild(el('path', {d:d, fill:'none', stroke:color, 'stroke-width':1.8, 'marker-end':'url(#' + mk + ')', 'stroke-dasharray':dash || null})); }
+    function label(x, y, t, color, anchor){ svg.appendChild(el('text', {x:x, y:y, 'text-anchor':anchor || 'middle', 'font-size':11, fill:color || C.muted, 'font-family':FONT}, t)); }
+
+    arrow('M108 120 H166', C.navy, 'aN');
+    label(137, 110, 'POST', C.navy);
+    arrow('M322 120 H426', C.navy, 'aN');
+    label(374, 98, 'reservas', C.navy);
+    label(374, 110, '+ traceparent', C.navy);
+    // pull
+    arrow('M330 222 C300 200 260 180 250 152', C.terra, 'aT', '6 4');
+    arrow('M410 222 C440 200 480 180 494 152', C.terra, 'aT', '6 4');
+    label(370, 196, 'GET /actuator/prometheus', C.terra);
+    label(370, 208, 'cada 5 s (pull)', C.terra);
+    // push
+    arrow('M300 148 C360 170 560 170 640 228', C.ped, 'aN', '2 4');
+    arrow('M560 148 C600 170 640 190 660 228', C.ped, 'aN', '2 4');
+    label(700, 190, 'spans por OTLP', C.ped, 'middle');
+    label(700, 202, ':4318 (push)', C.ped, 'middle');
+    // grafana
+    arrow('M162 252 H286', C.muted, 'aM');
+    label(224, 244, 'PromQL', C.muted);
+    arrow('M100 278 C100 296 600 296 640 282', C.muted, 'aM');
+    label(380, 292, 'trazas por traceId', C.muted);
+
+    box(14, 96, 94, 50, 'k6 / curl', 'tráfico', '#fff', C.line, C.navy);
+    box(170, 96, 152, 54, 'pedidos', ':8081', '#fff', C.ped, C.ped);
+    box(430, 96, 152, 54, 'inventario', ':8082', '#fff', C.inv, '#7C441A');
+    box(290, 222, 160, 54, 'Prometheus', ':9090', C.navy, C.navy, '#fff');
+    box(40, 226, 122, 52, 'Grafana', ':3000', '#fff', C.line, C.navy);
+    box(600, 228, 150, 54, 'Jaeger', ':16686', C.navy, C.navy, '#fff');
+  })();
+
+  /* ── Sección 2: quiz de señales ────────────────────────── */
+  (function(){
+    var OPTS = ['Métrica', 'Log', 'Traza'];
+    var Q = [
+      {q:'¿Cuántas peticiones por segundo atiende el servicio de inventario?', a:0,
+       why:'Es un valor numérico agregado en el tiempo: <code>rate(http_server_requests_seconds_count[1m])</code> en Prometheus.'},
+      {q:'Un pedido tardó 2 segundos. ¿El tiempo se fue en pedidos o en inventario?', a:2,
+       why:'La traza muestra la duración de cada span en cada servicio. Sin trazas habría que adivinar a partir de los promedios de cada servicio.'},
+      {q:'¿Qué mensaje de error produjo la petición que falló a las 17:49:05?', a:1,
+       why:'El log registra el evento puntual: <code>Error al atender la solicitud: El inventario respondió 500</code>.'},
+      {q:'¿Qué porcentaje de las peticiones terminó en error 5xx en el último minuto?', a:0,
+       why:'Es la consulta 5 del taller: la razón entre dos <code>rate</code>. Es también la base de la alerta <code>TasaDeErroresAlta</code>.'},
+      {q:'¿Por cuáles servicios pasó una petición concreta y en qué orden?', a:2,
+       why:'Una traza es el árbol de spans de una petición. En el taller: <code>pedidos</code> → <code>inventario</code>, con 3 spans.'}
+    ];
+    var box = document.getElementById('quiz'), score = document.getElementById('score'), answered = 0, right = 0;
+    Q.forEach(function(item){
+      var d = document.createElement('div'); d.className = 'q';
+      d.innerHTML = '<p>' + item.q + '</p><div class="opts">' +
+        OPTS.map(function(o, i){ return '<button type="button" data-o="' + i + '">' + o + '</button>'; }).join('') +
+        '</div><div class="ans">' + item.why + '</div>';
+      d.querySelectorAll('button').forEach(function(b){
+        b.addEventListener('click', function(){
+          if (d.classList.contains('done')) return;
+          var o = +b.getAttribute('data-o');
+          d.classList.add('done'); answered++;
+          if (o === item.a){ right++; b.classList.add('right'); }
+          else { b.classList.add('wrong'); d.querySelector('[data-o="' + item.a + '"]').classList.add('right'); }
+          score.textContent = answered + ' de ' + Q.length + ' respondidas · ' + right + ' correctas';
+        });
+      });
+      box.appendChild(d);
+    });
+  })();
+
+  /* ── Lab 1: pull y push ────────────────────────────────── */
+  (function(){
+    var svg = document.getElementById('pull-svg'), pre = document.getElementById('scr-pre'), head = document.getElementById('scr-head');
+    var appList = document.getElementById('app-vals'), spansN = document.getElementById('spans-n'), pauseBtn = document.getElementById('scr-pause');
+    var vis = visibleFlag(svg);
+    var app = {ped:{confirmado:1, producto_inexistente:1, sin_stock:1},
+               inv:{audifonos:30000, monitor:20000, mouse:50000, portatil:0, teclado:49998}};
+    var lastScraped = null, spans = 0, countdown = 5, elapsed = 0, paused = REDUCED, scraping = false;
+
+    var defs = el('defs', {});
+    var mk = el('marker', {id:'pa', markerWidth:9, markerHeight:9, refX:7, refY:3, orient:'auto'});
+    mk.appendChild(el('path', {d:'M0,0 L7,3 L0,6 Z', fill:C.muted})); defs.appendChild(mk);
+    svg.appendChild(defs);
+    var P = {
+      pp: 'M190 132 C240 132 250 70 298 70',
+      pi: 'M190 168 C240 168 250 230 298 230',
+      pj: 'M472 70 C520 70 520 132 572 132',
+      ij: 'M472 230 C520 230 520 168 572 168'
+    };
+    var paths = {};
+    Object.keys(P).forEach(function(k){
+      var push = k === 'pj' || k === 'ij';
+      paths[k] = el('path', {d:P[k], fill:'none', stroke: push ? C.ped : C.terra, 'stroke-width':1.8, 'stroke-dasharray': push ? '2 4' : '6 4', 'marker-end':'url(#pa)'});
+      svg.appendChild(paths[k]);
+    });
+    function box(x, y, w, h, t1, t2, t3, fill, stroke, tc){
+      var g = el('g', {});
+      g.appendChild(el('rect', {x:x, y:y, width:w, height:h, rx:8, fill:fill, stroke:stroke, 'stroke-width':1.6}));
+      g.appendChild(el('text', {x:x + w / 2, y:y + 22, 'text-anchor':'middle', 'font-size':14.5, 'font-weight':700, fill:tc, 'font-family':FONT}, t1));
+      g.appendChild(el('text', {x:x + w / 2, y:y + 40, 'text-anchor':'middle', 'font-size':11.5, fill: fill === C.navy ? '#B9C6E2' : C.muted, 'font-family':MONO}, t2));
+      if (t3) g.appendChild(el('text', {x:x + w / 2, y:y + 56, 'text-anchor':'middle', 'font-size':10.5, fill: fill === C.navy ? '#B9C6E2' : C.muted, 'font-family':MONO}, t3));
+      svg.appendChild(g); return g;
+    }
+    box(20, 112, 170, 76, 'Prometheus', ':9090', 'job "tienda"', C.navy, C.navy, '#fff');
+    var bPed = box(300, 38, 172, 66, 'pedidos', ':8081', '/actuator/prometheus', '#fff', C.ped, C.ped);
+    var bInv = box(300, 198, 172, 66, 'inventario', ':8082', '/actuator/prometheus', '#fff', C.inv, '#7C441A');
+    box(574, 112, 170, 76, 'Jaeger', 'OTLP :4318', 'UI :16686', C.navy, C.navy, '#fff');
+    svg.appendChild(el('text', {x:200, y:30, 'font-size':11.5, fill:C.terra, 'font-family':FONT}, 'pull: GET cada 5 s'));
+    svg.appendChild(el('text', {x:500, y:30, 'font-size':11.5, fill:C.ped, 'font-family':FONT}, 'push: spans por OTLP'));
+    var cd = el('text', {x:105, y:214, 'text-anchor':'middle', 'font-size':12, fill:C.navy, 'font-family':FONT}, '');
+    svg.appendChild(cd);
+    var upTxt = el('text', {x:105, y:232, 'text-anchor':'middle', 'font-size':11, fill:C.ok, 'font-family':MONO}, '');
+    svg.appendChild(upTxt);
+    var dots = el('g', {}); svg.appendChild(dots);
+
+    async function travel(pathKey, color, reverse, label){
+      var p = paths[pathKey], len = p.getTotalLength();
+      var g = el('g', {}), c = el('circle', {r:6, fill:color, stroke:'#fff', 'stroke-width':1.5});
+      g.appendChild(c);
+      var t = label ? el('text', {'font-size':10, fill:color, 'font-family':MONO, 'text-anchor':'middle'}, label) : null;
+      if (t) g.appendChild(t);
+      dots.appendChild(g);
+      await tween(650, function(pr){
+        var q = reverse ? 1 - ease(pr) : ease(pr), pt = p.getPointAtLength(q * len);
+        c.setAttribute('cx', pt.x); c.setAttribute('cy', pt.y);
+        if (t){ t.setAttribute('x', pt.x); t.setAttribute('y', pt.y - 10); }
+      });
+      if (g.parentNode) dots.removeChild(g);
+    }
+    function flashBox(g){
+      var r = g.querySelector('rect');
+      r.setAttribute('stroke-width', 3.5);
+      setTimeout(function(){ r.setAttribute('stroke-width', 1.6); }, 500);
+    }
+    function exposition(){
+      var L = [];
+      L.push(['c', 'GET http://pedidos:8081/actuator/prometheus']);
+      L.push(['c', '# HELP pedidos_total Pedidos procesados, por resultado']);
+      L.push(['c', '# TYPE pedidos_total counter']);
+      Object.keys(app.ped).sort().forEach(function(k){ L.push(['m', 'pedidos_total{application="pedidos",resultado="' + k + '"} ', app.ped[k].toFixed(1), 'ped.' + k]); });
+      L.push(['c', '… y las métricas de HTTP y de la JVM']);
+      L.push(['c', '']);
+      L.push(['c', 'GET http://inventario:8082/actuator/prometheus']);
+      L.push(['c', '# HELP inventario_stock Unidades disponibles por producto']);
+      L.push(['c', '# TYPE inventario_stock gauge']);
+      Object.keys(app.inv).sort().forEach(function(k){ L.push(['m', 'inventario_stock{application="inventario",producto="' + k + '"} ', app.inv[k].toFixed(1), 'inv.' + k]); });
+      L.push(['c', '… y las métricas de HTTP y de la JVM']);
+      return L;
+    }
+    function renderApp(changed){
+      var rows = [];
+      Object.keys(app.ped).sort().forEach(function(k){ rows.push(['pedidos_total{resultado="' + k + '"}', app.ped[k], 'ped.' + k]); });
+      Object.keys(app.inv).sort().forEach(function(k){ rows.push(['inventario_stock{producto="' + k + '"}', app.inv[k], 'inv.' + k]); });
+      appList.innerHTML = rows.map(function(r){
+        return '<li><span>' + esc(r[0]) + '</span><b class="' + (changed && changed.indexOf(r[2]) >= 0 ? 'chg' : '') + '">' + r[1] + '</b></li>';
+      }).join('');
+    }
+    function renderScrape(prev){
+      var L = exposition();
+      pre.innerHTML = L.map(function(l){
+        if (l[0] === 'c') return '<span class="ln c">' + esc(l[1]) + '</span>';
+        var changed = prev && prev[l[3]] !== undefined && prev[l[3]] !== l[2];
+        return '<span class="ln' + (changed ? ' flash' : '') + '">' + esc(l[1]) + '<span class="g">' + l[2] + '</span></span>';
+      }).join('');
+      setTimeout(function(){ pre.querySelectorAll('.flash').forEach(function(n){ n.classList.remove('flash'); }); }, 1400);
+    }
+    function snapshot(){
+      var s = {};
+      Object.keys(app.ped).forEach(function(k){ s['ped.' + k] = app.ped[k].toFixed(1); });
+      Object.keys(app.inv).forEach(function(k){ s['inv.' + k] = app.inv[k].toFixed(1); });
+      return s;
+    }
+    async function scrape(){
+      if (scraping) return;
+      scraping = true;
+      head.textContent = 'Scrape en curso…';
+      await Promise.all([travel('pp', C.terra, false, 'GET'), travel('pi', C.terra, false, 'GET')]);
+      flashBox(bPed); flashBox(bInv);
+      await Promise.all([travel('pp', C.navy, true, '200'), travel('pi', C.navy, true, '200')]);
+      renderScrape(lastScraped);
+      lastScraped = snapshot();
+      head.textContent = 'Último scrape leído por Prometheus (t = ' + elapsed + ' s)';
+      upTxt.textContent = 'up{job="tienda"} = 1 · 1';
+      renderApp(null);
+      scraping = false;
+    }
+    async function pedido(kind){
+      if (kind === 'teclado'){ app.ped.confirmado++; app.inv.teclado -= 2; renderApp(['ped.confirmado', 'inv.teclado']); }
+      if (kind === 'portatil'){ app.ped.sin_stock++; renderApp(['ped.sin_stock']); }
+      if (kind === 'tablet'){ app.ped.producto_inexistente++; renderApp(['ped.producto_inexistente']); }
+      await Promise.all([travel('pj', C.ped, false, '2 spans'), travel('ij', C.inv, false, '1 span')]);
+      spans += 3; spansN.textContent = spans;
+    }
+    document.querySelectorAll('[data-ped]').forEach(function(b){
+      b.addEventListener('click', function(){ pedido(b.getAttribute('data-ped')); });
+    });
+    function setPause(p){ paused = p; pauseBtn.textContent = p ? '▶ Reanudar los scrapes' : '⏸ Pausar los scrapes'; cd.textContent = p ? 'scrapes en pausa' : 'próximo scrape en ' + countdown + ' s'; }
+    pauseBtn.addEventListener('click', function(){ setPause(!paused); });
+    setInterval(function(){
+      if (paused || !vis.on || document.hidden) return;
+      elapsed++;
+      countdown--;
+      if (countdown <= 0){ countdown = 5; scrape(); }
+      cd.textContent = 'próximo scrape en ' + countdown + ' s';
+    }, 1000);
+    renderApp(null);
+    renderScrape(null);
+    lastScraped = snapshot();
+    head.textContent = 'Último scrape leído por Prometheus (t = 0 s)';
+    upTxt.textContent = 'up{job="tienda"} = 1 · 1';
+    setPause(paused);
+  })();
+
+  /* ── Lab 2: tipos de métricas ──────────────────────────── */
+  (function(){
+    var live = document.getElementById('mt-live'), hist = document.getElementById('mt-hist');
+    var s1 = document.getElementById('mt-svg1'), s2 = document.getElementById('mt-svg2');
+    var l1 = document.getElementById('mt-leg1'), l2 = document.getElementById('mt-leg2');
+    var desc = document.getElementById('mt-desc'), note = document.getElementById('mt-note');
+    var pauseBtn = document.getElementById('mt-pause'), restartBtn = document.getElementById('mt-restart');
+    var vis = visibleFlag(live);
+    var mode = 'counter', paused = REDUCED, rnd = mulberry(7);
+    var STEP = 5, KEEP = 37;
+    var t = 0, counterApp = 1, stock = 49998, heap = 31;
+    var cS = [], gS = [];
+    var DESC = {
+      counter: '<strong>Counter (contador):</strong> solo aumenta. <code>pedidos_total{resultado="confirmado"}</code> cuenta los pedidos confirmados. Su valor crudo no dice mucho; lo útil es cuánto crece por segundo, que es lo que calcula <code>rate()</code>. Pruebe a reiniciar el contenedor: el contador vuelve a 0 y <code>rate()</code> lo detecta.',
+      gauge: '<strong>Gauge (medidor):</strong> sube y baja, y se lee directamente, sin <code>rate()</code>. <code>inventario_stock{producto="teclado"}</code> baja con cada reserva; la memoria heap de la JVM sube hasta que el recolector de basura la libera.'
+    };
+    function rateAt(arr, i, naive){
+      var t1 = arr[i].t, j = i;
+      while (j > 0 && arr[j - 1].t >= t1 - 60) j--;
+      if (j === i) return null;
+      if (naive) return (arr[i].v - arr[j].v) / (arr[i].t - arr[j].t);
+      var inc = 0;
+      for (var k = j + 1; k <= i; k++){ var d = arr[k].v - arr[k - 1].v; inc += d >= 0 ? d : arr[k].v; }
+      return inc / (arr[i].t - arr[j].t);
+    }
+    function push(){
+      t += STEP;
+      // k6: 10 iteraciones/s; 11 de 13 productos tienen stock -> ≈ 8.46 pedidos confirmados por segundo
+      counterApp += Math.round(STEP * 8.46 * (0.85 + rnd() * 0.3));
+      cS.push({t:t, v:counterApp});
+      // teclado: 3 de 13 elecciones, cantidad promedio 2 -> ≈ 4.6 unidades/s
+      stock -= Math.round(STEP * 4.6 * (0.6 + rnd() * 0.8));
+      heap += 1.5 + rnd() * 3;
+      if (heap > 52 + rnd() * 4) heap = 24 + rnd() * 4;
+      gS.push({t:t, stock:stock, heap:heap});
+      if (cS.length > KEEP) cS.shift();
+      if (gS.length > KEEP) gS.shift();
+    }
+    function xt(){ return [{v:t - 180, label:'-3 min'}, {v:t - 120, label:'-2 min'}, {v:t - 60, label:'-1 min'}, {v:t, label:'ahora'}]; }
+    function draw(){
+      if (mode === 'counter'){
+        var maxV = Math.max.apply(null, cS.map(function(s){ return s.v; }).concat([100]));
+        lineChart(s1, {H:200, x0:t - 180, x1:t, yMax:Math.ceil(maxV * 1.15 / 400) * 400, xTicks:xt(), legend:l1,
+          series:[{name:'pedidos_total{resultado="confirmado"}  (valor crudo)', color:C.ped, pts:cS.map(function(s){ return [s.t, s.v]; })}]});
+        var r = cS.map(function(s, i){ return [s.t, rateAt(cS, i, false)]; });
+        var nv = cS.map(function(s, i){ return [s.t, rateAt(cS, i, true)]; });
+        var mn = Math.min.apply(null, nv.map(function(p){ return p[1] == null ? 0 : p[1]; }).concat([0]));
+        var ymn = mn < 0 ? -15 * Math.ceil(-mn / 15) : 0;
+        lineChart(s2, {H:200, x0:t - 180, x1:t, yMin:ymn, yMax:15, yTicks:(15 - ymn) / (ymn < 0 ? 15 : 5), xTicks:xt(), legend:l2,
+          yFmt:function(v){ return v.toFixed(0) + '/s'; },
+          series:[{name:'rate(pedidos_total{resultado="confirmado"}[1m])', color:C.ok, pts:r},
+                  {name:'resta simple (último − primero) / 60 s, sin detectar reinicios', color:C.warn, dash:'5 4', width:1.6, pts:nv}]});
+      } else {
+        lineChart(s1, {H:200, x0:t - 180, x1:t, yMin:50000 - 4 * 500 * Math.ceil((50000 - gS[gS.length - 1].stock + 800) / 2000), yMax:50000, xTicks:xt(), legend:l1, yFmt:function(v){ return Math.round(v).toLocaleString('es-CO'); },
+          series:[{name:'inventario_stock{producto="teclado"}', color:C.inv, pts:gS.map(function(s){ return [s.t, s.stock]; })}]});
+        lineChart(s2, {H:200, x0:t - 180, x1:t, yMin:0, yMax:64, xTicks:xt(), legend:l2, yFmt:function(v){ return v.toFixed(0) + ' MiB'; },
+          series:[{name:'jvm_memory_used_bytes{area="heap"}  (pedidos)', color:C.ped, pts:gS.map(function(s){ return [s.t, s.heap]; })}]});
+      }
+    }
+    for (var i = 0; i < KEEP; i++) push();
+    setInterval(function(){
+      if (paused || mode === 'hist' || !vis.on || document.hidden) return;
+      push(); draw();
+    }, 450);
+    function setMode(m){
+      mode = m;
+      live.hidden = m === 'hist'; hist.hidden = m !== 'hist';
+      if (m !== 'hist'){
+        desc.innerHTML = DESC[m];
+        restartBtn.hidden = m !== 'counter';
+        note.innerHTML = m === 'counter'
+          ? 'Datos ilustrativos: una muestra cada 5 s (un scrape) con el tráfico de k6 del taller, unos 8.5 pedidos confirmados por segundo (10 iteraciones/s y 11 de los 13 productos de <code>k6/trafico.js</code> tienen stock). La línea roja muestra lo que pasaría si se restaran los valores sin detectar el reinicio.'
+          : 'Datos ilustrativos: el stock inicial de teclado es 50000 (<code>InventarioService</code>) y baja unas 4.6 unidades por segundo con el tráfico de k6. La memoria heap oscila entre unos 24 y 56 MiB, como en la captura del dashboard del taller.';
+        draw();
+      } else drawHist();
+    }
+    tabGroup('[data-mt]', 'data-mt', setMode);
+    pauseBtn.addEventListener('click', function(){ paused = !paused; pauseBtn.textContent = paused ? '▶ Reanudar' : '⏸ Pausar'; });
+    pauseBtn.textContent = paused ? '▶ Reanudar' : '⏸ Pausar';
+    restartBtn.addEventListener('click', function(){
+      counterApp = 0;
+      if (paused){ push(); draw(); }
+    });
+
+    /* Histograma */
+    var hn = document.getElementById('h-n'), hms = document.getElementById('h-ms'), hsvg = document.getElementById('h-svg');
+    var SUB = [0.005592405, 0.011184809, 0.022369621, 0.044739241, 0.089478485, 0.178956969, 0.357913941, 0.536870911, 0.805306366, 1.073741824, 2.147483647, 3.22122547, Infinity];
+    var bars = null;
+    function leTxt(b){ return b === Infinity ? '+Inf' : String(b); }
+    function leShort(b){ return b === Infinity ? '+Inf' : (b < 0.1 ? b.toFixed(4) : b.toPrecision(3)); }
+    function drawHist(){
+      var nSlow = +hn.value, ms = +hms.value, nFast = 100 - nSlow;
+      document.getElementById('h-n-v').textContent = nSlow;
+      document.getElementById('h-ms-v').textContent = ms + ' ms';
+      var per = BOUNDS.map(function(){ return 0; });
+      per[bucketIndex(0.010)] += nFast;
+      per[bucketIndex(ms / 1000)] += nSlow;
+      var cum = cumulative(per);
+      var p95 = histQuantile(0.95, cum), avg = (nFast * 0.010 + nSlow * ms / 1000) / 100;
+      var b95 = 0; while (cum[b95] < 95) b95++;
+      var lo = b95 === 0 ? 0 : BOUNDS[b95 - 1], hi = BOUNDS[b95];
+      document.getElementById('h-avg').textContent = avg >= 1 ? fmtDur(avg) : parseFloat((avg * 1000).toFixed(1)) + ' ms';
+      document.getElementById('h-p95').textContent = fmtDur(p95);
+      var al = document.getElementById('h-alert');
+      al.textContent = p95 > 0.5 ? 'sí' : 'no';
+      al.style.color = p95 > 0.5 ? C.warn : C.ok;
+      document.getElementById('h-explain').innerHTML = 'El conteo acumulado llega a 95 de 100 en el bucket <code>le="' + leTxt(hi) + '"</code> (el anterior es <code>le="' + (lo === 0 ? '0' : leTxt(lo)) + '"</code>). Dentro de ese bucket Prometheus interpola linealmente y estima el p95 en <strong>' + fmtDur(p95) + '</strong>. ' +
+        (nSlow > 5 ? 'Con más de 5 peticiones lentas, el p95 ya cae en las lentas.' : 'Con 5 o menos peticiones lentas, el p95 sigue en las rápidas, aunque el promedio sí sube.');
+      // gráfico
+      var W = 760, H = 260, L = 50, R = W - 10, T = 26, B = H - 40;
+      var subCum = SUB.map(function(b){ return cum[bucketIndex(b === Infinity ? Infinity : b)]; });
+      var slot = (R - L) / SUB.length, bw = slot * 0.72;
+      function Y(v){ return B - v / 100 * (B - T); }
+      var hiIdx = 0; while (SUB[hiIdx] < hi) hiIdx++;
+      if (!bars){
+        clear(hsvg);
+        [0, 25, 50, 75, 100].forEach(function(v){
+          hsvg.appendChild(el('line', {x1:L, y1:Y(v), x2:R, y2:Y(v), stroke: v === 0 ? '#C8D0DE' : C.grid}));
+          hsvg.appendChild(el('text', {x:L - 8, y:Y(v) + 4, 'text-anchor':'end', 'font-size':11, fill:C.muted, 'font-family':FONT}, v));
+        });
+        hsvg.appendChild(el('line', {x1:L, y1:Y(95), x2:R, y2:Y(95), stroke:C.warn, 'stroke-width':1.5, 'stroke-dasharray':'6 4'}));
+        hsvg.appendChild(el('text', {x:L, y:10, 'text-anchor':'start', 'font-size':11, fill:C.warn, 'font-family':FONT}, 'línea discontinua: 95 = 0.95 × 100 peticiones'));
+        hsvg.appendChild(el('text', {x:(L + R) / 2, y:H - 4, 'text-anchor':'middle', 'font-size':11, fill:C.muted, 'font-family':FONT}, 'le (segundos)'));
+        bars = SUB.map(function(b, i){
+          var x = L + slot * i + (slot - bw) / 2;
+          var r = el('rect', {x:x, y:B, width:bw, height:0, rx:3, fill:'#C8D0DE'});
+          var tx = el('text', {x:x + bw / 2, y:B - 5, 'text-anchor':'middle', 'font-size':11, fill:C.navy, 'font-family':FONT}, '');
+          hsvg.appendChild(r); hsvg.appendChild(tx);
+          hsvg.appendChild(el('text', {x:x + bw / 2, y:B + 16, 'text-anchor':'middle', 'font-size':10.5, fill:C.navy, 'font-family':MONO}, leShort(b)));
+          return {r:r, t:tx, h:0};
+        });
+      }
+      bars.forEach(function(bar, i){
+        bar.r.setAttribute('fill', i === hiIdx ? C.terra : (SUB[i] <= 0.5 ? '#9FB0D4' : '#C8D0DE'));
+        var from = bar.h, to = subCum[i];
+        bar.t.textContent = to;
+        tween(350, function(p){
+          var v = from + (to - from) * ease(p), y = Y(v);
+          bar.r.setAttribute('y', y); bar.r.setAttribute('height', B - y);
+          bar.t.setAttribute('y', y - 5);
+        });
+        bar.h = to;
+      });
+      var lines = ['<span class="c"># etiquetas resumidas; la serie real lleva application, method, uri, status, outcome…</span>'];
+      SUB.forEach(function(b){
+        lines.push('http_server_requests_seconds_bucket{uri="/api/pedidos",le="' + leTxt(b) + '"} <span class="g">' + cum[bucketIndex(b)] + '</span>');
+      });
+      lines.push('http_server_requests_seconds_count{uri="/api/pedidos"} <span class="g">100</span>');
+      lines.push('http_server_requests_seconds_sum{uri="/api/pedidos"} <span class="g">' + parseFloat((avg * 100).toFixed(3)) + '</span>');
+      document.getElementById('h-pre').innerHTML = lines.join('\n');
+    }
+    hn.addEventListener('input', drawHist);
+    hms.addEventListener('input', drawHist);
+    setMode('counter');
+  })();
+
+  /* ── Lab 3: PromQL ─────────────────────────────────────── */
+  (function(){
+    var svg = document.getElementById('pq-svg'), leg = document.getElementById('pq-leg');
+    var qEl = document.getElementById('pq-query'), wEl = document.getElementById('pq-what'), nEl = document.getElementById('pq-note');
+    // Línea de tiempo ilustrativa del paso 6 (minutos): k6 desde 1, tasaError=0.3 en [5.5, 8), latenciaMs=800 en [8, 10), DELETE en 10
+    function k6(t){ return t >= 1 ? 1 : 0; }
+    function E(t){ return t >= 5.5 && t < 8 ? 0.3 : 0; }
+    function Lat(t){ return t >= 8 && t < 10 ? 1 : 0; }
+    function inst(t){
+      var k = k6(t), e = E(t);
+      var p201 = 10 * (1 - e) * 11 / 13 * k;
+      return {
+        inv: 20 * k, invErr: 20 * e * k,
+        p201: p201, g200: p201, p404: 10 * (1 - e) / 13 * k, p409: 10 * (1 - e) / 13 * k, p503: 10 * e * k,
+        ped: 10 * k + p201, pedErr: 10 * e * k
+      };
+    }
+    function win(t, key){ var s = 0, n = 0; for (var u = t - 1; u <= t + 1e-9; u += 0.05){ s += (u < 0 ? 0 : inst(u)[key]); n++; } return s / n; }
+    function frac(t, f){ var s = 0, n = 0; for (var u = t - 1; u <= t + 1e-9; u += 0.05){ s += u < 0 ? 0 : f(u); n++; } return s / n; }
+    var TS = []; for (var t = 0; t <= 12.0001; t += 0.25) TS.push(+t.toFixed(2));
+    var XT = [0, 2, 4, 6, 8, 10, 12].map(function(v){ return {v:v, label: v === 12 ? '12 min' : String(v)}; });
+    var BANDS = [{from:5.5, to:8, label:'tasaError=0.3'}, {from:8, to:10, label:'latenciaMs=800', fill:'#E3E9F5', color:C.navy}];
+    var rate = function(v){ return (Math.round(v * 10) / 10) + '/s'; };
+    var common = 'Datos ilustrativos que siguen la secuencia del paso 6 del taller: k6 empieza en el minuto 1, <code>tasaError=0.3</code> en el 5.5, <code>latenciaMs=800</code> en el 8 (reemplaza la configuración y apaga los errores) y <code>DELETE /api/fallas</code> en el 10. ';
+    function integ(key){ var acc = 1, out = []; TS.forEach(function(t, i){ if (i > 0) acc += inst(TS[i - 1])[key] * 15; out.push([t, acc]); }); return out; }
+    function stockSeries(init, share){ var acc = init, out = []; TS.forEach(function(t, i){ if (i > 0){ var x = inst(TS[i - 1]); acc -= 10 * share * (1 - E(TS[i - 1])) * k6(TS[i - 1]) * 2 * 15; } out.push([t, Math.round(acc)]); }); return out; }
+    var Q = {
+      1: {q:'up{job="tienda"}', what:'1 si Prometheus logra leer las métricas del servicio, 0 si no. Equivale al estado UP o DOWN de <code>http://localhost:9090/targets</code>.',
+          note:'Resultado esperado con el stack arriba: los dos targets del job <code>tienda</code> en 1. Si alguno da 0, Prometheus no logra leer su <code>/actuator/prometheus</code>.',
+          draw:function(){ barChart(svg, {cats:['instance="pedidos:8081"', 'instance="inventario:8082"'], catSize:11, yMax:1, yTicks:2, yFmt:function(v){ return v.toFixed(1); }, legend:leg,
+            series:[{name:'up{job="tienda"}', color:C.ok, vals:[1, 1]}], valFmt:function(v){ return v; }}); }},
+      2: {q:'http_server_requests_seconds_count{application="pedidos"}', what:'El contador crudo de peticiones, una serie por combinación de etiquetas. Solo crece.',
+          note:'Se muestran dos de las series de pedidos. El valor absoluto depende de cuándo arrancó el servicio; por eso los contadores se consultan con <code>rate</code> o <code>increase</code>. ' + common,
+          draw:function(){
+            var a = integ('p201'), b = integ('g200');
+            lineChart(svg, {H:250, x0:0, x1:12, yMax:6000, xTicks:XT, bands:BANDS, legend:leg, animate:true,
+              series:[{name:'{method="POST",uri="/api/pedidos",status="201"}', color:C.ped, pts:a},
+                      {name:'{method="GET",uri="/api/pedidos/{id}",status="200"}', color:C.ok, pts:b}]}); }},
+      3: {q:'sum by (application) (rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[1m]))', what:'<strong>Rate:</strong> peticiones por segundo de cada servicio, sin contar las de Prometheus a <code>/actuator</code>.',
+          note:common + 'Con 10 iteraciones/s, inventario recibe unas 20 peticiones/s (consulta de stock y reserva) y pedidos unas 18 (el pedido y su consulta), como en la captura del dashboard del README. Durante los errores pedidos baja porque k6 solo consulta los pedidos creados.',
+          draw:function(){
+            lineChart(svg, {H:250, x0:0, x1:12, yMax:24, xTicks:XT, bands:BANDS, legend:leg, animate:true, yFmt:rate,
+              series:[{name:'{application="inventario"}', color:C.inv, pts:TS.map(function(t){ return [t, win(t, 'inv')]; })},
+                      {name:'{application="pedidos"}', color:C.ped, pts:TS.map(function(t){ return [t, win(t, 'ped')]; })}]}); }},
+      4: {q:'sum by (application, status) (rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[1m]))', what:'Peticiones por segundo separadas por código HTTP.',
+          note:common + 'Se muestran solo las series de pedidos. Los 404 (<code>tablet</code>) y 409 (<code>portatil</code>) aparecen siempre porque k6 los pide a propósito: 1 de cada 13 pedidos cada uno. La serie 503 aparece con los errores y, después, se queda en 0.',
+          draw:function(){
+            function s(key){ return TS.map(function(t){ return [t, win(t, key)]; }); }
+            var s503 = TS.map(function(t){ return [t, t < 5.5 ? null : win(t, 'p503')]; });
+            var s200 = TS.map(function(t){ return [t, win(t, 'g200')]; });
+            lineChart(svg, {H:250, x0:0, x1:12, yMax:10, yTicks:5, xTicks:XT, bands:BANDS, legend:leg, animate:true, yFmt:rate,
+              series:[{name:'{application="pedidos",status="201"}', color:C.ped, pts:s('p201'), width:3.2},
+                      {name:'{application="pedidos",status="200"}', color:'#7A8BB0', dash:'5 4', pts:s200},
+                      {name:'{application="pedidos",status="404"}', color:C.ok, pts:s('p404')},
+                      {name:'{application="pedidos",status="409"}', color:'#B08A2E', dash:'3 3', pts:s('p409')},
+                      {name:'{application="pedidos",status="503"}', color:C.warn, pts:s503}]}); }},
+      5: {q:'sum by (application) (rate(http_server_requests_seconds_count{uri!~"/actuator.*", status=~"5.."}[1m]))\n  /\nsum by (application) (rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[1m]))',
+          what:'<strong>Errors:</strong> fracción de peticiones que terminan en 5xx (0.05 = 5%).',
+          note:'Antes del primer error la consulta responde «Empty query result»: no hay ninguna serie con <code>status=~"5.."</code> que dividir. Después de los errores la serie existe y vale 0. Valores de referencia del README: inventario 30.79% (anotación de la alerta); pedidos queda más abajo, cerca del 19%, porque sus consultas de pedidos no fallan. ' + common,
+          draw:function(){
+            var a = TS.map(function(t){ return [t, t < 5.5 ? null : win(t, 'invErr') / win(t, 'inv')]; });
+            var b = TS.map(function(t){ return [t, t < 5.5 ? null : win(t, 'pedErr') / win(t, 'ped')]; });
+            lineChart(svg, {H:250, x0:0, x1:12, yMax:0.4, xTicks:XT, bands:BANDS.concat([{from:0, to:5.5, fill:'#fff', opacity:0, label:'Empty query result', color:C.muted}]), legend:leg, animate:true,
+              yFmt:function(v){ return Math.round(v * 100) + '%'; }, threshold:{v:0.05, label:'umbral de la alerta: 5%'},
+              series:[{name:'{application="inventario"}', color:C.inv, pts:a}, {name:'{application="pedidos"}', color:C.ped, pts:b}]}); }},
+      6: {q:'histogram_quantile(0.95,\n  sum by (application, le) (rate(http_server_requests_seconds_bucket{uri!~"/actuator.*"}[1m])))',
+          what:'<strong>Duration:</strong> latencia p95 en segundos.',
+          note:'Con <code>latenciaMs=800</code> el p95 de inventario sube a unos 800 ms y el de pedidos un poco más, como en la captura del dashboard del README. Antes de que k6 genere tráfico no hay buckets con datos y la consulta no devuelve valores. Los valores en estado normal (unos milisegundos) son ilustrativos. ' + common,
+          draw:function(){
+            var a = TS.map(function(t){ if (!k6(t - 0.05) && !k6(t)) return [t, null]; return [t, frac(t, Lat) > 0.05 ? 0.803 : 0.008]; });
+            var b = TS.map(function(t){ if (!k6(t - 0.05) && !k6(t)) return [t, null]; return [t, frac(t, Lat) * 10 / 18.5 > 0.05 ? 0.85 : 0.022]; });
+            lineChart(svg, {H:250, x0:0, x1:12, yMax:1, xTicks:XT, bands:BANDS, legend:leg, animate:true,
+              yFmt:function(v){ return Math.round(v * 1000) + ' ms'; }, threshold:{v:0.5, label:'umbral de la alerta: 500 ms'},
+              series:[{name:'{application="inventario"}', color:C.inv, pts:a}, {name:'{application="pedidos"}', color:C.ped, pts:b}]}); }},
+      7: {q:'sum by (resultado) (increase(pedidos_total[5m]))', what:'Métrica propia: pedidos de los últimos 5 minutos por resultado.',
+          note:'Valores calculados a partir de <code>k6/trafico.js</code>: en 5 minutos hay 3000 iteraciones; 1 de cada 13 elige <code>portatil</code> (sin stock) y 1 de cada 13 <code>tablet</code> (no existe). Con <code>tasaError=0.3</code>, el 30% de las reservas falla y aparece la serie <code>error_inventario</code>.',
+          draw:function(){
+            barChart(svg, {cats:['confirmado', 'sin_stock', 'producto_inexistente', 'error_inventario'], catSize:11, yMax:3000, yTicks:3, legend:leg,
+              series:[{name:'ventana normal', color:C.ped, vals:[2538, 231, 231, 0]},
+                      {name:'ventana con tasaError=0.3', color:C.inv, vals:[1777, 162, 162, 900]}]}); }},
+      8: {q:'inventario_stock', what:'Métrica propia: unidades disponibles por producto. Es un Gauge, así que se consulta directamente.',
+          note:'Stock inicial según <code>InventarioService</code>: teclado y mouse 50000, audífonos 30000, monitor 20000 y portátil 0. Cada pedido reserva entre 1 y 3 unidades. ' + common,
+          draw:function(){
+            lineChart(svg, {H:250, x0:0, x1:12, yMax:60000, xTicks:XT, bands:BANDS, legend:leg, animate:true,
+              series:[{name:'{producto="teclado"}', color:C.warn, pts:stockSeries(49998, 3 / 13)},
+                      {name:'{producto="mouse"}', color:C.ped, dash:'6 4', pts:stockSeries(50000, 3 / 13)},
+                      {name:'{producto="audifonos"}', color:C.ok, pts:stockSeries(30000, 3 / 13)},
+                      {name:'{producto="monitor"}', color:'#B08A2E', pts:stockSeries(20000, 2 / 13)},
+                      {name:'{producto="portatil"}', color:C.inv, pts:TS.map(function(t){ return [t, 0]; })}]}); }},
+      9: {q:'sum by (application) (jvm_memory_used_bytes{area="heap"})', what:'Memoria heap usada por cada JVM, en bytes. Es una métrica de recursos (método USE).',
+          note:'Datos ilustrativos con la forma de la captura del dashboard: la memoria sube y el recolector de basura la libera, entre unos 24 y 56 MiB.',
+          draw:function(){
+            function saw(seed){ var r = mulberry(seed), h = 28, out = []; TS.forEach(function(t){ h += (k6(t) ? 2 : 0.5) + r() * 3; if (h > 50 + r() * 6) h = 24 + r() * 4; out.push([t, h * 1048576]); }); return out; }
+            lineChart(svg, {H:250, x0:0, x1:12, yMax:64 * 1048576, xTicks:XT, legend:leg, animate:true,
+              yFmt:function(v){ return Math.round(v / 1048576) + ' MiB'; },
+              series:[{name:'{application="inventario"}', color:C.inv, pts:saw(3)}, {name:'{application="pedidos"}', color:C.ped, pts:saw(11)}]}); }}
+    };
+    function hl(q){
+      return esc(q)
+        .replace(/"[^"\n]*"/g, function(m){ return '<span class="g">' + m + '</span>'; })
+        .replace(/\b(sum|by|rate|increase|histogram_quantile)\b/g, '<span class="k">$1</span>')
+        .replace(/\[(1m|5m)\]/g, '[<span class="r">$1</span>]');
+    }
+    function show(k){
+      var d = Q[k];
+      qEl.innerHTML = hl(d.q);
+      wEl.innerHTML = d.what;
+      nEl.innerHTML = '<span class="badge">ilustrativo</span> ' + d.note;
+      d.draw();
+    }
+    tabGroup('[data-pq]', 'data-pq', show);
+    show('3');
+  })();
+
+  /* ── Sección 5: paneles de Grafana ─────────────────────── */
+  (function(){
+    var ROWS = [
+      {t:'Tráfico HTTP (método RED)', cls:'', p:[
+        {n:'Peticiones por segundo', u:'reqps', q:'sum by (application) (rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[1m]))', d:'Consulta 3 del paso 3.', spark:[2,9,9,9,9,8,9,9]},
+        {n:'Tasa de errores 5xx', u:'percentunit', th:'línea roja en 0.05 (5%)', q:'sum by (application) (rate(http_server_requests_seconds_count{uri!~"/actuator.*", status=~"5.."}[1m])) / sum by (application) (rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[1m]))\n  or sum by (application) (rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[1m])) * 0', d:'Consulta 5 con <code>or … * 0</code>: cuando no hay ningún error 5xx, la primera parte no devuelve series y el panel muestra 0 en lugar de quedar vacío.', spark:[0,0,0,0,7,8,1,0]},
+        {n:'Latencia p95', u:'s', th:'línea roja en 0.5 (500 ms)', q:'histogram_quantile(0.95, sum by (application, le) (rate(http_server_requests_seconds_bucket{uri!~"/actuator.*"}[1m])))', d:'Consulta 6 del paso 3.', spark:[1,1,1,1,1,1,9,1]},
+        {n:'Peticiones por endpoint y código de estado', u:'reqps', wide:true, q:'sum by (application, method, uri, status) (rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[1m]))', d:'Consulta 4 agregando <code>method</code> y <code>uri</code>: una serie por endpoint y código.', spark:[2,8,8,8,6,6,8,8]}
+      ]},
+      {t:'Métricas de negocio (propias)', cls:'two', p:[
+        {n:'Pedidos por resultado (por minuto)', u:'short', q:'sum by (resultado) (increase(pedidos_total[1m]))', d:'Con los errores activados aparece la serie <code>error_inventario</code>.', spark:[1,9,9,9,7,7,9,9]},
+        {n:'Stock del inventario', u:'short', q:'inventario_stock', d:'Un Gauge: se grafica directamente.', spark:[9,9,8.9,8.8,8.8,8.7,8.6,8.5]}
+      ]},
+      {t:'JVM (método USE)', cls:'two', p:[
+        {n:'Memoria heap usada', u:'bytes', q:'sum by (application) (jvm_memory_used_bytes{area="heap"})', d:'Consulta 9 del paso 3.', spark:[3,6,8,3,5,9,4,7]},
+        {n:'Uso de CPU del proceso', u:'percentunit', q:'process_cpu_usage', d:'Fracción de CPU que usa el proceso Java (0 a 1).', spark:[1,9,4,3,4,2,3,2]}
+      ]}
+    ];
+    var dash = document.getElementById('dash'), det = document.getElementById('panel-detail'), all = [];
+    function spark(vals){
+      var w = 200, h = 34, pts = vals.map(function(v, i){ return (i * w / (vals.length - 1)).toFixed(1) + ',' + (h - 3 - v / 10 * (h - 6)).toFixed(1); }).join(' ');
+      return '<svg viewBox="0 0 200 34" preserveAspectRatio="none" aria-hidden="true"><polyline points="' + pts + '" fill="none" stroke="#C9722F" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>';
+    }
+    ROWS.forEach(function(row){
+      var r = document.createElement('div'); r.className = 'row'; r.textContent = '▾ ' + row.t; dash.appendChild(r);
+      var g = document.createElement('div'); g.className = 'panels ' + row.cls; dash.appendChild(g);
+      row.p.forEach(function(p){
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'panel' + (p.wide ? ' wide' : ''); b.setAttribute('aria-pressed', 'false');
+        b.innerHTML = '<span>' + esc(p.n) + '</span>' + spark(p.spark);
+        b.addEventListener('click', function(){
+          all.forEach(function(o){ o.setAttribute('aria-pressed', 'false'); });
+          b.setAttribute('aria-pressed', 'true');
+          det.innerHTML = '<p style="margin:0 0 8px"><strong>' + esc(p.n) + '</strong> · fila «' + esc(row.t) + '» · unidad <code>' + p.u + '</code>' + (p.th ? ' · ' + p.th : '') + '</p>' +
+            '<pre class="pq fadein">' + esc(p.q) + '</pre><p class="small" style="margin:0">' + p.d + '</p>';
+        });
+        all.push(b); g.appendChild(b);
+      });
+    });
+    all[1].click();
+  })();
+
+  /* ── Trazas: datos y dibujo de la cascada ──────────────── */
+  var URL_RES = 'http://inventario:8082/api/inventario/teclado/reservas?cantidad=2';
+  var TRACES = {
+    normal: {desc:'Traza real de la captura del README (<code>img/jaeger-traza.png</code>): 16.3 ms en total, 3 spans de 2 servicios.',
+      note:'Duraciones de la captura de Jaeger del taller. La diferencia entre <code>http post</code> (10 ms) y el span de inventario (3.3 ms) es el tiempo de red y de manejo HTTP entre los dos contenedores.',
+      groups:[{id:'3d2ecea', title:'pedidos: http post /api/pedidos', total:16.3, spans:[
+        {svc:'pedidos', name:'http post /api/pedidos', s:0, d:16.3, depth:0, tags:[['method','POST'],['uri','/api/pedidos'],['status','201']]},
+        {svc:'pedidos', name:'http post', s:3.4, d:10, depth:1, tags:[['method','POST'],['http.url', URL_RES],['status','200']]},
+        {svc:'inventario', name:'http post /api/inventario/{producto}/reservas', s:7.4, d:3.3, depth:2, tags:[['method','POST'],['uri','/api/inventario/{producto}/reservas'],['status','200']]}]}]},
+    lento: {desc:'Con <code>latenciaMs=800</code>, cada operación de inventario espera 800 ms. La traza muestra que el tiempo se va en el span de inventario, y que los spans de pedidos solo lo esperan.',
+      note:'<span class="badge">ilustrativo</span> El README no trae la captura de esta traza: las duraciones son aproximadas (los 800 ms del simulador sumados a la traza normal).',
+      approx:true,
+      groups:[{id:'(ilustrativa)', title:'pedidos: http post /api/pedidos', total:816, spans:[
+        {svc:'pedidos', name:'http post /api/pedidos', s:0, d:816, depth:0, tags:[['method','POST'],['uri','/api/pedidos'],['status','201']]},
+        {svc:'pedidos', name:'http post', s:3.4, d:810, depth:1, tags:[['method','POST'],['http.url', URL_RES],['status','200']]},
+        {svc:'inventario', name:'http post /api/inventario/{producto}/reservas', s:7.4, d:803, depth:2, tags:[['method','POST'],['uri','/api/inventario/{producto}/reservas'],['status','200']]}]}]},
+    error: {desc:'Con <code>tasaError=0.3</code>, el 30% de las reservas falla con 500 y pedidos responde 503. Los tres spans aparecen marcados con error (captura <code>img/jaeger-traza-error.png</code>: 44.8 ms en total).',
+      note:'Duraciones de la captura de Jaeger del taller. Al abrir los spans se ve la excepción: <code>FallaSimuladaException</code> en inventario e <code>InventarioNoDisponibleException</code> en pedidos.',
+      groups:[{id:'4cbd17f', title:'pedidos: http post /api/pedidos', total:44.8, spans:[
+        {svc:'pedidos', name:'http post /api/pedidos', s:0, d:44.8, depth:0, err:true, tags:[['method','POST'],['uri','/api/pedidos'],['status','503'],['exception','InventarioNoDisponibleException']]},
+        {svc:'pedidos', name:'http post', s:5.3, d:25.8, depth:1, err:true, tags:[['method','POST'],['http.url', URL_RES],['status','500']]},
+        {svc:'inventario', name:'http post /api/inventario/{producto}/reservas', s:12.4, d:8.8, depth:2, err:true, tags:[['method','POST'],['uri','/api/inventario/{producto}/reservas'],['status','500'],['exception','FallaSimuladaException']]}]}]},
+    sinprop: {desc:'Si <code>InventarioClienteHttp</code> creara el cliente con <code>RestClient.create()</code> en lugar del builder inyectado, la llamada funcionaría igual, pero sin el encabezado <code>traceparent</code>: en Jaeger aparecerían dos trazas separadas en lugar de una.',
+      note:'<span class="badge">ilustrativo</span> Escenario descrito en el README; las duraciones son las de la traza normal y los traceId son distintos en cada traza.',
+      groups:[
+        {id:'traceId A', title:'pedidos: http post /api/pedidos', total:16.3, spans:[
+          {svc:'pedidos', name:'http post /api/pedidos', s:0, d:16.3, depth:0, tags:[['method','POST'],['uri','/api/pedidos'],['status','201']]}]},
+        {id:'traceId B', title:'inventario: http post /api/inventario/{producto}/reservas', total:3.3, spans:[
+          {svc:'inventario', name:'http post /api/inventario/{producto}/reservas', s:0, d:3.3, depth:0, tags:[['method','POST'],['uri','/api/inventario/{producto}/reservas'],['status','200']]}]}]}
+  };
+  function fmtMs(v, approx){
+    if (v === 0) return '0µs';
+    var s = v >= 100 ? Math.round(v) + 'ms' : (Math.round(v * 10) / 10) + 'ms';
+    return (approx ? '≈' : '') + s;
+  }
+  function renderTrace(svg, groups, o){
+    o = o || {};
+    clear(svg);
+    var W = 760, LBL = 300, X0 = 312, X1 = 742, y = 4, rowsOut = [];
+    var all = [];
+    groups.forEach(function(g, gi){
+      if (gi > 0) y += 14;
+      svg.appendChild(el('text', {x:0, y:y + 15, 'font-size':13.5, 'font-weight':700, fill:C.navy, 'font-family':FONT}, g.title));
+      svg.appendChild(el('text', {x:W - 4, y:y + 15, 'text-anchor':'end', 'font-size':11.5, fill:C.muted, 'font-family':MONO}, g.id + ' · ' + fmtMs(g.total, o.approx) + ' · ' + g.spans.length + (g.spans.length === 1 ? ' span' : ' spans')));
+      y += 26;
+      for (var k = 0; k <= 4; k++){
+        var tx = X0 + (X1 - X0) * k / 4;
+        svg.appendChild(el('line', {x1:tx, y1:y, x2:tx, y2:y + 18 + g.spans.length * 42, stroke:C.grid}));
+        svg.appendChild(el('text', {x:tx, y:y + 12, 'text-anchor': k === 0 ? 'start' : (k === 4 ? 'end' : 'middle'), 'font-size':10.5, fill:C.muted, 'font-family':FONT}, fmtMs(g.total * k / 4, o.approx && k > 0)));
+      }
+      y += 18;
+      g.spans.forEach(function(s){
+        var row = el('g', {'class':'row-span', tabindex:0, role:'button', 'aria-label':'Span ' + s.name + ' del servicio ' + s.svc + ', ' + fmtMs(s.d, o.approx) + (s.err ? ', con error' : '')});
+        var bg = el('rect', {'class':'rowbg', x:0, y:y, width:W, height:40, rx:4, fill:'#fff', stroke:'none'});
+        row.appendChild(bg);
+        var ix = 6 + s.depth * 16, color = s.svc === 'pedidos' ? C.ped : C.inv;
+        if (s.err){
+          row.appendChild(el('circle', {cx:ix + 6, cy:y + 14, r:6, fill:C.warn}));
+          row.appendChild(el('text', {x:ix + 6, y:y + 18, 'text-anchor':'middle', 'font-size':10, 'font-weight':700, fill:'#fff', 'font-family':FONT}, '!'));
+          ix += 16;
+        }
+        row.appendChild(el('text', {x:ix, y:y + 17, 'font-size':13, 'font-weight':700, fill:color, 'font-family':FONT}, s.svc));
+        row.appendChild(el('text', {x:6 + s.depth * 16, y:y + 33, 'font-size':11, fill:C.muted, 'font-family':MONO}, s.name));
+        var bx = X0 + (X1 - X0) * s.s / g.total;
+        var bar = el('rect', {x:bx, y:y + 13, width:0, height:14, rx:3, fill:color, stroke: s.err ? C.warn : 'none', 'stroke-width':2});
+        row.appendChild(bar);
+        var bw = (X1 - X0) * s.d / g.total;
+        var right = bx + bw + 6 < X1 - 40;
+        var lab = el('text', {x: right ? bx + bw + 6 : bx - 6, y:y + 24, 'text-anchor': right ? 'start' : 'end', 'font-size':11, fill:C.muted, 'font-family':FONT, opacity:0}, fmtMs(s.d, o.approx));
+        if (!right && bw > 70){ lab.setAttribute('x', bx + bw - 6); lab.setAttribute('text-anchor', 'end'); lab.setAttribute('fill', '#fff'); lab.setAttribute('font-weight', 600); }
+        row.appendChild(lab);
+        svg.appendChild(row);
+        var item = {s:s, g:g, bg:bg, bar:bar, bw:bw, lab:lab, row:row};
+        all.push(item); rowsOut.push(item);
+        function pick(){ if (o.onSelect) o.onSelect(item); }
+        row.addEventListener('click', pick);
+        row.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); pick(); } });
+        y += 42;
+      });
+    });
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (y + 6));
+    var token = (svg._tok = (svg._tok || 0) + 1);
+    tween(o.animate === false ? 0 : 1500, function(p){
+      if (svg._tok !== token) return;
+      all.forEach(function(it){
+        var cur = p * it.g.total, w = Math.max(0, Math.min(it.s.d, cur - it.s.s)) / it.g.total * (X1 - X0);
+        it.bar.setAttribute('width', w);
+        if (cur >= it.s.s + it.s.d) it.lab.setAttribute('opacity', 1);
+      });
+    });
+    return rowsOut;
+  }
+  function selectRow(rows, item){
+    rows.forEach(function(r){ r.bg.setAttribute('fill', r === item ? C.soft : '#fff'); });
+  }
+  function spanTable(s){
+    return '<div class="tablewrap fadein"><table><thead><tr><th colspan="2">' + esc(s.svc) + ' · ' + esc(s.name) + '</th></tr></thead><tbody>' +
+      s.tags.map(function(t){ return '<tr><th><code>' + esc(t[0]) + '</code></th><td><code>' + esc(t[1]) + '</code></td></tr>'; }).join('') + '</tbody></table></div>';
+  }
+
+  /* ── Lab 4: cascada de la traza ────────────────────────── */
+  (function(){
+    var svg = document.getElementById('tr-svg'), info = document.getElementById('tr-info'), desc = document.getElementById('tr-desc'), note = document.getElementById('tr-note');
+    var psvg = document.getElementById('prop-svg'), ppre = document.getElementById('prop-pre');
+    var cur = 'normal', rows = [];
+    var tok = 0;
+    async function prop(scn){
+      var my = ++tok;
+      clear(psvg);
+      var noProp = scn === 'sinprop';
+      function box(x, t1, t2, color){
+        psvg.appendChild(el('rect', {x:x, y:30, width:170, height:56, rx:8, fill:'#fff', stroke:color, 'stroke-width':1.6}));
+        psvg.appendChild(el('text', {x:x + 85, y:54, 'text-anchor':'middle', 'font-size':14, 'font-weight':700, fill:color, 'font-family':FONT}, t1));
+        psvg.appendChild(el('text', {x:x + 85, y:72, 'text-anchor':'middle', 'font-size':11, fill:C.muted, 'font-family':MONO}, t2));
+      }
+      box(10, 'pedidos', noProp ? 'traceId A' : 'traceId T', C.ped);
+      box(580, 'inventario', noProp ? 'traceId B (nuevo)' : 'traceId T (el mismo)', C.inv);
+      psvg.appendChild(el('line', {x1:184, y1:58, x2:576, y2:58, stroke:C.line, 'stroke-width':2, 'stroke-dasharray':'4 4'}));
+      var env = el('g', {});
+      env.appendChild(el('rect', {x:-62, y:-15, width:124, height:30, rx:6, fill: noProp ? '#fff' : C.navy, stroke: noProp ? C.warn : C.navy, 'stroke-width':1.5}));
+      env.appendChild(el('text', {x:0, y:5, 'text-anchor':'middle', 'font-size':11.5, fill: noProp ? C.warn : '#fff', 'font-family':MONO}, noProp ? 'sin traceparent' : 'traceparent'));
+      psvg.appendChild(env);
+      psvg.appendChild(el('text', {x:380, y:20, 'text-anchor':'middle', 'font-size':11.5, fill:C.muted, 'font-family':FONT}, 'POST /api/inventario/teclado/reservas?cantidad=2'));
+      await tween(1500, function(p){ if (my === tok) env.setAttribute('transform', 'translate(' + (250 + 260 * ease(p)) + ',58)'); });
+      ppre.innerHTML = noProp
+        ? '<span class="c">POST /api/inventario/teclado/reservas?cantidad=2 HTTP/1.1</span>\nHost: inventario:8082\n<span class="r"># sin encabezado traceparent: inventario no sabe a qué traza pertenece la petición\n# y empieza una traza nueva</span>'
+        : '<span class="c">POST /api/inventario/teclado/reservas?cantidad=2 HTTP/1.1</span>\nHost: inventario:8082\n<span class="k">traceparent</span>: 00-<span class="k">&lt;traceId: 32 hex&gt;</span>-<span class="g">&lt;spanId de "http post": 16 hex&gt;</span>-01\n\n<span class="c"># 00       versión del formato (W3C Trace Context)\n# traceId  el mismo para todos los spans de la petición\n# spanId   el span que hizo la llamada: será el padre del span de inventario\n# 01       la traza está muestreada (sampling.probability=1.0)</span>';
+    }
+    function draw(scn){
+      cur = scn;
+      var T = TRACES[scn];
+      desc.innerHTML = T.desc;
+      note.innerHTML = T.note;
+      info.innerHTML = '<span class="muted">Seleccione un span (clic o Enter) para ver sus etiquetas.</span>';
+      rows = renderTrace(svg, T.groups, {approx:T.approx, onSelect:function(it){ selectRow(rows, it); info.innerHTML = spanTable(it.s); }});
+      prop(scn);
+    }
+    tabGroup('[data-tr]', 'data-tr', draw);
+    document.getElementById('tr-replay').addEventListener('click', function(){ draw(cur); });
+    draw('normal');
+  })();
+
+  /* ── Lab 5: ciclo de vida de una alerta ────────────────── */
+  (function(){
+    var rulePre = document.getElementById('al-rule'), st = document.getElementById('al-states'), chart = document.getElementById('al-chart');
+    var leg = document.getElementById('al-leg'), annot = document.getElementById('al-annot'), logEl = document.getElementById('al-log'), clock = document.getElementById('al-clock');
+    var errIn = document.getElementById('al-err'), latIn = document.getElementById('al-lat'), preset = document.getElementById('al-preset');
+    var pauseBtn = document.getElementById('al-pause');
+    var vis = visibleFlag(st);
+    var RULES = {
+      err: {name:'TasaDeErroresAlta', th:0.05, sev:'critica',
+        yaml:'- <span class="k">alert</span>: <span class="g">TasaDeErroresAlta</span>\n  <span class="k">expr</span>: |\n    sum by (application) (rate(http_server_requests_seconds_count{uri!~"/actuator.*", status=~"5.."}[1m]))\n      /\n    sum by (application) (rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[1m]))\n      &gt; <span class="r">0.05</span>\n  <span class="k">for</span>: <span class="r">30s</span>\n  <span class="k">labels</span>:\n    <span class="k">severidad</span>: critica\n  <span class="k">annotations</span>:\n    <span class="k">resumen</span>: "El servicio {{ $labels.application }} tiene una tasa de errores 5xx alta"\n    <span class="k">descripcion</span>: "{{ $value | humanizePercentage }} de las peticiones terminan en error 5xx (umbral: 5%)."',
+        presetTxt:'curl -X POST "…/api/fallas?tasaError=0.3"'},
+      lat: {name:'LatenciaP95Alta', th:0.5, sev:'advertencia',
+        yaml:'- <span class="k">alert</span>: <span class="g">LatenciaP95Alta</span>\n  <span class="k">expr</span>: |\n    histogram_quantile(0.95,\n      sum by (application, le) (rate(http_server_requests_seconds_bucket{uri!~"/actuator.*"}[1m]))\n    ) &gt; <span class="r">0.5</span>\n  <span class="k">for</span>: <span class="r">30s</span>\n  <span class="k">labels</span>:\n    <span class="k">severidad</span>: advertencia\n  <span class="k">annotations</span>:\n    <span class="k">resumen</span>: "El servicio {{ $labels.application }} responde lento"\n    <span class="k">descripcion</span>: "El p95 de la latencia es {{ $value | humanizeDuration }} (umbral: 500 ms)."',
+        presetTxt:'curl -X POST "…/api/fallas?latenciaMs=800"'}
+    };
+    var APPS = ['pedidos', 'inventario'];
+    var rule = 'err', speed = 5, paused = REDUCED, timer = null, sim;
+    function emptyB(){ return BOUNDS.map(function(){ return 0; }); }
+    function reset(){
+      sim = {t:0, snaps:[], hist:[], log:[], c:{}, s:{}, seen:{}};
+      APPS.forEach(function(a){ sim.c[a] = {req:0, err:0, b:emptyB()}; sim.s[a] = {state:'inactive', since:0, flash:0, val:null}; sim.seen[a] = false; });
+      // 70 s previos sin fallas: la ventana [1m] arranca con tráfico normal, como en el taller
+      for (var w = 0; w < 70; w++) step(0, 0);
+      sim.t = 0;
+      sim.snaps.forEach(function(x){ x.t -= 70; });
+      sim.hist.forEach(function(x){ x.t -= 70; });
+      logEl.innerHTML = '<span class="c">Registro de cambios de estado (tiempo simulado; t = 0 es el inicio de la simulación)</span>';
+      render();
+    }
+    function addLog(html){ sim.log.push(html); logEl.innerHTML += '\n' + html; logEl.scrollTop = logEl.scrollHeight; }
+    function observe(a, dur, isErr){
+      var c = sim.c[a]; c.req++; if (isErr){ c.err++; sim.seen[a] = true; }
+      c.b[bucketIndex(dur)]++;
+    }
+    function tick(){
+      step(rule === 'err' ? +errIn.value : 0, rule === 'lat' ? +latIn.value / 1000 : 0);
+      render();
+    }
+    function step(e, L){
+      sim.t++;
+      var i;
+      // inventario: ~20 peticiones/s (consulta de stock + reserva); el simulador afecta a las dos
+      for (i = 0; i < 20; i++) observe('inventario', L + 0.002 + Math.random() * 0.006, Math.random() < e);
+      // pedidos: 10 POST/s (503 si inventario falla) y la consulta GET de los pedidos creados
+      for (i = 0; i < 10; i++){
+        var fail = Math.random() < e;
+        observe('pedidos', L + 0.010 + Math.random() * 0.010, fail);
+        if (!fail && Math.random() < 11 / 13) observe('pedidos', 0.001 + Math.random() * 0.003, false);
+      }
+      if (sim.t % 5 === 0){
+        var snap = {t:sim.t};
+        APPS.forEach(function(a){ snap[a] = {req:sim.c[a].req, err:sim.c[a].err, cum:cumulative(sim.c[a].b), seen:sim.seen[a]}; });
+        sim.snaps.push(snap);
+        while (sim.snaps.length && sim.snaps[0].t < sim.t - 65) sim.snaps.shift();
+        evaluate();
+      }
+      APPS.forEach(function(a){ if (sim.s[a].flash > 0) sim.s[a].flash--; });
+    }
+    function evaluate(){
+      var w = sim.snaps.filter(function(s){ return s.t >= sim.t - 60; });
+      var R = RULES[rule], h = {t:sim.t};
+      APPS.forEach(function(a){
+        var v = null;
+        if (w.length >= 2){
+          var f = w[0][a], l = w[w.length - 1][a];
+          if (rule === 'err'){
+            if (l.seen && l.req > f.req) v = (l.err - f.err) / (l.req - f.req);
+          } else {
+            var d = l.cum.map(function(x, k){ return x - f.cum[k]; });
+            var q = histQuantile(0.95, d);
+            v = isNaN(q) ? null : q;
+          }
+        }
+        h[a] = v;
+        var S = sim.s[a]; S.val = v;
+        var cond = v != null && v > R.th;
+        var vt = v == null ? 'sin resultado' : (rule === 'err' ? humanizePercentage(v) : humanizeDuration(v));
+        var tag = '<span class="k">t = ' + sim.t + ' s</span>  ' + (a === 'pedidos' ? 'pedidos   ' : 'inventario') + '  ';
+        if (S.state === 'inactive' && cond){ S.state = 'pending'; S.since = sim.t; addLog(tag + 'Inactive → <span class="k">Pending</span>  (valor ' + vt + ')'); }
+        else if (S.state === 'pending' && cond && sim.t - S.since >= 30){ S.state = 'firing'; addLog(tag + 'Pending → <span class="r">Firing</span>  (30 s cumpliendo la condición, valor ' + vt + ')'); }
+        else if (S.state === 'pending' && !cond){ S.state = 'inactive'; addLog(tag + 'Pending → Inactive  (dejó de cumplirse antes de 30 s; no se disparó)'); }
+        else if (S.state === 'firing' && !cond){ S.state = 'inactive'; S.flash = 10; addLog(tag + 'Firing → <span class="g">Resolved</span> → Inactive  (valor ' + vt + ')'); }
+      });
+      sim.hist.push(h);
+      while (sim.hist.length && sim.hist[0].t < sim.t - 185) sim.hist.shift();
+    }
+    // Dibujo fijo del diagrama de estados
+    var BOX = {inactive:{x:14, c:C.ok, l:'Inactive'}, pending:{x:204, c:C.terra, l:'Pending'}, firing:{x:394, c:C.warn, l:'Firing'}, resolved:{x:584, c:'#5A6480', l:'Resolved'}};
+    var BW = 162, BY = 62, BH = 78, boxEls = {}, markers = {}, pendTxt = {};
+    (function(){
+      var defs = el('defs', {});
+      var mk = el('marker', {id:'sa', markerWidth:9, markerHeight:9, refX:7, refY:3, orient:'auto'});
+      mk.appendChild(el('path', {d:'M0,0 L7,3 L0,6 Z', fill:C.muted})); defs.appendChild(mk); st.appendChild(defs);
+      function arr(d){ st.appendChild(el('path', {d:d, fill:'none', stroke:C.muted, 'stroke-width':1.5, 'marker-end':'url(#sa)'})); }
+      function lab(x, y, t){ st.appendChild(el('text', {x:x, y:y, 'text-anchor':'middle', 'font-size':10.5, fill:C.muted, 'font-family':FONT}, t)); }
+      arr('M' + (14 + BW) + ' ' + (BY + 22) + ' H' + (202));
+      lab(190, BY - 8, 'expr > umbral');
+      arr('M' + (204 + BW) + ' ' + (BY + 22) + ' H' + (392));
+      lab(380, BY - 8, '30 s (for)');
+      arr('M' + (394 + BW) + ' ' + (BY + 22) + ' H' + (582));
+      lab(570, BY - 8, 'expr ≤ umbral');
+      arr('M285 ' + BY + ' C285 24 95 24 95 ' + (BY - 2));
+      lab(190, 16, 'deja de cumplirse antes de 30 s');
+      arr('M665 ' + (BY + BH) + ' C665 ' + (BY + BH + 50) + ' 95 ' + (BY + BH + 50) + ' 95 ' + (BY + BH + 2));
+      lab(380, BY + BH + 46, 'Prometheus la muestra de nuevo como Inactive');
+      Object.keys(BOX).forEach(function(k){
+        var b = BOX[k], g = el('g', {});
+        var r = el('rect', {x:b.x, y:BY, width:BW, height:BH, rx:10, fill:'#fff', stroke:b.c, 'stroke-width':2});
+        var t = el('text', {x:b.x + BW / 2, y:BY + 22, 'text-anchor':'middle', 'font-size':14, 'font-weight':700, fill:b.c, 'font-family':FONT}, b.l);
+        g.appendChild(r); g.appendChild(t); st.appendChild(g);
+        boxEls[k] = {r:r, t:t, c:b.c};
+      });
+      APPS.forEach(function(a, i){
+        var g = el('g', {'class':'marker'});
+        g.appendChild(el('circle', {cx:0, cy:0, r:9, fill: a === 'pedidos' ? C.ped : C.inv, stroke:'#fff', 'stroke-width':2}));
+        g.appendChild(el('text', {x:0, y:4, 'text-anchor':'middle', 'font-size':10, 'font-weight':700, fill:'#fff', 'font-family':FONT}, a === 'pedidos' ? 'P' : 'I'));
+        st.appendChild(g); markers[a] = g;
+        pendTxt[a] = el('text', {x:0, y:0, 'font-size':10.5, fill:C.navy, 'font-family':MONO}, '');
+        st.appendChild(pendTxt[a]);
+      });
+    })();
+    function render(){
+      clock.textContent = 't = ' + sim.t + ' s';
+      var active = {};
+      APPS.forEach(function(a){ var S = sim.s[a]; active[S.flash > 0 ? 'resolved' : S.state] = true; if (S.flash > 0) active.inactive = true; });
+      Object.keys(boxEls).forEach(function(k){
+        var b = boxEls[k], on = !!active[k];
+        b.r.setAttribute('fill', on ? b.c : '#fff');
+        b.t.setAttribute('fill', on ? '#fff' : b.c);
+      });
+      APPS.forEach(function(a, i){
+        var S = sim.s[a], key = S.flash > 0 ? 'resolved' : S.state, b = BOX[key];
+        var x = b.x + 20, y = BY + 42 + i * 22;
+        markers[a].style.transform = 'translate(' + x + 'px,' + y + 'px)';
+        pendTxt[a].setAttribute('x', x + 13); pendTxt[a].setAttribute('y', y + 4);
+        pendTxt[a].setAttribute('fill', boxEls[key].r.getAttribute('fill') === '#fff' ? C.navy : '#fff');
+        pendTxt[a].textContent = a + (S.state === 'pending' ? ' ' + Math.min(30, sim.t - S.since) + '/30 s' : '');
+      });
+      // gráfico
+      var R = RULES[rule], t = sim.t;
+      var isErr = rule === 'err';
+      var maxV = isErr ? 0.4 : 1.2;
+      sim.hist.forEach(function(h){ APPS.forEach(function(a){ if (h[a] != null && h[a] > maxV) maxV = h[a] * 1.1; }); });
+      lineChart(chart, {H:220, x0:t - 180, x1:t, yMax:maxV, xTicks:[{v:t - 180, label:'−180 s'}, {v:t - 120, label:'−120 s'}, {v:t - 60, label:'−60 s'}, {v:t, label:'ahora'}], legend:leg,
+        yFmt: isErr ? function(v){ return Math.round(v * 100) + '%'; } : function(v){ return Math.round(v * 1000) + ' ms'; },
+        threshold:{v:R.th, label: isErr ? 'umbral 0.05 (5%)' : 'umbral 0.5 s'},
+        series:[{name:'{application="inventario"}', color:C.inv, pts:sim.hist.map(function(h){ return [h.t, h.inventario]; })},
+                {name:'{application="pedidos"}', color:C.ped, pts:sim.hist.map(function(h){ return [h.t, h.pedidos]; })}]});
+      // anotaciones
+      var out = [];
+      APPS.forEach(function(a){
+        var S = sim.s[a];
+        if (S.state === 'firing' && S.val != null){
+          var d = isErr ? humanizePercentage(S.val) + ' de las peticiones terminan en error 5xx (umbral: 5%).' : 'El p95 de la latencia es ' + humanizeDuration(S.val) + ' (umbral: 500 ms).';
+          var r = isErr ? 'El servicio ' + a + ' tiene una tasa de errores 5xx alta' : 'El servicio ' + a + ' responde lento';
+          out.push('<div class="banner fail">🔔 ' + R.name + ' · ' + a + ' · severidad=' + R.sev + '<span class="why"><strong>resumen:</strong> ' + r + '<br><strong>descripcion:</strong> ' + d + '</span></div>');
+        } else if (S.state === 'pending'){
+          out.push('<div class="banner pend">' + R.name + ' · ' + a + ' en Pending<span class="why">La condición se cumple desde t = ' + S.since + ' s. Si se mantiene hasta t = ' + (S.since + 30) + ' s, pasa a Firing.</span></div>');
+        }
+      });
+      annot.innerHTML = out.length ? out.join('') : '<div class="banner ok">Sin alertas activas<span class="why">Mueva el control o use el botón de <code>curl</code> para activar el simulador de fallas de inventario.</span></div>';
+    }
+    function setRule(r){
+      rule = r;
+      rulePre.innerHTML = RULES[r].yaml;
+      document.getElementById('al-sl-err').hidden = r !== 'err';
+      document.getElementById('al-sl-lat').hidden = r !== 'lat';
+      preset.textContent = RULES[r].presetTxt;
+      errIn.value = 0; latIn.value = 0; updLabels();
+      reset();
+    }
+    function updLabels(){
+      document.getElementById('al-err-v').textContent = Math.round(+errIn.value * 100) + '%';
+      document.getElementById('al-lat-v').textContent = latIn.value + ' ms';
+    }
+    errIn.addEventListener('input', updLabels);
+    latIn.addEventListener('input', updLabels);
+    preset.addEventListener('click', function(){ if (rule === 'err') errIn.value = 0.3; else latIn.value = 800; updLabels(); if (paused) setPause(false); });
+    document.getElementById('al-delete').addEventListener('click', function(){ errIn.value = 0; latIn.value = 0; updLabels(); });
+    document.getElementById('al-reset').addEventListener('click', function(){ errIn.value = 0; latIn.value = 0; updLabels(); reset(); });
+    function startTimer(){
+      if (timer) clearInterval(timer);
+      timer = setInterval(function(){ if (!paused && vis.on && !document.hidden) tick(); }, 1000 / speed);
+    }
+    function setPause(p){ paused = p; pauseBtn.textContent = p ? '▶ Reanudar' : '⏸ Pausar'; }
+    pauseBtn.addEventListener('click', function(){ setPause(!paused); });
+    tabGroup('[data-spd]', 'data-spd', function(v){ speed = +v; startTimer(); });
+    tabGroup('[data-al]', 'data-al', setRule);
+    setPause(paused);
+    setRule('err');
+    startTimer();
+  })();
+
+  /* ── Lab 6: correlación ────────────────────────────────── */
+  (function(){
+    var TID = '1b742b56410a5d2017f63301e04d0478', SP = '82551770d2c9750d', SI = 'de126e9e0ad76e48';
+    var logs = document.getElementById('co-logs'), svg = document.getElementById('co-svg'), info = document.getElementById('co-info');
+    var next = document.getElementById('co-next'), alertBox = document.getElementById('co-alert');
+    var steps = document.querySelectorAll('#co-steps .step3');
+    var stage = 0, rows = [], tok = 0;
+    var LINE_P = ['pedidos-1  | 2026-10-05T17:49:05.507Z ERROR 1 --- [pedidos] [nio-8081-exec-8] [', '] e.u.dyas.tienda.comun.ManejadorErrores   : Error al atender la solicitud: El inventario respondió 500'];
+    var LINE_I = ['inventario-1  | 2026-10-05T17:49:05.503Z ERROR 1 --- [inventario] [nio-8082-exec-8] [', '] e.u.dyas.tienda.comun.ManejadorErrores   : Error al atender la solicitud: Falla simulada en el servicio de inventario'];
+    var LABELS = ['▶ docker compose logs pedidos | grep ERROR', '▶ docker compose logs inventario | grep ' + TID.slice(0, 8) + '…', '▶ Abrir http://localhost:16686/trace/' + TID.slice(0, 8) + '…', '✓ Recorrido completo'];
+    var GROUP = [{id:TID.slice(0, 7), title:'pedidos: http post /api/pedidos', total:44.8, spans:TRACES.error.groups[0].spans}];
+    function idBtn(id, cls, label){ return '<button type="button" class="id ' + cls + '" data-id="' + id + '" aria-label="' + label + '">' + id + '</button>'; }
+    function line(parts, spanId){ return esc(parts[0]) + idBtn(TID, 'trace', 'traceId ' + TID) + '-' + idBtn(spanId, 'span', 'spanId ' + spanId) + esc(parts[1]); }
+    function setSteps(){
+      var active = [0, 1, 1, 2][stage];
+      steps.forEach(function(s, i){
+        s.classList.toggle('done', stage >= 3 || i < active);
+        s.classList.toggle('on', stage < 3 && i === active);
+      });
+      next.textContent = LABELS[Math.min(stage, 3)];
+      next.disabled = stage >= 3;
+    }
+    async function type(html, plain){
+      var my = tok;
+      if (REDUCED){ logs.innerHTML += html; return; }
+      var base = logs.innerHTML, n = plain.length;
+      for (var i = 0; i <= n; i += 6){
+        if (my !== tok) return;
+        logs.innerHTML = base + '<span class="cmd">' + esc(plain.slice(0, i)) + '</span>';
+        await sleep(12);
+      }
+      if (my !== tok) return;
+      logs.innerHTML = base + html;
+    }
+    function bindIds(){
+      logs.querySelectorAll('button.id').forEach(function(b){
+        b.addEventListener('click', function(){ highlight(b.getAttribute('data-id')); });
+      });
+    }
+    function highlight(id){
+      logs.querySelectorAll('button.id').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-id') === id); });
+      if (!rows.length){
+        info.innerHTML = '<span class="muted">' + (id === TID ? 'Es el traceId de la petición. ' : 'Es el spanId del span activo cuando se escribió la línea. ') + 'Abra la traza en Jaeger para ver los spans.</span>';
+        return;
+      }
+      var target = null;
+      if (id === SP) target = rows[0];
+      if (id === SI) target = rows[2];
+      rows.forEach(function(r){ r.bg.setAttribute('fill', (id === TID || r === target) ? C.soft : '#fff'); });
+      if (id === TID) info.innerHTML = '<span class="fadein">El traceId <code>' + TID + '</code> identifica la traza completa: los 3 spans de los 2 servicios.</span>';
+      else info.innerHTML = '<span class="fadein">El spanId <code>' + esc(id) + '</code> es el del span activo cuando se escribió el log en <strong>' + (id === SP ? 'pedidos' : 'inventario') + '</strong>: <code>' + esc(target.s.name) + '</code>.</span>';
+    }
+    async function advance(){
+      if (stage === 0){
+        stage = 1; setSteps();
+        var p = line(LINE_P, SP);
+        await type('<span class="cmd">$ docker compose logs pedidos | grep ERROR</span>\n' + p, '$ docker compose logs pedidos | grep ERROR');
+        bindIds();
+      } else if (stage === 1){
+        stage = 2; setSteps();
+        var cmd = '$ docker compose logs inventario | grep ' + TID;
+        await type('\n\n<span class="cmd">' + esc(cmd) + '</span>\n' + line(LINE_I, SI), '\n\n' + cmd);
+        bindIds(); highlight(TID);
+      } else if (stage === 2){
+        stage = 3; setSteps();
+        rows = renderTrace(svg, GROUP, {onSelect:function(it){ rows.forEach(function(r){ r.bg.setAttribute('fill', r === it ? C.soft : '#fff'); }); info.innerHTML = spanTable(it.s); }});
+        info.innerHTML = '<span class="fadein">Traza abierta en Jaeger con <code>http://localhost:16686/trace/' + TID + '</code>. Seleccione el traceId o un spanId en los logs para ubicarlo en la traza.</span>';
+      }
+    }
+    function reset(){
+      tok++; stage = 0; rows = [];
+      logs.innerHTML = '<span class="cmd"># Con tasaError=0.3 activo. Presione el botón para buscar los errores en los logs.</span>\n';
+      clear(svg); svg.setAttribute('viewBox', '0 0 760 60');
+      svg.appendChild(el('text', {x:380, y:34, 'text-anchor':'middle', 'font-size':13, fill:C.muted, 'font-family':FONT}, 'La traza aparece aquí en el paso 3'));
+      info.innerHTML = '';
+      alertBox.innerHTML = '<div class="banner fail">🔔 TasaDeErroresAlta · inventario · Firing<span class="why"><strong>descripcion:</strong> 30.79% de las peticiones terminan en error 5xx (umbral: 5%).</span></div>';
+      setSteps();
+    }
+    next.addEventListener('click', advance);
+    document.getElementById('co-reset').addEventListener('click', reset);
+    reset();
+  })();
+
+  /* ── Lab 7: checklist del Proyecto 3 ───────────────────── */
+  (function(){
+    var ITEMS = [
+      'Cada servicio expone <code>/actuator/prometheus</code> (o el equivalente en su lenguaje) y aparece en UP en Prometheus.',
+      'Un dashboard aprovisionado desde el repositorio con las métricas RED de cada servicio.',
+      'Al menos una métrica de negocio propia, graficada.',
+      'Al menos una regla de alerta sobre errores o latencia.',
+      'Trazas en Jaeger que atraviesan al menos dos servicios o componentes.',
+      'Logs con traceId y un plan para centralizarlos.'
+    ];
+    var KEY = 'dyas-monitoreo-checklist';
+    var saved = [];
+    try { saved = JSON.parse(localStorage.getItem(KEY) || '[]') || []; } catch (e) { saved = []; }
+    var ul = document.getElementById('chk'), bar = document.getElementById('chk-bar'), cnt = document.getElementById('chk-count');
+    ITEMS.forEach(function(t, i){
+      var li = document.createElement('li');
+      li.innerHTML = '<label><input type="checkbox" data-i="' + i + '"><span>' + t + '</span></label>';
+      var cb = li.querySelector('input');
+      cb.checked = !!saved[i];
+      li.classList.toggle('done', cb.checked);
+      cb.addEventListener('change', function(){ li.classList.toggle('done', cb.checked); upd(); });
+      ul.appendChild(li);
+    });
+    function upd(){
+      var cbs = ul.querySelectorAll('input'), n = 0, arr = [];
+      cbs.forEach(function(c){ if (c.checked) n++; arr.push(c.checked); });
+      bar.style.width = (n / ITEMS.length * 100) + '%';
+      cnt.textContent = n + ' de ' + ITEMS.length + (n === ITEMS.length ? ' · completo' : '');
+      try { localStorage.setItem(KEY, JSON.stringify(arr)); } catch (e) {}
+    }
+    upd();
+  })();
+})();
+</script>
+</body>
+</html>

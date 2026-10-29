@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arquitectura Limpia y Hexagonal | Diplomado en Diseño y Arquitectura de Software</title>
+<style>
+  :root{
+    --navy:#1F2D4E; --navy-ink:#16223c; --terra:#C9722F; --terra-soft:#F3E2D4;
+    --paper:#FFFFFF; --surface:#F1F3F7; --line:#D5DAE4; --muted:#5A6480;
+    --ok:#2F6F4F; --warn:#9A3B2C;
+    --mono: ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+    --sans: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --serif: Georgia,"Iowan Old Style","Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--surface);color:var(--navy-ink);font-family:var(--sans);font-size:16.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+  header.hero{background:var(--navy);color:#fff;padding:64px 0 56px;position:relative;overflow:hidden}
+  header.hero .wrap{position:relative;z-index:2}
+  .kicker{font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;color:#9FB0D4;margin:0 0 14px}
+  h1{font-family:var(--serif);font-weight:700;font-size:clamp(34px,5.2vw,54px);line-height:1.08;margin:0 0 18px;max-width:21ch}
+  .lede{font-size:19px;color:#D6DEF0;max-width:64ch;margin:0}
+  .hexline{position:absolute;inset:0;opacity:.13;z-index:1}
+  main{padding:0 0 90px}
+  section{padding:54px 0 10px}
+  section + section{border-top:1px solid var(--line)}
+  h2{font-family:var(--serif);font-size:clamp(25px,3.4vw,34px);line-height:1.15;margin:0 0 6px;color:var(--navy)}
+  .sec-note{color:var(--muted);margin:0 0 26px;max-width:70ch;font-size:15.5px}
+  h3{font-size:18px;margin:30px 0 10px;color:var(--navy)}
+  h4{font-size:15px;margin:0 0 10px;color:var(--navy)}
+  p{max-width:74ch}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:22px 24px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+  figure{margin:0}
+  svg{display:block;width:100%;height:auto}
+  .lab{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:24px}
+  .lab-head{display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;justify-content:space-between;margin-bottom:16px}
+  .lab-title{font-weight:700;font-size:17px;color:var(--navy)}
+  button{font:inherit;cursor:pointer}
+  button.tab{font-size:14.5px;padding:8px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--muted)}
+  button.tab[aria-selected=true]{background:var(--navy);border-color:var(--navy);color:#fff}
+  button:focus-visible{outline:3px solid var(--terra);outline-offset:2px}
+  table{border-collapse:collapse;width:100%;font-size:15px;background:var(--paper)}
+  caption{text-align:left;color:var(--muted);font-size:14px;padding-bottom:8px}
+  th,td{border:1px solid var(--line);padding:10px 12px;vertical-align:top;text-align:left}
+  th{background:var(--navy);color:#fff;font-weight:600}
+  tbody th{background:#EDF0F6;color:var(--navy)}
+  code{font-family:var(--mono);font-size:13.5px;background:#EDF0F6;padding:1px 5px;border-radius:3px}
+  pre{font-family:var(--mono);font-size:13px;background:var(--navy-ink);color:#E6ECF8;padding:16px 18px;border-radius:8px;overflow:auto;line-height:1.55;margin:0}
+  pre .c{color:#8FA6CE} pre .k{color:#E7B36B} pre .g{color:#8ED9A9} pre .r{color:#F0A08E}
+  .callout{border-left:4px solid var(--terra);background:var(--terra-soft);padding:16px 20px;border-radius:0 8px 8px 0;margin:22px 0}
+  .callout strong{color:#7C441A}
+  .callout.warn{border-left-color:var(--warn);background:#F7E4E0}
+  .callout.warn strong{color:var(--warn)}
+  ul.tight{margin:8px 0;padding-left:20px}
+  ul.tight li{margin:5px 0}
+  .yesno{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  @media(max-width:820px){.yesno{grid-template-columns:1fr}}
+  .yesno > div{padding:20px 22px;background:var(--paper)}
+  .yesno > div + div{border-left:1px solid var(--line)}
+  @media(max-width:820px){.yesno > div + div{border-left:0;border-top:1px solid var(--line)}}
+  .tagline{font-family:var(--serif);font-style:italic;font-size:19px;color:var(--navy);max-width:62ch}
+  footer{background:var(--navy);color:#B9C6E2;padding:34px 0;font-size:14px}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .pill{font-family:var(--mono);font-size:11.5px;padding:3px 8px;border-radius:4px;background:#EDF0F6;color:var(--navy);border:1px solid var(--line)}
+  .quad{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .quad > div{background:var(--paper);padding:18px 20px;min-height:126px}
+  .quad h4{margin:0 0 6px}
+  .quad p{font-size:14.5px;margin:0;color:var(--muted)}
+  .axis{font-size:13px;color:var(--muted);font-family:var(--mono)}
+  .adapters{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg class="hexline" viewBox="0 0 1200 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g fill="none" stroke="#7E93C4" stroke-width="1.2">
+      <path d="M170 90 L290 90 L350 195 L290 300 L170 300 L110 195 Z"/>
+      <path d="M470 90 L590 90 L650 195 L590 300 L470 300 L410 195 Z"/>
+      <path d="M770 90 L890 90 L950 195 L890 300 L770 300 L710 195 Z"/>
+      <path d="M1070 90 L1190 90 L1250 195 L1190 300 L1070 300 L1010 195 Z"/>
+    </g>
+  </svg>
+  <div class="wrap">
+    <p class="kicker">Diplomado en Diseño y Arquitectura de Software · Módulo 5</p>
+    <h1>Arquitectura Limpia y Hexagonal: una sola idea, dos dibujos</h1>
+    <p class="lede">Puertos y adaptadores (Cockburn, 2005) y Arquitectura Limpia (Martin, 2012) llegan a la misma conclusión desde caminos distintos: la regla de negocio no debe conocer la tecnología que la entrega ni la que la persiste. Todo lo demás es consecuencia.</p>
+  </div>
+</header>
+
+<main>
+
+<section id="tesis"><div class="wrap">
+  <h2>1. La tesis, sin metáforas</h2>
+  <p class="sec-note">Las capas circulares se dibujan mucho y se explican poco. Esta es la regla operativa.</p>
+  <p>Ambos estilos imponen <strong>una única restricción estructural</strong>: las dependencias del código fuente apuntan hacia adentro, hacia la regla de negocio. El dominio no importa Spring, ni JPA, ni el cliente HTTP del proveedor de pagos. Si abre una clase del dominio y encuentra un <code>import org.springframework...</code>, la arquitectura ya está incumplida, sin importar cuántos círculos tenga el diagrama.</p>
+
+  <div class="callout">
+    <strong>Por qué existe.</strong> El costo dominante de un sistema empresarial no es escribirlo: es modificarlo durante diez años mientras la tecnología de entrega y persistencia cambia dos o tres veces. Aislar la regla de negocio no es purismo académico: es proteger el activo que no caduca del componente que sí caduca.
+  </div>
+
+  <div class="grid3">
+    <div class="card"><h4>Hexagonal (Puertos y Adaptadores)</h4><p style="font-size:15px;margin:0">Simetría: entradas y salidas se tratan igual. Todo lo externo entra por un puerto y un adaptador lo traduce. El hexágono no significa seis lados: significa «varios lados, ninguno privilegiado».</p></div>
+    <div class="card"><h4>Arquitectura Limpia</h4><p style="font-size:15px;margin:0">Añade capas explícitas —entidades, casos de uso, adaptadores de interfaz, frameworks— y nombra la <em>regla de dependencia</em>: nada de un círculo interno puede referenciar algo de uno externo.</p></div>
+    <div class="card"><h4>Cebolla (Onion)</h4><p style="font-size:15px;margin:0">Variante de Palermo con el mismo principio y énfasis en el modelo de dominio del DDD. Las tres son la misma idea con vocabulario distinto.</p></div>
+  </div>
+
+  <div class="callout warn">
+    <strong>Distinción que conviene corregir en clase.</strong> La arquitectura hexagonal <em>no</em> es «arquitectura por capas con otros nombres». En capas tradicionales la dependencia fluye hacia abajo y termina en la base de datos: el dominio depende de la persistencia. En hexagonal esa flecha se invierte mediante interfaces que pertenecen al dominio. Confundirlas es el error más frecuente en presentaciones sobre el tema.
+  </div>
+</div></section>
+
+<section id="dip"><div class="wrap">
+  <h2>2. La inversión, en código</h2>
+  <p class="sec-note">La diferencia entre ambos diseños cabe en una línea: quién es dueño de la interfaz.</p>
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">Notificación de un pedido despachado</span>
+      <div style="display:flex;gap:8px">
+        <button class="tab" data-dip="antes" aria-selected="true">Antes · dependencia directa</button>
+        <button class="tab" data-dip="despues" aria-selected="false">Después · dependencia invertida</button>
+      </div>
+    </div>
+    <div class="grid2" style="gap:20px">
+      <div><pre id="dip-code"></pre></div>
+      <div>
+        <figure><svg id="dip-svg" viewBox="0 0 420 200" role="img" aria-label="Dirección de la dependencia entre dominio e infraestructura"></svg></figure>
+        <div id="dip-text" style="font-size:15.5px;margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+  <p style="margin-top:22px">El código es casi idéntico; el paquete donde vive la interfaz es lo que cambia todo. En el segundo caso <code>NotificadorDeCliente</code> es un <strong>puerto</strong>: lo declara el dominio, expresa lo que el negocio necesita («avisar al cliente») y no lo que la tecnología ofrece («enviar un correo SMTP»). El adaptador implementa el puerto desde afuera.</p>
+  <div class="callout">
+    <strong>Criterio para nombrar un puerto.</strong> Si el nombre de la interfaz menciona una tecnología —<code>EmailSender</code>, <code>KafkaPublisher</code>, <code>JpaRepository</code>— probablemente sea un adaptador disfrazado. Un puerto se nombra con el vocabulario del negocio: <code>NotificadorDeCliente</code>, <code>RepositorioDePedidos</code>, <code>PasarelaDePagos</code>.
+  </div>
+</div></section>
+
+<section id="puertos"><div class="wrap">
+  <h2>3. Puertos primarios y secundarios</h2>
+  <p class="sec-note">La simetría del hexágono es la parte que más se omite y la que da su poder al estilo.</p>
+  <figure class="card" style="padding:26px">
+    <svg viewBox="0 0 900 330" role="img" aria-label="Hexágono con puertos primarios a la izquierda y secundarios a la derecha">
+      <defs><marker id="a2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#5A6480"/></marker></defs>
+      <g font-family="-apple-system, sans-serif" font-size="13">
+        <polygon points="330,45 570,45 640,165 570,285 330,285 260,165" fill="#1F2D4E"/>
+        <text x="450" y="152" text-anchor="middle" fill="#fff" font-size="18" font-family="Georgia,serif">Dominio</text>
+        <text x="450" y="180" text-anchor="middle" fill="#B9C6E2" font-size="13">Entidades · Casos de uso</text>
+
+        <g fill="#C9722F"><rect x="286" y="88" width="22" height="34" rx="3"/><rect x="252" y="148" width="22" height="34" rx="3"/><rect x="286" y="208" width="22" height="34" rx="3"/></g>
+        <g fill="#C9722F"><rect x="592" y="88" width="22" height="34" rx="3"/><rect x="626" y="148" width="22" height="34" rx="3"/><rect x="592" y="208" width="22" height="34" rx="3"/></g>
+
+        <text x="150" y="30" fill="#1F2D4E" font-size="14" font-family="Georgia,serif">Lado primario (conducen)</text>
+        <text x="700" y="30" fill="#1F2D4E" font-size="14" font-family="Georgia,serif">Lado secundario (conducidos)</text>
+
+        <g fill="#EDF0F6" stroke="#1F2D4E" stroke-width="1.4">
+          <rect x="30" y="82" width="170" height="42" rx="6"/><rect x="30" y="144" width="170" height="42" rx="6"/><rect x="30" y="206" width="170" height="42" rx="6"/>
+          <rect x="700" y="82" width="170" height="42" rx="6"/><rect x="700" y="144" width="170" height="42" rx="6"/><rect x="700" y="206" width="170" height="42" rx="6"/>
+        </g>
+        <g fill="#1F2D4E">
+          <text x="115" y="108" text-anchor="middle">Controlador REST</text>
+          <text x="115" y="170" text-anchor="middle">Consumidor Kafka</text>
+          <text x="115" y="232" text-anchor="middle">Prueba de aceptación</text>
+          <text x="785" y="108" text-anchor="middle">Repositorio JPA</text>
+          <text x="785" y="170" text-anchor="middle">Cliente de pagos</text>
+          <text x="785" y="232" text-anchor="middle">Adaptador en memoria</text>
+        </g>
+        <g stroke="#5A6480" stroke-width="1.5" marker-end="url(#a2)" fill="none">
+          <path d="M202 103 L282 104"/><path d="M202 165 L248 165"/><path d="M202 227 L282 226"/>
+          <path d="M616 104 L696 103"/><path d="M650 165 L696 165"/><path d="M616 226 L696 227"/>
+        </g>
+        <text x="450" y="318" text-anchor="middle" fill="#5A6480" font-size="13">La flecha siempre nace afuera: nadie dentro del hexágono conoce a quien está fuera.</text>
+      </g>
+    </svg>
+  </figure>
+  <div class="grid2" style="margin-top:22px">
+    <div class="card"><h4>Puerto primario (driving)</h4><p style="font-size:15px;margin:0">Es la API del caso de uso. Lo invoca quien inicia la interacción: un controlador HTTP, un consumidor de eventos, un job programado o una prueba automatizada. Que una prueba de aceptación pueda ocupar exactamente el mismo puerto que el controlador REST es la evidencia de que el diseño funciona.</p></div>
+    <div class="card"><h4>Puerto secundario (driven)</h4><p style="font-size:15px;margin:0">Es lo que el dominio necesita del mundo. Lo declara el dominio y lo implementa la infraestructura. Sustituir PostgreSQL por un adaptador en memoria en las pruebas no requiere tocar una sola línea del negocio: ese es el retorno concreto de la inversión de dependencias.</p></div>
+  </div>
+</div></section>
+
+<section id="cohesion"><div class="wrap">
+  <h2>4. Cohesión y acoplamiento: la brújula</h2>
+  <p class="sec-note">Toda decisión de diseño se puede evaluar por su efecto sobre estas dos variables.</p>
+  <p><strong>Cohesión</strong> mide cuán relacionados están entre sí los elementos <em>dentro</em> de un módulo. <strong>Acoplamiento</strong> mide cuánto depende un módulo de otros. La meta es alta cohesión y bajo acoplamiento — pero conviene entender por qué cada combinación se comporta como se comporta.</p>
+  <p class="axis" style="margin:22px 0 8px">Eje vertical: cohesión (arriba = alta) · Eje horizontal: acoplamiento (derecha = alto)</p>
+  <div class="quad">
+    <div style="border-top:3px solid var(--ok)"><h4 style="color:var(--ok)">Alta cohesión · bajo acoplamiento</h4><p>El objetivo. Cada módulo tiene una razón de cambio y puede modificarse sin efectos en cascada. Es el estado que las arquitecturas limpia y hexagonal buscan producir estructuralmente.</p></div>
+    <div style="border-top:3px solid var(--terra)"><h4 style="color:#7C441A">Alta cohesión · alto acoplamiento</h4><p>Módulos bien definidos que dependen demasiado unos de otros. El diseño interno es bueno pero el sistema es frágil: un cambio local se propaga. Suele indicar límites correctos con contratos ausentes.</p></div>
+    <div><h4>Baja cohesión · bajo acoplamiento</h4><p>Módulos aislados que agrupan cosas sin relación entre sí: los paquetes <code>utils</code>, <code>helpers</code>, <code>common</code>. No hacen daño inmediato, pero nadie sabe dónde poner ni dónde buscar el código.</p></div>
+    <div style="border-top:3px solid var(--warn)"><h4 style="color:var(--warn)">Baja cohesión · alto acoplamiento</h4><p>El peor cuadrante. El código no está organizado por ninguna razón coherente y además todo depende de todo. Cambiar cualquier cosa exige entender el sistema completo, y por eso el costo de cada cambio crece con el tiempo.</p></div>
+  </div>
+  <div class="callout">
+    <strong>Cómo usarlo en una revisión de diseño.</strong> Ante una propuesta, pregunte: ¿este cambio aumenta la cohesión de algún módulo, reduce el acoplamiento entre módulos, o ninguna de las dos? Si la respuesta es «ninguna», la propuesta necesita otra justificación —rendimiento, seguridad, costo— explícita y medible.
+  </div>
+</div></section>
+
+<section id="costo"><div class="wrap">
+  <h2>5. El costo, dicho con honestidad</h2>
+  <p class="sec-note">Estos estilos tienen detractores con argumentos válidos. Presentarlos solo con ventajas es un error pedagógico.</p>
+  <div class="yesno">
+    <div>
+      <h4 style="color:var(--ok)">Lo que se gana</h4>
+      <ul class="tight">
+        <li>Pruebas del negocio sin base de datos ni servidor: milisegundos en vez de minutos, lo que hace viable el TDD real.</li>
+        <li>Sustitución de tecnología periférica sin tocar reglas de negocio.</li>
+        <li>Límites explícitos que permiten trabajar a varios equipos en paralelo.</li>
+        <li>La regla de negocio queda legible: se puede leer el caso de uso y entender el proceso sin ruido técnico.</li>
+      </ul>
+    </div>
+    <div>
+      <h4 style="color:var(--warn)">Lo que se paga</h4>
+      <ul class="tight">
+        <li><strong>Más clases y más indirección.</strong> Un CRUD simple pasa de una clase a cinco. En un sistema mayoritariamente CRUD, esa indirección es sobrecarga sin retorno.</li>
+        <li><strong>Mapeo entre modelos.</strong> Entidad de dominio, entidad de persistencia y DTO son tres objetos parecidos que hay que mantener sincronizados.</li>
+        <li><strong>Curva de adopción.</strong> Un equipo sin criterio produce «arquitectura limpia de fachada»: interfaces con una sola implementación y ninguna inversión real.</li>
+        <li><strong>Rendimiento en consultas complejas.</strong> Prohibir que la capa de lectura use el motor de base de datos a fondo puede costar caro; suele resolverse permitiendo un camino de solo lectura que evita el dominio (afín a CQRS).</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout warn">
+    <strong>Criterio de aplicación proporcional.</strong> No toda la aplicación merece el mismo tratamiento. Aplique la estructura completa donde hay reglas de negocio que cambian y valen dinero; use un acceso directo y simple donde el módulo solo mueve datos de un formulario a una tabla. Aplicar el estilo de forma uniforme por disciplina, sin evaluar el retorno módulo a módulo, es tan poco arquitectónico como no aplicarlo nunca.
+  </div>
+</div></section>
+
+<section id="verificacion"><div class="wrap">
+  <h2>6. Cómo verificar que la arquitectura se cumple</h2>
+  <p class="sec-note">Una regla que no se verifica automáticamente se erosiona en tres <em>sprints</em>.</p>
+  <div class="grid2">
+    <div>
+<pre><span class="c">// Prueba de arquitectura ejecutable en el pipeline (ArchUnit)</span>
+<span class="k">@AnalyzeClasses</span>(packages = <span class="g">"co.edu.sabana.pedidos"</span>)
+<span class="k">class</span> ArquitecturaTest {
+
+  <span class="k">@ArchTest</span>
+  <span class="k">static final</span> ArchRule el_dominio_no_conoce_la_infraestructura =
+      noClasses().that().resideInAPackage(<span class="g">"..dominio.."</span>)
+        .should().dependOnClassesThat()
+        .resideInAnyPackage(<span class="g">"..infraestructura.."</span>,
+                            <span class="g">"org.springframework.."</span>,
+                            <span class="g">"jakarta.persistence.."</span>);
+
+  <span class="k">@ArchTest</span>
+  <span class="k">static final</span> ArchRule los_casos_de_uso_dependen_solo_de_puertos =
+      classes().that().resideInAPackage(<span class="g">"..aplicacion.."</span>)
+        .should().onlyDependOnClassesThat()
+        .resideInAnyPackage(<span class="g">"..dominio.."</span>, <span class="g">"..aplicacion.."</span>, <span class="g">"java.."</span>);
+}</pre>
+    </div>
+    <div>
+      <h4>Por qué esto cambia el resultado</h4>
+      <ul class="tight" style="font-size:15px">
+        <li>Convierte la decisión arquitectónica en una prueba que falla el <em>build</em>: deja de depender de la memoria del revisor.</li>
+        <li>Documenta la intención en un lugar que nadie puede ignorar, a diferencia de un diagrama en una wiki.</li>
+        <li>Permite incorporar personas nuevas sin transmitir las reglas oralmente.</li>
+      </ul>
+      <h4 style="margin-top:18px">Complementos recomendados</h4>
+      <ul class="tight" style="font-size:15px;margin-bottom:0">
+        <li>Un <strong>ADR</strong> por decisión estructural: contexto, alternativas, decisión y consecuencias. Sin el ADR, dentro de dos años nadie recordará por qué existe el puerto.</li>
+        <li>Diagrama <strong>C4</strong> nivel 3 del componente, generado desde el código cuando sea posible, para que no se desactualice.</li>
+        <li>Un umbral de dependencias cíclicas en el análisis estático del pipeline.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="tagline" style="margin-top:30px">Una arquitectura que solo existe en el diagrama no es una arquitectura: es una intención.</p>
+</div></section>
+
+</main>
+
+<footer><div class="wrap">
+  <span>Diplomado en Diseño y Arquitectura de Software · Universidad de La Sabana</span>
+  <span>Material de apoyo — Módulo 5</span>
+</div></footer>
+
+<script>
+(function(){
+  var NS='http://www.w3.org/2000/svg';
+  function el(t,a,x){var n=document.createElementNS(NS,t);for(var k in a)n.setAttribute(k,a[k]);if(x!=null)n.textContent=x;return n;}
+  var svg=document.getElementById('dip-svg'), codeEl=document.getElementById('dip-code'), textEl=document.getElementById('dip-text');
+  var data={
+    antes:{
+      code:'<span class="c">// paquete: dominio</span>\n<span class="k">public class</span> ServicioDespacho {\n\n  <span class="k">private final</span> <span class="r">SmtpEmailSender</span> sender;  <span class="c">// clase concreta</span>\n\n  <span class="k">public void</span> despachar(Pedido p) {\n    p.marcarDespachado();\n    sender.send(p.correoCliente(),\n                <span class="g">"Tu pedido salió"</span>);\n  }\n}\n\n<span class="c">// El dominio importa infraestructura:\n// jakarta.mail, credenciales SMTP, timeouts.\n// Probarlo exige un servidor de correo.</span>',
+      dir:'down',
+      text:'<strong>Dependencia directa.</strong> El módulo de alto nivel depende del detalle de bajo nivel. Consecuencias: no se puede probar el despacho sin correo, cambiar a notificación push obliga a modificar el dominio, y la regla de negocio queda mezclada con configuración técnica.'
+    },
+    despues:{
+      code:'<span class="c">// paquete: dominio  — el puerto vive aquí</span>\n<span class="k">public interface</span> <span class="g">NotificadorDeCliente</span> {\n  <span class="k">void</span> pedidoDespachado(Pedido pedido);\n}\n\n<span class="k">public class</span> ServicioDespacho {\n  <span class="k">private final</span> <span class="g">NotificadorDeCliente</span> notificador;\n\n  <span class="k">public void</span> despachar(Pedido p) {\n    p.marcarDespachado();\n    notificador.pedidoDespachado(p);\n  }\n}\n\n<span class="c">// paquete: infraestructura — el adaptador</span>\n<span class="k">class</span> NotificadorPorCorreo <span class="k">implements</span> <span class="g">NotificadorDeCliente</span> { ... }',
+      dir:'up',
+      text:'<strong>Dependencia invertida.</strong> Ambos módulos dependen de una abstracción que <em>pertenece al dominio</em>. Consecuencias: la prueba usa un doble en memoria, agregar notificación push es un adaptador nuevo sin tocar el negocio, y el lenguaje de la interfaz es el del negocio, no el del proveedor.'
+    }
+  };
+  function draw(dir){
+    while(svg.firstChild)svg.removeChild(svg.firstChild);
+    svg.appendChild(el('rect',{x:40,y:20,width:150,height:44,rx:6,fill:'#1F2D4E'}));
+    svg.appendChild(el('text',{x:115,y:47,'text-anchor':'middle',fill:'#fff','font-size':'13','font-family':'-apple-system,sans-serif'},'Dominio'));
+    svg.appendChild(el('rect',{x:230,y:136,width:150,height:44,rx:6,fill:'#5A6480'}));
+    svg.appendChild(el('text',{x:305,y:163,'text-anchor':'middle',fill:'#fff','font-size':'13','font-family':'-apple-system,sans-serif'},'Infraestructura'));
+    if(dir==='down'){
+      svg.appendChild(el('path',{d:'M150 66 L150 158 L226 158',stroke:'#9A3B2C','stroke-width':2.4,fill:'none'}));
+      svg.appendChild(el('path',{d:'M226 158 L216 153 L216 163 Z',fill:'#9A3B2C'}));
+      svg.appendChild(el('text',{x:60,y:118,fill:'#9A3B2C','font-size':'12.5','font-family':'-apple-system,sans-serif'},'depende de'));
+    } else {
+      svg.appendChild(el('rect',{x:40,y:88,width:150,height:38,rx:6,fill:'#C9722F'}));
+      svg.appendChild(el('text',{x:115,y:112,'text-anchor':'middle',fill:'#fff','font-size':'12.5','font-family':'-apple-system,sans-serif'},'Puerto (interfaz)'));
+      svg.appendChild(el('line',{x1:115,y1:64,x2:115,y2:86,stroke:'#1F2D4E','stroke-width':2}));
+      svg.appendChild(el('path',{d:'M280 136 L280 112 L196 112',stroke:'#2F6F4F','stroke-width':2.4,fill:'none','stroke-dasharray':'6 4'}));
+      svg.appendChild(el('path',{d:'M196 112 L206 107 L206 117 Z',fill:'#2F6F4F'}));
+      svg.appendChild(el('text',{x:212,y:104,fill:'#2F6F4F','font-size':'12.5','font-family':'-apple-system,sans-serif'},'implementa'));
+    }
+  }
+  var tabs=document.querySelectorAll('[data-dip]');
+  function show(k){codeEl.innerHTML=data[k].code;textEl.innerHTML=data[k].text;draw(data[k].dir);}
+  tabs.forEach(function(t){t.addEventListener('click',function(){
+    tabs.forEach(function(o){o.setAttribute('aria-selected','false');});
+    t.setAttribute('aria-selected','true');show(t.dataset.dip);
+  });});
+  show('antes');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1704 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Programación reactiva | Diseño y Arquitectura de Software</title>
+<style>
+  :root{
+    --navy:#1F2D4E; --navy-ink:#16223c; --terra:#C9722F; --terra-soft:#F3E2D4;
+    --paper:#FFFFFF; --surface:#F1F3F7; --line:#D5DAE4; --muted:#5A6480;
+    --ok:#2F6F4F; --warn:#9A3B2C;
+    --mono: ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+    --sans: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --serif: Georgia,"Iowan Old Style","Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--surface);color:var(--navy-ink);font-family:var(--sans);font-size:16.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+  header.hero{background:var(--navy);color:#fff;padding:64px 0 56px;position:relative;overflow:hidden}
+  header.hero .wrap{position:relative;z-index:2}
+  .kicker{font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;color:#9FB0D4;margin:0 0 14px}
+  h1{font-family:var(--serif);font-weight:700;font-size:clamp(34px,5.2vw,54px);line-height:1.08;margin:0 0 18px;max-width:21ch}
+  .lede{font-size:19px;color:#D6DEF0;max-width:64ch;margin:0}
+  .hexline{position:absolute;inset:0;opacity:.13;z-index:1}
+  .hero-flow{opacity:.2}
+  .hero-flow .mb circle{fill:#B9C6E2;transform:translateX(var(--x));animation:hflow 18s linear infinite}
+  @keyframes hflow{from{transform:translateX(-60px)}to{transform:translateX(1260px)}}
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:28px;padding:0;list-style:none}
+  .toc a{display:inline-block;font-family:var(--mono);font-size:12px;color:#D6DEF0;border:1px solid rgba(159,176,212,.4);padding:4px 10px;border-radius:999px;text-decoration:none}
+  .toc a:hover{background:rgba(255,255,255,.08)}
+  main{padding:0 0 90px}
+  section{padding:54px 0 10px}
+  section + section{border-top:1px solid var(--line)}
+  h2{font-family:var(--serif);font-size:clamp(25px,3.4vw,34px);line-height:1.15;margin:0 0 6px;color:var(--navy)}
+  .sec-note{color:var(--muted);margin:0 0 26px;max-width:70ch;font-size:15.5px}
+  h3{font-size:18px;margin:30px 0 10px;color:var(--navy)}
+  h4{font-size:15px;margin:0 0 10px;color:var(--navy)}
+  p{max-width:74ch}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:22px 24px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .grid2 > *,.grid3 > *{min-width:0}
+  @media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+  figure{margin:0}
+  svg{display:block;width:100%;height:auto}
+  .viz{width:100%;min-width:0;margin:6px 0}
+  .viz text{font-family:var(--sans)}
+  .viz text.m{font-family:var(--mono)}
+  .lab{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:24px}
+  .lab-head{display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;justify-content:space-between;margin-bottom:16px}
+  .lab-title{font-weight:700;font-size:17px;color:var(--navy)}
+  .tabs{display:flex;flex-wrap:wrap;gap:8px}
+  .ctrl{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin:12px 0 6px}
+  .ctrl label{font-size:14px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  input[type=range]{accent-color:var(--terra);width:220px;max-width:100%}
+  .scrub{flex:1 1 160px;min-width:120px;width:auto}
+  .tlabel{font-family:var(--mono);font-size:12.5px;color:var(--muted);min-width:9ch}
+  button{font:inherit;cursor:pointer}
+  button.tab{font-size:14.5px;padding:8px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--muted)}
+  button.tab[aria-selected=true]{background:var(--navy);border-color:var(--navy);color:#fff}
+  button.tab.sm{font-size:13px;padding:5px 11px}
+  button.act{font-size:14.5px;padding:8px 15px;border-radius:6px;background:var(--terra);border:1px solid var(--terra);color:#fff;font-weight:600}
+  button.act.ghost{background:#fff;color:var(--navy);border-color:var(--line);font-weight:500}
+  button.act:disabled{opacity:.5;cursor:default}
+  button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--terra);outline-offset:2px}
+  select{font:inherit;font-size:13.5px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--navy-ink);max-width:100%;width:100%}
+  .metric{display:flex;gap:26px;flex-wrap:wrap;margin-top:14px}
+  .metric > div{min-width:0}
+  .metric .n{display:block;font-family:var(--serif);font-size:32px;line-height:1;color:var(--navy)}
+  .metric .n.bad{color:var(--warn)}
+  .metric .n.good{color:var(--ok)}
+  .metric .l{display:block;font-size:13px;color:var(--muted);margin-top:6px;max-width:22ch}
+  table{border-collapse:collapse;width:100%;font-size:15px;background:var(--paper)}
+  .tablewrap{overflow-x:auto;max-width:100%}
+  caption{text-align:left;color:var(--muted);font-size:14px;padding-bottom:8px}
+  th,td{border:1px solid var(--line);padding:10px 12px;vertical-align:top;text-align:left}
+  th{background:var(--navy);color:#fff;font-weight:600}
+  tbody th{background:#EDF0F6;color:var(--navy)}
+  code{font-family:var(--mono);font-size:13.5px;background:#EDF0F6;padding:1px 5px;border-radius:3px;overflow-wrap:anywhere}
+  pre{font-family:var(--mono);font-size:13px;background:var(--navy-ink);color:#E6ECF8;padding:16px 18px;border-radius:8px;overflow:auto;line-height:1.55;margin:0;max-width:100%}
+  pre code{background:none;padding:0;font-size:inherit;overflow-wrap:normal}
+  pre .c{color:#8FA6CE} pre .k{color:#E7B36B} pre .g{color:#8ED9A9} pre .r{color:#F0A08E}
+  pre .mark{background:rgba(231,179,107,.2);border-radius:3px;box-shadow:0 0 0 1px rgba(231,179,107,.35)}
+  .codehead{font-family:var(--mono);font-size:12px;color:var(--muted);margin:0 0 6px}
+  .callout{border-left:4px solid var(--terra);background:var(--terra-soft);padding:16px 20px;border-radius:0 8px 8px 0;margin:22px 0}
+  .callout strong{color:#7C441A}
+  .callout.warn{border-left-color:var(--warn);background:#F7E4E0}
+  .callout.warn strong{color:var(--warn)}
+  .callout pre{margin-top:10px}
+  ul.tight{margin:8px 0;padding-left:20px}
+  ul.tight li{margin:5px 0}
+  .yesno{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  @media(max-width:820px){.yesno{grid-template-columns:1fr}}
+  .yesno > div{padding:20px 22px;background:var(--paper);min-width:0}
+  .yesno > div + div{border-left:1px solid var(--line)}
+  @media(max-width:820px){.yesno > div + div{border-left:0;border-top:1px solid var(--line)}}
+  footer{background:var(--navy);color:#B9C6E2;padding:34px 0;font-size:14px}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .pill{font-family:var(--mono);font-size:11.5px;padding:3px 8px;border-radius:4px;background:#EDF0F6;color:var(--navy);border:1px solid var(--line)}
+  .log{font-family:var(--mono);font-size:12.5px;background:#0F1830;color:#CBD8F2;border-radius:8px;padding:12px 14px;min-height:120px;max-height:240px;overflow:auto;line-height:1.5}
+  .log div{padding:1px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+  .log .ko{color:#F0A08E}
+  .log .comp{color:#E7B36B}
+  .log .okl{color:#8ED9A9}
+  .log .dim{color:#7F8FB3}
+  .log .new{animation:flash 1.1s ease-out}
+  @keyframes flash{from{background:rgba(231,179,107,.3)}to{background:transparent}}
+  .out{font-family:var(--mono);font-size:14px;margin:6px 0 0;min-height:1.6em;color:var(--navy);overflow-wrap:anywhere}
+  .note{font-size:13.5px;color:var(--muted);margin:10px 0 0}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);margin:6px 0}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+  .legend i.sq{border-radius:2px}
+  .desc{font-size:15.5px;margin:12px 0 16px;max-width:none}
+  .slots{display:grid;gap:8px;margin:0}
+  .slots label{display:grid;grid-template-columns:118px 1fr;gap:8px;align-items:center;font-size:13.5px;color:var(--muted)}
+  .slots .chk{display:flex;grid-template-columns:none;gap:8px;align-items:flex-start;color:var(--navy-ink);margin-top:4px}
+  .slots .chk input{margin-top:4px;accent-color:var(--terra);width:16px;height:16px;flex:none}
+  .presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .presets button.act{font-size:13px;padding:6px 11px}
+  .term{font-family:var(--mono);font-size:12.5px;background:#0F1830;color:#CBD8F2;border-radius:8px;padding:12px 14px;min-height:190px;max-height:260px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+  .term .h{color:#7F8FB3}
+  .term .ev{color:#8ED9A9}
+  .term .p{color:#E7B36B}
+  .steps{margin:10px 0 0;padding-left:22px;font-family:var(--mono);font-size:13px}
+  .steps li{padding:3px 6px;border-radius:4px;color:var(--muted);overflow-wrap:anywhere}
+  .steps li.on{background:var(--terra-soft);color:var(--navy-ink)}
+  .steps li.done{color:var(--navy-ink)}
+  @media(max-width:560px){
+    .wrap{padding:0 16px}
+    body{font-size:16px}
+    header.hero{padding:44px 0 40px}
+    .lede{font-size:17px}
+    .lab{padding:16px}
+    .card{padding:18px}
+    .callout{padding:14px 16px}
+    pre{font-size:12px;padding:12px 13px}
+    .metric{gap:16px}
+    .metric .n{font-size:26px}
+    .slots label{grid-template-columns:1fr;gap:3px}
+    th,td{padding:8px 9px}
+    table{font-size:14px}
+  }
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+    .hero-flow .mb circle{animation:none !important;transform:translateX(var(--x))}
+    .log .new{animation:none !important}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg class="hexline hero-flow" viewBox="0 0 1200 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g fill="none" stroke="#7E93C4" stroke-width="1.4">
+      <line x1="0" y1="120" x2="1200" y2="120"/>
+      <line x1="0" y1="220" x2="1200" y2="220"/>
+      <line x1="0" y1="320" x2="1200" y2="320"/>
+      <path d="M1130 104 v32 M1130 204 v32 M1130 304 v32"/>
+    </g>
+    <g class="mb">
+      <circle cx="0" cy="120" r="14" style="--x:120px;animation-delay:-1.8s"/>
+      <circle cx="0" cy="120" r="14" style="--x:520px;animation-delay:-7.8s"/>
+      <circle cx="0" cy="120" r="14" style="--x:900px;animation-delay:-13.4s"/>
+      <circle cx="0" cy="220" r="14" style="--x:300px;animation-delay:-4.6s"/>
+      <circle cx="0" cy="220" r="14" style="--x:700px;animation-delay:-10.6s"/>
+      <circle cx="0" cy="220" r="14" style="--x:1050px;animation-delay:-15.8s"/>
+      <circle cx="0" cy="320" r="14" style="--x:210px;animation-delay:-3.2s"/>
+      <circle cx="0" cy="320" r="14" style="--x:620px;animation-delay:-9.3s"/>
+      <circle cx="0" cy="320" r="14" style="--x:980px;animation-delay:-14.7s"/>
+    </g>
+  </svg>
+  <div class="wrap">
+    <p class="kicker">Diseño y Arquitectura de Software · Módulo 7</p>
+    <h1>Programación reactiva</h1>
+    <p class="lede">Un Flux representa una secuencia de señales en el tiempo, regida por un contrato de demanda entre quien produce y quien consume. Este material presenta ese contrato con laboratorios interactivos: operadores, hilos, backpressure, publicadores hot y cold, manejo de errores, pruebas y streaming HTTP.</p>
+    <nav aria-label="Contenido">
+      <ul class="toc">
+        <li><a href="#porque">1. ¿Por qué reactivo?</a></li>
+        <li><a href="#operadores">2. Operadores</a></li>
+        <li><a href="#hilos">3. Hilos</a></li>
+        <li><a href="#backpressure">4. Backpressure</a></li>
+        <li><a href="#hotcold">5. Hot y Cold</a></li>
+        <li><a href="#errores">6. Errores</a></li>
+        <li><a href="#pruebas">7. StepVerifier</a></li>
+        <li><a href="#webflux">8. WebFlux y SSE</a></li>
+        <li><a href="#cuando">9. Cuándo usarla</a></li>
+        <li><a href="#taller">10. Taller</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ============================ 1 ============================ -->
+<section id="porque"><div class="wrap">
+  <h2>1. ¿Por qué programación reactiva?</h2>
+  <p class="sec-note">El modelo reactivo cambia lo que hace un hilo mientras espera una operación de entrada/salida (E/S).</p>
+  <p>En el modelo clásico de servidor (Servlet, Spring MVC) cada petición ocupa un hilo de principio a fin. Si la petición consulta una base de datos que tarda 300 ms, el hilo pasa esos 300 ms bloqueado: no usa CPU, pero ocupa memoria (su pila) y un cupo del pool. Cuando la carga está dominada por E/S, el límite deja de ser la CPU y pasa a ser el número de hilos disponibles.</p>
+  <p>En el modelo no bloqueante pocos hilos (en Netty, un <em>event loop</em> por núcleo) registran la operación de E/S, atienden otra tarea y retoman la petición cuando llega la respuesta. Ningún hilo queda esperando.</p>
+
+  <div class="lab" id="io-lab">
+    <div class="lab-head">
+      <span class="lab-title">Hilo por petición y event loop con E/S lenta</span>
+      <div class="tabs" role="tablist" aria-label="Número de peticiones" id="io-tabs">
+        <button class="tab" role="tab" data-k="4" aria-selected="false">4 peticiones</button>
+        <button class="tab" role="tab" data-k="8" aria-selected="true">8 peticiones</button>
+        <button class="tab" role="tab" data-k="16" aria-selected="false">16 peticiones</button>
+      </div>
+    </div>
+    <div class="ctrl">
+      <button class="act" id="io-play">Reproducir</button>
+      <input type="range" class="scrub" id="io-range" min="0" max="1000" value="0" aria-label="Posición en la línea de tiempo">
+      <span class="tlabel" id="io-t"></span>
+    </div>
+    <div class="viz"><svg id="io-svg" role="img" aria-label="Diagrama de Gantt animado. Arriba, cuatro hilos que pasan la mayor parte del tiempo bloqueados esperando E/S. Abajo, un único event loop que solo usa CPU para preparar y responder, mientras la E/S queda en vuelo sin ocupar hilos."></svg></div>
+    <div class="legend" aria-hidden="true">
+      <span><i class="sq" style="background:#1F2D4E"></i>CPU: preparar la petición</span>
+      <span><i class="sq" style="background:#F7E4E0;border:1px solid #9A3B2C"></i>hilo bloqueado esperando E/S</span>
+      <span><i class="sq" style="background:#2F6F4F"></i>CPU: responder</span>
+      <span><i class="sq" style="background:#C9722F"></i>operaciones de E/S en vuelo (sin hilo)</span>
+    </div>
+    <div class="metric" id="io-metrics"></div>
+    <p class="note" id="io-note"></p>
+    <p class="note">Modelo ilustrativo, no una medición. Cada petición = 0,5 u de CPU para preparar + 6 u de espera de E/S + 0,5 u de CPU para responder. Pool de 4 hilos frente a 1 event loop. Unidades de tiempo arbitrarias.</p>
+  </div>
+
+  <div class="callout warn">
+    <strong>Límites del modelo.</strong> La programación reactiva no acelera un cálculo. Si el trabajo es intensivo en CPU, un event loop no tiene ventaja sobre un pool de hilos. La ventaja también desaparece si algún operador bloquea el event loop, por ejemplo una llamada JDBC dentro de un <code>map</code>: ese hilo deja de atender a todas las demás peticiones.
+  </div>
+
+  <h3>El contrato: Reactive Streams</h3>
+  <p>Reactor y RxJava 2/3 implementan la especificación Reactive Streams (incorporada en Java 9 como <code>java.util.concurrent.Flow</code>). Son cuatro interfaces y una regla central: el suscriptor indica cuántos elementos puede recibir con <code>request(n)</code> y el publicador nunca envía más de lo pedido.</p>
+  <div class="grid2">
+    <div>
+<pre data-hl>// org.reactivestreams
+public interface Publisher&lt;T> {
+    void subscribe(Subscriber&lt;? super T> s);
+}
+public interface Subscriber&lt;T> {
+    void onSubscribe(Subscription s);
+    void onNext(T t);
+    void onError(Throwable t);
+    void onComplete();
+}
+public interface Subscription {
+    void request(long n);   // demanda: "puedo recibir n más"
+    void cancel();
+}
+public interface Processor&lt;T, R> extends Subscriber&lt;T>, Publisher&lt;R> { }</pre>
+    </div>
+    <div class="card">
+      <h4>Orden de las señales</h4>
+      <p style="font-family:var(--mono);font-size:13.5px;margin:0 0 10px">onSubscribe → request(n) → onNext × (≤ n) → onComplete | onError</p>
+      <ul class="tight" style="font-size:15px">
+        <li>Como máximo una señal terminal: <code>onComplete</code> u <code>onError</code>. Después de ella no llega nada más.</li>
+        <li>Un error es una señal terminal: el flujo termina, a menos que un operador lo transforme (sección 6).</li>
+        <li>Mientras no haya <code>subscribe()</code>, nada se ejecuta: el código solo ensambla el pipeline.</li>
+      </ul>
+<pre data-hl>Flux&lt;String> f = Flux.range(1, 3)
+    .map(i -> { System.out.println("map " + i); return "v" + i; });
+// Hasta aquí no se imprime nada.
+f.subscribe();   // map 1, map 2, map 3
+f.subscribe();   // se repite: cada suscripción ejecuta de nuevo</pre>
+    </div>
+  </div>
+
+  <h3>Tipos en Reactor y RxJava</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Cardinalidad</th><th>Reactor 3</th><th>RxJava 2/3</th></tr></thead>
+    <tbody>
+      <tr><th>0 o 1 elemento</th><td><code>Mono&lt;T&gt;</code></td><td><code>Single&lt;T&gt;</code> (exactamente 1), <code>Maybe&lt;T&gt;</code> (0 o 1)</td></tr>
+      <tr><th>0..N con backpressure</th><td><code>Flux&lt;T&gt;</code></td><td><code>Flowable&lt;T&gt;</code></td></tr>
+      <tr><th>0..N sin backpressure</th><td>(no existe)</td><td><code>Observable&lt;T&gt;</code></td></tr>
+      <tr><th>Solo terminación</th><td><code>Mono&lt;Void&gt;</code></td><td><code>Completable</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+</div></section>
+
+<!-- ============================ 2 ============================ -->
+<section id="operadores"><div class="wrap">
+  <h2>2. Operadores básicos</h2>
+  <p class="sec-note">Los diagramas de canicas (<em>marble diagrams</em>) son la forma estándar de describir un operador: el tiempo avanza hacia la derecha, arriba está la fuente y abajo lo que emite el operador.</p>
+  <div class="legend" aria-hidden="true">
+    <span><i style="background:#1F2D4E"></i>onNext (un elemento)</span>
+    <span><b style="color:#1F2D4E">|</b>&nbsp; onComplete</span>
+    <span><b style="color:#9A3B2C">×</b>&nbsp; descartado u onError</span>
+    <span><i class="sq" style="background:#fff;border:1px dashed #C9722F"></i>en cola</span>
+  </div>
+
+  <div class="lab" id="mb-lab">
+    <div class="lab-head">
+      <span class="lab-title">Laboratorio de operadores</span>
+      <div class="tabs" role="tablist" aria-label="Operador" id="mb-tabs">
+        <button class="tab" role="tab" data-k="map" aria-selected="true">map</button>
+        <button class="tab" role="tab" data-k="filter" aria-selected="false">filter</button>
+        <button class="tab" role="tab" data-k="flatMap" aria-selected="false">flatMap</button>
+        <button class="tab" role="tab" data-k="concatMap" aria-selected="false">concatMap</button>
+        <button class="tab" role="tab" data-k="merge" aria-selected="false">merge</button>
+        <button class="tab" role="tab" data-k="zip" aria-selected="false">zip</button>
+        <button class="tab" role="tab" data-k="reduce" aria-selected="false">reduce</button>
+      </div>
+    </div>
+    <div class="ctrl">
+      <button class="act" id="mb-play">Reproducir</button>
+      <input type="range" class="scrub" id="mb-range" min="0" max="1000" value="0" aria-label="Posición en la línea de tiempo">
+      <span class="tlabel" id="mb-t"></span>
+    </div>
+    <div class="viz"><svg id="mb-svg" role="img" aria-label="Diagrama de canicas animado del operador seleccionado: fuente, caja del operador y flujo de salida."></svg></div>
+    <p class="out" id="mb-out" aria-live="off"></p>
+    <p class="desc" id="mb-desc"></p>
+    <div class="grid2">
+      <div><p class="codehead">Reactor (Flux / Mono)</p><pre id="mb-rx"></pre></div>
+      <div><p class="codehead">RxJava 3 (Observable / Single)</p><pre id="mb-rj"></pre></div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>flatMap, concatMap y flatMapSequential.</strong> Los tres convierten cada elemento en un publicador interno. <code>flatMap</code> se suscribe a todos los internos de inmediato y emite según terminan, por lo que no garantiza el orden. <code>concatMap</code> procesa un interno a la vez y preserva el orden, pero suma las latencias. <code>flatMapSequential</code> (Reactor) o <code>concatMapEager</code> (RxJava) se suscriben a todos a la vez y reordenan la salida: concurrencia de flatMap con el orden de concatMap, a cambio de retener en memoria los resultados que llegan antes de tiempo.
+  </div>
+  <div class="callout warn">
+    <strong>merge con fuentes síncronas.</strong> <code>Flux.merge(Flux.just(1, 3, 5), Flux.just(2, 4, 6))</code> imprime 1, 3, 5, 2, 4, 6: la primera fuente emite todo de forma síncrona antes de que merge se suscriba a la segunda. La intercalación solo aparece cuando las fuentes emiten en momentos distintos, como en el diagrama.
+  </div>
+</div></section>
+
+<!-- ============================ 3 ============================ -->
+<section id="hilos"><div class="wrap">
+  <h2>3. Hilos con subscribeOn y publishOn</h2>
+  <p class="sec-note">Un operador no crea hilos. Los <code>Scheduler</code> deciden en qué hilo corre cada tramo del pipeline. En RxJava el equivalente de <code>publishOn</code> se llama <code>observeOn</code>.</p>
+  <div class="grid2">
+    <div class="card">
+      <h4>subscribeOn(scheduler)</h4>
+      <p style="font-size:15px;margin:0">Cambia el hilo en el que viaja la suscripción hacia arriba y, por lo tanto, el hilo en el que la fuente empieza a emitir. Su posición en la cadena casi no importa. Si hay varios en la misma cadena, gana el más cercano a la fuente (el primero en el código); los demás no cambian el hilo de la fuente.</p>
+    </div>
+    <div class="card">
+      <h4>publishOn(scheduler)</h4>
+      <p style="font-size:15px;margin:0">Cambia el hilo de todo lo que está <em>debajo</em> de él. Internamente es una cola: el hilo de arriba encola y un trabajador del scheduler entrega aguas abajo, en el mismo orden. Su posición sí importa, y puede haber varios en la cadena.</p>
+    </div>
+  </div>
+
+  <div class="lab" id="th-lab" style="margin-top:22px">
+    <div class="lab-head">
+      <span class="lab-title">¿En qué hilo corre cada etapa?</span>
+    </div>
+    <div class="presets" aria-label="Escenarios">
+      <button class="act ghost" data-p="repo">ReactorExample del repositorio</button>
+      <button class="act ghost" data-p="none">Sin schedulers</button>
+      <button class="act ghost" data-p="pub">publishOn en medio</button>
+      <button class="act ghost" data-p="dos">Dos subscribeOn</button>
+      <button class="act ghost" data-p="mix">publishOn después de flatMap</button>
+    </div>
+    <div class="grid2">
+      <div class="slots" id="th-slots">
+        <label>tras range <select id="th-s0" aria-label="Operador después de range"></select></label>
+        <label>tras filter <select id="th-s1" aria-label="Operador después de filter"></select></label>
+        <label>tras map <select id="th-s2" aria-label="Operador después de map"></select></label>
+        <label>tras flatMap <select id="th-s3" aria-label="Operador después de flatMap"></select></label>
+        <label>tras doOnNext <select id="th-s4" aria-label="Operador después de doOnNext"></select></label>
+        <label class="chk"><input type="checkbox" id="th-inner" checked> <span>El Mono interno de flatMap usa <code>subscribeOn(Schedulers.parallel())</code></span></label>
+      </div>
+      <div><pre id="th-code"></pre></div>
+    </div>
+    <div class="ctrl">
+      <button class="act" id="th-play">Reproducir</button>
+      <button class="act ghost" id="th-again">Ejecutar de nuevo</button>
+      <input type="range" class="scrub" id="th-range" min="0" max="1000" value="0" aria-label="Posición en la línea de tiempo">
+    </div>
+    <div class="legend" aria-hidden="true">
+      <span><i style="background:#5A6480"></i>main</span>
+      <span><i style="background:#C9722F"></i>boundedElastic</span>
+      <span><i style="background:#2B7A99"></i>parallel</span>
+      <span><i style="background:#7A4E9C"></i>single</span>
+      <span><b style="color:#5A6480">×</b>&nbsp; descartado por filter</span>
+    </div>
+    <div class="viz"><svg id="th-svg" role="img" aria-label="Carriles por etapa del pipeline. Cada elemento aparece como una canica coloreada según el hilo en que se procesa; las líneas muestran su recorrido y si el orden cambia."></svg></div>
+    <p class="out" id="th-order"></p>
+    <div class="grid2" style="margin-top:10px">
+      <div><p class="codehead">Consola (simulada)</p><div class="log" id="th-log"></div></div>
+      <div id="th-note" style="font-size:15px"></div>
+    </div>
+    <p class="note">Simulación ilustrativa: los tiempos y el número de hilos parallel-N son representativos; las reglas de asignación de hilos son las de Reactor 3.4.</p>
+  </div>
+
+  <div class="callout warn">
+    <strong>Reactor no tiene observeOn.</strong> En RxJava el operador se llama <code>observeOn</code>; en Reactor es <code>publishOn</code>. <code>Flux</code> no tiene un método <code>observeOn</code>, y el compilador lo rechaza con <code>cannot find symbol</code>.
+<pre data-hl>Flux.range(1, 10).observeOn(Schedulers.parallel());
+// javac: error: cannot find symbol
+//   symbol:   method observeOn(Scheduler)
+//   location: class Flux&lt;Integer></pre>
+  </div>
+
+  <div class="tablewrap">
+  <table>
+    <caption>Equivalencias entre Reactor y RxJava</caption>
+    <thead><tr><th>Concepto</th><th>Reactor 3.4</th><th>RxJava 2/3</th></tr></thead>
+    <tbody>
+      <tr><th>Hilo donde arranca la fuente</th><td><code>subscribeOn(...)</code></td><td><code>subscribeOn(...)</code></td></tr>
+      <tr><th>Cambiar el hilo aguas abajo</th><td><code>publishOn(...)</code></td><td><code>observeOn(...)</code></td></tr>
+      <tr><th>Pool para tareas bloqueantes (E/S)</th><td><code>Schedulers.boundedElastic()</code></td><td><code>Schedulers.io()</code></td></tr>
+      <tr><th>Pool para CPU (≈ un hilo por núcleo)</th><td><code>Schedulers.parallel()</code></td><td><code>Schedulers.computation()</code></td></tr>
+      <tr><th>Un solo hilo reutilizable</th><td><code>Schedulers.single()</code></td><td><code>Schedulers.single()</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Resultados medidos con ReactorExample</h3>
+  <p>El pipeline del repositorio es <code>Flux.range(1, 10).filter(impar).map(...).flatMap(item -> Mono.just(item).subscribeOn(Schedulers.parallel())).doOnNext(...).subscribeOn(Schedulers.boundedElastic())</code>. Al instrumentarlo con el nombre del hilo se observó:</p>
+  <ul class="tight">
+    <li><code>range</code>, <code>filter</code> y <code>map</code> corrieron en <code>boundedElastic</code>: el <code>subscribeOn</code> exterior decide dónde arranca la fuente.</li>
+    <li><code>doOnNext</code> y el suscriptor corrieron en hilos <code>parallel-N</code> en casi todos los elementos (en una medición, solo 24 de 2 500 se entregaron en <code>boundedElastic</code>): cuando el hilo exterior está dentro del ciclo de drenaje (<em>drain loop</em>) de flatMap, entrega él mismo un valor que ya llegó.</li>
+    <li>El orden de salida no se preservó en entre el 21 % y el 33 % de 500 ejecuciones, según la medición (por ejemplo 5, 7, 9, 1, 3). Con <code>concatMap</code> o <code>flatMapSequential</code> no hubo ninguna ejecución fuera de orden.</li>
+    <li>El <code>subscribeOn(parallel())</code> dentro de flatMap no compite con el <code>subscribeOn(boundedElastic())</code> exterior: aplica a cada Mono interno, que es otra suscripción distinta.</li>
+  </ul>
+  <p>Para observar el hilo hay que pedirlo explícitamente, como hacen los ejemplos del repositorio:</p>
+<pre data-hl>// Repositorio: el mensaje dice "thread" pero imprime el item
+.doOnNext(item -> System.out.println("Processing item on thread: " + ⟦item⟧))
+
+// Corregido
+.doOnNext(item -> System.out.println(
+        "Processing " + item + " on thread: " + ⟪Thread.currentThread().getName()⟫))</pre>
+</div></section>
+
+<!-- ============================ 4 ============================ -->
+<section id="backpressure"><div class="wrap">
+  <h2>4. Backpressure</h2>
+  <p class="sec-note">Backpressure (contrapresión) es el mecanismo con el que el consumidor indica cuánto puede recibir, mediante <code>request(n)</code>. Este laboratorio sigue la Estación 1 de la prueba guía: productor rápido, consumidor lento.</p>
+
+  <div class="lab" id="bp-lab">
+    <div class="lab-head">
+      <span class="lab-title">Productor rápido, consumidor lento</span>
+      <div class="tabs" role="tablist" aria-label="Estrategia de backpressure" id="bp-tabs">
+        <button class="tab" role="tab" data-k="obs" aria-selected="true">Observable (sin backpressure)</button>
+        <button class="tab" role="tab" data-k="flow" aria-selected="false">Flowable (request n)</button>
+        <button class="tab" role="tab" data-k="drop" aria-selected="false">onBackpressureDrop</button>
+        <button class="tab" role="tab" data-k="latest" aria-selected="false">onBackpressureLatest</button>
+        <button class="tab" role="tab" data-k="buffer" aria-selected="false">onBackpressureBuffer(256, DROP_OLDEST)</button>
+      </div>
+    </div>
+    <div class="ctrl">
+      <button class="act" id="bp-play">Ejecutar</button>
+      <button class="act ghost" id="bp-reset">Reiniciar</button>
+      <span class="tabs" role="tablist" aria-label="Velocidad de la simulación" id="bp-speed">
+        <button class="tab sm" role="tab" data-k="1" aria-selected="false">×1</button>
+        <button class="tab sm" role="tab" data-k="10" aria-selected="true">×10</button>
+        <button class="tab sm" role="tab" data-k="50" aria-selected="false">×50</button>
+      </span>
+      <span class="tabs" role="tablist" aria-label="Tamaño de cada elemento" id="bp-payload">
+        <button class="tab sm" role="tab" data-k="16" aria-selected="true">Integer</button>
+        <button class="tab sm" role="tab" data-k="1040" aria-selected="false">byte[1024]</button>
+      </span>
+    </div>
+    <div class="viz"><svg id="bp-svg" role="img" aria-label="Simulación de productor, operador de backpressure, cola de observeOn y consumidor, con partículas que representan elementos emitidos, entregados, descartados y consumidos."></svg></div>
+    <div class="metric" id="bp-metrics"></div>
+    <p class="desc" id="bp-desc"></p>
+    <div class="grid2">
+      <div><p class="codehead">RxJava 3 (como en BackpressureChallenge.java)</p><pre id="bp-rj"></pre></div>
+      <div><p class="codehead">Reactor</p><pre id="bp-rx"></pre></div>
+    </div>
+    <p class="note">Modelo: el productor emite hasta 40 elementos por tick y el consumidor procesa 1 cada 2 ticks. La cola de <code>observeOn</code> de RxJava pide 128 (prefetch) y repone de a 96 (75 %). En Reactor, <code>publishOn</code> usa prefetch 256 y repone de a 192, así que los números cambian. La memoria es una estimación (≈ 16 B por Integer, ≈ 1 KB por byte[1024]).</p>
+  </div>
+
+  <div class="callout">
+    <strong>Datos medidos en la preparación de la Estación 1.</strong>
+    <ul class="tight">
+      <li><code>Observable</code> + <code>observeOn</code> con consumidor <code>Thread.sleep(1)</code>: con 10 000 elementos, el productor terminó en ~174 ms con ~9 998 lecturas todavía pendientes, sin ninguna excepción: la cola de Observable no tiene límite.</li>
+      <li>Con elementos <code>Integer</code> el heap casi no cambia. El problema se hace visible con cargas más pesadas: 20 000 elementos de 1 KB llevaron el heap de 21 MB a 50 MB.</li>
+      <li><code>Flowable</code> + <code>observeOn</code> sin ningún <code>onBackpressureX</code> ya aplica backpressure: nunca hubo más de 128 elementos pendientes.</li>
+      <li><code>onBackpressureDrop</code> sobre <code>Flowable.range(1, 5000)</code> descartó 4 872 de 5 000 elementos (5 000 − 128): <code>range</code> emite todo antes de que el consumidor pida más.</li>
+    </ul>
+  </div>
+
+  <div class="tablewrap">
+  <table>
+    <caption>Estrategias de backpressure</caption>
+    <thead><tr><th>Estrategia</th><th>Sin demanda, el elemento...</th><th>¿Pierde datos?</th><th>Memoria</th><th>Uso típico</th></tr></thead>
+    <tbody>
+      <tr><th>Observable</th><td>se encola sin límite</td><td>No, hasta quedarse sin memoria</td><td>Sin cota</td><td>Fuentes pequeñas y acotadas, eventos de UI</td></tr>
+      <tr><th>Flowable / Flux con <code>request(n)</code></th><td>no se produce: se frena la fuente</td><td>No</td><td>Acotada</td><td>Fuentes que pueden esperar: consultas paginadas, archivos</td></tr>
+      <tr><th><code>onBackpressureDrop</code></th><td>se descarta</td><td>Sí</td><td>Acotada</td><td>Métricas de alta frecuencia donde la siguiente lectura reemplaza a la anterior</td></tr>
+      <tr><th><code>onBackpressureLatest</code></th><td>reemplaza al anterior; solo se guarda el último</td><td>Sí, los intermedios</td><td>1 elemento</td><td>Estado actual: posición GPS, precio, tablero</td></tr>
+      <tr><th><code>onBackpressureBuffer(N, DROP_OLDEST)</code></th><td>entra a un buffer de N; al llenarse se descarta el más viejo</td><td>Sí, de forma controlada</td><td>N elementos</td><td>Absorber ráfagas cortas conservando lo más reciente</td></tr>
+      <tr><th><code>onBackpressureBuffer(N)</code></th><td>entra a un buffer de N; al llenarse, error</td><td>No en silencio: el flujo falla</td><td>N elementos</td><td>Cuando perder datos es inaceptable y el sistema debe enterarse</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout">
+    <strong>Pregunta para discutir (Estación 1).</strong> ¿Qué estrategia elegiría para las lecturas de temperatura de una planta industrial, y cuál para los «me gusta» de una red social? Tenga en cuenta que una lectura perdida puede ocultar el cruce de un umbral de seguridad, mientras que un «me gusta» intermedio no cambia el contador final. Considere también que un sensor físico es una fuente <em>hot</em>: no se le puede pedir que espere, así que <code>request(n)</code> por sí solo no lo frena. ¿Qué cambia si el sensor envía un promedio por segundo en lugar de cada lectura?
+  </div>
+</div></section>
+
+<!-- ============================ 5 ============================ -->
+<section id="hotcold"><div class="wrap">
+  <h2>5. Hot y Cold publishers</h2>
+  <p class="sec-note">Un publisher <em>cold</em> ejecuta la secuencia completa para cada suscriptor. Un publisher <em>hot</em> emite una sola vez y los suscriptores reciben lo que se emite desde que llegan.</p>
+
+  <div class="lab" id="hc-lab">
+    <div class="lab-head">
+      <span class="lab-title">Dos paneles de monitoreo que se suscriben en momentos distintos</span>
+      <div class="tabs" role="tablist" aria-label="Tipo de publisher" id="hc-tabs">
+        <button class="tab" role="tab" data-k="cold" aria-selected="true">Cold</button>
+        <button class="tab" role="tab" data-k="hot2" aria-selected="false">Hot · autoConnect(2)</button>
+        <button class="tab" role="tab" data-k="hot1" aria-selected="false">Hot · connect()</button>
+        <button class="tab" role="tab" data-k="replay" aria-selected="false">Hot · replay(2)</button>
+      </div>
+    </div>
+    <div class="ctrl">
+      <button class="act" id="hc-play">Reproducir</button>
+      <label>Llegada del panel B <input type="range" id="hc-b" min="0" max="4" step="1" value="2" aria-describedby="hc-bl"></label>
+      <span class="tlabel" id="hc-bl"></span>
+    </div>
+    <div class="ctrl" style="margin-top:0">
+      <input type="range" class="scrub" id="hc-range" min="0" max="1000" value="0" aria-label="Posición en la línea de tiempo">
+      <span class="tlabel" id="hc-t"></span>
+    </div>
+    <div class="viz"><svg id="hc-svg" role="img" aria-label="Línea de tiempo con la fuente y los paneles A y B. En Cold cada panel tiene su propia fuente; en Hot comparten una sola emisión."></svg></div>
+    <p class="out" id="hc-sum"></p>
+    <p class="desc" id="hc-desc"></p>
+    <pre id="hc-code"></pre>
+  </div>
+
+  <div class="callout warn">
+    <strong>autoConnect(2) puede parecer Cold.</strong> La Estación 4 sugiere <code>.publish().autoConnect(2)</code>. Con ese operador la fuente no empieza a emitir hasta que llega el segundo suscriptor, así que ambos paneles reciben 0..4 y el resultado se ve igual que con un Flux cold. Para observar el comportamiento hot hay que conectar antes de que llegue el panel tardío: <code>autoConnect(1)</code> o <code>ConnectableFlux.connect()</code>. Verificado: con <code>connect()</code> y el panel B llegando a los 2,5 s, B recibió solo 2, 3 y 4.
+  </div>
+  <p>En Reactor, <code>share()</code> equivale a <code>publish().refCount()</code>: conecta con el primer suscriptor y se desconecta cuando no queda ninguno. <code>replay(n)</code> guarda los últimos n elementos para entregarlos a los suscriptores tardíos.</p>
+</div></section>
+
+<!-- ============================ 6 ============================ -->
+<section id="errores"><div class="wrap">
+  <h2>6. Manejo de errores y resiliencia</h2>
+  <p class="sec-note">En un flujo reactivo un error es una señal terminal. Los operadores de resiliencia lo interceptan para reintentar, limitar el tiempo o reemplazarlo por un valor de respaldo. El orden de esos operadores cambia el resultado.</p>
+
+  <div class="lab" id="rs-lab">
+    <div class="lab-head">
+      <span class="lab-title">Servicio externo intermitente (FlakyExternalService)</span>
+      <div class="tabs" role="tablist" aria-label="Configuración del pipeline" id="rs-tabs">
+        <button class="tab" role="tab" data-k="ok" aria-selected="true">timeout → retryWhen → onErrorResume</button>
+        <button class="tab" role="tab" data-k="bad" aria-selected="false">onErrorResume antes de retryWhen</button>
+        <button class="tab" role="tab" data-k="budget" aria-selected="false">timeout después de retryWhen</button>
+      </div>
+    </div>
+    <div class="ctrl">
+      <label>Fallos <input type="range" id="rs-fail" min="0" max="60" step="5" value="10" aria-describedby="rs-failv"> <span class="tlabel" id="rs-failv">10 %</span></label>
+      <label>Respuestas lentas (1,5 s) <input type="range" id="rs-slow" min="0" max="30" step="5" value="5" aria-describedby="rs-slowv"> <span class="tlabel" id="rs-slowv">5 %</span></label>
+    </div>
+    <div class="ctrl">
+      <button class="act" id="rs-run">Ejecutar una petición</button>
+      <button class="act ghost" id="rs-many">Simular 1 000 peticiones</button>
+      <input type="range" class="scrub" id="rs-range" min="0" max="1000" value="0" aria-label="Posición en la línea de tiempo">
+      <span class="tlabel" id="rs-t"></span>
+    </div>
+    <div class="viz"><svg id="rs-svg" role="img" aria-label="Línea de tiempo de intentos contra el servicio: barras verdes para éxito, rojas para fallo, ámbar para timeout y barras punteadas para las esperas de backoff."></svg></div>
+    <div class="legend" aria-hidden="true">
+      <span><i class="sq" style="background:#2F6F4F"></i>intento exitoso</span>
+      <span><i class="sq" style="background:#9A3B2C"></i>intento fallido</span>
+      <span><i class="sq" style="background:#B7791F"></i>cortado por timeout</span>
+      <span><i class="sq" style="background:#fff;border:1px dashed #5A6480"></i>espera de backoff</span>
+    </div>
+    <div class="grid2" style="margin-top:8px">
+      <div><p class="codehead">Registro</p><div class="log" id="rs-log"></div></div>
+      <div><p class="codehead">Pipeline</p><pre id="rs-code"></pre></div>
+    </div>
+    <div class="metric" id="rs-stats"></div>
+    <p class="note">El servicio del repositorio falla ~10 % de las veces. Las respuestas lentas se agregan en el laboratorio para poder observar <code>timeout</code>. Backoff según <code>Retry.backoff(3, 100 ms)</code>: esperas de ≈ 100, 200 y 400 ms con jitter de ±50 % por defecto.</p>
+  </div>
+
+  <div class="callout warn">
+    <strong>El orden de los operadores importa.</strong>
+    <ul class="tight">
+      <li><code>onErrorResume</code> antes de <code>retryWhen</code>: el error se convierte en el valor de respaldo antes de llegar a <code>retryWhen</code>, así que nunca se reintenta (intentos = 1).</li>
+      <li>Cuando se agotan los reintentos, lo que llega a <code>onErrorResume</code> no es la excepción original sino una <code>RetryExhaustedException</code> («Retries exhausted: 3/3») con la original como causa. Se detecta con <code>Exceptions.isRetryExhausted(e)</code>; para propagar la original se usa <code>.onRetryExhaustedThrow((spec, signal) -> signal.failure())</code>.</li>
+      <li><code>timeout</code> antes de <code>retryWhen</code> limita cada intento. <code>timeout</code> después de <code>retryWhen</code> es un presupuesto total para todos los intentos y esperas; al vencer llega una <code>TimeoutException</code>.</li>
+    </ul>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>retry(n) y retryWhen(Retry.backoff(...))</h4>
+      <p style="font-size:15px;margin:0 0 8px"><code>retry(3)</code> se vuelve a suscribir de inmediato. Si el servicio falla por sobrecarga, los reintentos inmediatos aumentan la carga justo cuando el servicio está peor. <code>Retry.backoff</code> espera tiempos crecientes, y el jitter evita que muchos clientes reintenten al mismo tiempo.</p>
+<pre data-hl>Retry.backoff(3, Duration.ofMillis(100))
+     .maxBackoff(Duration.ofSeconds(2))
+     .filter(e -> e instanceof IOException)   // solo errores transitorios
+     .onRetryExhaustedThrow((spec, s) -> s.failure());</pre>
+    </div>
+    <div class="card">
+      <h4>Reintentar exige una fuente perezosa</h4>
+      <p style="font-size:15px;margin:0 0 8px">Reintentar consiste en volver a suscribirse. Si la llamada ya se ejecutó al construir el Mono, la nueva suscripción no la repite.</p>
+<pre data-hl>// Mal: llamar() se ejecuta una sola vez, al ensamblar
+Mono.just(⟦servicio.llamar()⟧).retry(3);
+
+// Bien: cada suscripción vuelve a invocar el servicio
+Mono.fromCallable(() -> servicio.llamar()).retry(3);
+Mono.defer(() -> servicio.llamarAsync()).retry(3);</pre>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <strong>Caso en que reintentar automáticamente es peligroso.</strong> Un <code>POST /pagos</code> que cobra $350.000 a una tarjeta. La pasarela procesa el cobro, pero la respuesta tarda más que el <code>timeout</code> de 2 s. El cliente recibe <code>TimeoutException</code>, <code>retryWhen</code> repite el POST y el cliente queda cobrado dos veces. La operación no es idempotente. Opciones: no reintentar errores posteriores al envío, enviar una clave de idempotencia para que el servidor descarte duplicados, o reintentar solo cuando la petición no salió (fallo de conexión).
+<pre data-hl>webClient.post().uri("/pagos")
+    .header("Idempotency-Key", pedido.getId())      // el servidor deduplica
+    .bodyValue(cobro)
+    .retrieve()
+    .bodyToMono(Recibo.class)
+    .retryWhen(Retry.backoff(2, Duration.ofMillis(200))
+                    .filter(e -> e.getCause() instanceof ConnectException));</pre>
+  </div>
+</div></section>
+
+<!-- ============================ 7 ============================ -->
+<section id="pruebas"><div class="wrap">
+  <h2>7. Pruebas con StepVerifier</h2>
+  <p class="sec-note"><code>StepVerifier</code> (módulo <code>reactor-test</code>) se suscribe al publisher y verifica señal por señal: cada <code>onNext</code>, su orden y la señal terminal. Con tiempo virtual, un flujo que espera segundos se prueba en milisegundos.</p>
+  <div class="grid2">
+    <div>
+      <p class="codehead">Secuencia exacta</p>
+<pre data-hl>@Test
+public void secuenciaExacta() {
+    Flux&lt;String> pipeline = Flux.range(1, 10)
+        .filter(i -> i % 2 == 1)
+        .map(i -> "Number: " + i);
+
+    StepVerifier.create(pipeline)
+        .expectNext("Number: 1", "Number: 3", "Number: 5")
+        .expectNext("Number: 7", "Number: 9")
+        .verifyComplete();
+}</pre>
+    </div>
+    <div>
+      <p class="codehead">Tiempo virtual</p>
+<pre data-hl>@Test
+public void tiempoVirtual() {
+    StepVerifier.withVirtualTime(() -> Flux.just("a", "b", "c")
+                .delayElements(Duration.ofSeconds(5)))   // creado DENTRO del Supplier
+        .expectSubscription()
+        .expectNoEvent(Duration.ofSeconds(5))
+        .expectNext("a")
+        .thenAwait(Duration.ofSeconds(5))
+        .expectNext("b")
+        .thenAwait(Duration.ofSeconds(5))
+        .expectNext("c")
+        .verifyComplete();   // 15 s virtuales, milisegundos reales
+}</pre>
+    </div>
+  </div>
+  <p>El Flux debe crearse dentro del <code>Supplier</code>. <code>withVirtualTime</code> reemplaza los schedulers de tiempo por un <code>VirtualTimeScheduler</code> antes de invocar el Supplier; si el Flux se creó antes, <code>delayElements</code> ya quedó atado al reloj real. <code>expectSubscription()</code> va antes de <code>expectNoEvent</code> porque la suscripción también cuenta como evento.</p>
+
+  <div class="lab" id="vt-lab">
+    <div class="lab-head">
+      <span class="lab-title">Reloj virtual y reloj real</span>
+      <div class="tabs" role="tablist" aria-label="Modo de prueba" id="vt-tabs">
+        <button class="tab" role="tab" data-k="virtual" aria-selected="true">withVirtualTime</button>
+        <button class="tab" role="tab" data-k="real" aria-selected="false">create (tiempo real)</button>
+      </div>
+    </div>
+    <div class="ctrl"><button class="act" id="vt-run">Ejecutar la prueba</button></div>
+    <div class="grid2">
+      <div class="viz"><svg id="vt-svg" role="img" aria-label="Dos relojes: el reloj virtual avanza 15 segundos mientras el reloj real avanza milisegundos con tiempo virtual, o 15 segundos sin él."></svg></div>
+      <ol class="steps" id="vt-steps"></ol>
+    </div>
+    <p class="note" id="vt-note"></p>
+  </div>
+
+  <div class="callout warn">
+    <strong>Pruebas intermitentes con flatMap.</strong> Si el pipeline usa <code>flatMap</code> con publishers internos asíncronos, un <code>expectNext(1, 3, 5, 7, 9)</code> estricto falla en algunas ejecuciones, porque el orden depende de qué interno termina primero (sección 3). Para estos casos hay dos opciones: usar <code>concatMap</code> o <code>flatMapSequential</code> si el orden es un requisito, o verificar el contenido sin orden.
+<pre data-hl>StepVerifier.create(flujoConFlatMapAsincrono)
+    .recordWith(ArrayList::new)
+    .expectNextCount(5)
+    .consumeRecordedWith(xs -> assertEquals(
+        new HashSet&lt;>(Arrays.asList(1, 3, 5, 7, 9)), new HashSet&lt;>(xs)))
+    .verifyComplete();</pre>
+  </div>
+  <p><code>StepVerifier</code> verifica cosas que un <code>assertEquals</code> sobre una lista no puede: el orden de llegada, que el flujo complete (o falle con el error esperado), que no haya señales de más y el comportamiento en el tiempo. No verifica en qué hilo se ejecutó cada etapa ni el comportamiento con carga real.</p>
+</div></section>
+
+<!-- ============================ 8 ============================ -->
+<section id="webflux"><div class="wrap">
+  <h2>8. WebFlux y Server-Sent Events</h2>
+  <p class="sec-note">En Spring WebFlux un controlador puede devolver <code>Mono</code> o <code>Flux</code>. El framework se suscribe y escribe cada elemento en la respuesta HTTP sobre Netty, sin dedicar un hilo por petición.</p>
+<pre data-hl>@RestController
+@RequestMapping("/reactive")
+public class ReactiveController {
+
+    @GetMapping("/mono")
+    public Mono&lt;String> getMono() { return Mono.just("Hello, Mono!"); }    // 1 valor
+
+    @GetMapping("/flux")
+    public Flux&lt;String> getFlux() { return Flux.just("Hello, Flux!"); }    // 0..N valores
+
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux&lt;String> getStream() {
+        return Flux.interval(Duration.ofSeconds(1))     // 0, 1, 2, ... cada segundo
+                   .filter(i -> i % 2 == 0)
+                   .map(i -> "evento " + i)
+                   .doOnCancel(() -> log.info("cliente desconectado"));
+    }
+}</pre>
+
+  <div class="lab" id="sse-lab" style="margin-top:22px">
+    <div class="lab-head">
+      <span class="lab-title">curl -N http://localhost:8080/reactive/stream</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="act" id="sse-go">Conectar</button>
+        <button class="act ghost" id="sse-stop" disabled>Desconectar</button>
+      </div>
+    </div>
+    <div class="grid2">
+      <div><p class="codehead">Con produces = TEXT_EVENT_STREAM_VALUE</p><div class="term" id="sse-a" aria-live="off"></div></div>
+      <div><p class="codehead">Mismo Flux&lt;String&gt; sin produces</p><div class="term" id="sse-b" aria-live="off"></div></div>
+    </div>
+    <p class="codehead" style="margin-top:12px">Registro del servidor</p>
+    <div class="log" id="sse-srv" style="min-height:80px;max-height:150px"></div>
+    <p class="note">Simulación con un tick cada 0,8 s. El laboratorio se desconecta solo después de 12 ticks; un <code>Flux.interval</code> real no termina nunca.</p>
+  </div>
+
+  <div class="callout">
+    <strong>Diferencia real entre los dos endpoints.</strong> Un <code>Flux&lt;String&gt;</code> sin <code>produces</code> también llega por partes: se envía como <code>text/plain</code> con codificación por bloques (<em>chunked</em>), pero sin delimitadores, así que el cliente recibe «evento 0evento 2evento 4» pegado. Ambos endpoints hacen streaming; lo que cambia con SSE es el protocolo. SSE envía eventos delimitados (líneas <code>data:</code> seguidas de una línea en blanco, con campos opcionales <code>id</code> y <code>event</code>), que el navegador consume con <code>EventSource</code> y que permiten reconexión automática con <code>Last-Event-ID</code>. Para enviar esos campos desde Spring se devuelve <code>Flux&lt;ServerSentEvent&lt;T&gt;&gt;</code>.
+<pre data-hl>// Navegador
+const es = new EventSource("/reactive/stream");
+es.onmessage = e => console.log(e.data);   // "evento 0", "evento 2", ...</pre>
+  </div>
+  <p>Cuando el cliente cierra la conexión, WebFlux cancela la suscripción y <code>Flux.interval</code> deja de emitir (<code>doOnCancel</code> lo registra). Devolver un <code>Flux</code> no garantiza que el endpoint sea no bloqueante: si dentro del pipeline hay una llamada JDBC, ese hilo de Netty queda bloqueado.</p>
+</div></section>
+
+<!-- ============================ 9 ============================ -->
+<section id="cuando"><div class="wrap">
+  <h2>9. Cuándo usar programación reactiva</h2>
+  <p class="sec-note">La programación reactiva tiene costos concretos. Conviene usarla donde sus ventajas compensan esos costos.</p>
+  <div class="yesno">
+    <div>
+      <h4 style="color:var(--ok)">Cuándo conviene</h4>
+      <ul class="tight">
+        <li>Flujos continuos de datos: SSE, WebSockets, telemetría, consumo de Kafka.</li>
+        <li>Muchas conexiones concurrentes dominadas por E/S, con todo el stack no bloqueante: WebClient, R2DBC, drivers reactivos de MongoDB, Redis o Cassandra.</li>
+        <li>Composición de llamadas asíncronas: combinar tres servicios con <code>zip</code>, aplicar timeouts y reintentos por llamada.</li>
+        <li>Necesidad de backpressure de extremo a extremo entre productor y consumidor.</li>
+      </ul>
+    </div>
+    <div>
+      <h4 style="color:var(--warn)">Cuándo no conviene</h4>
+      <ul class="tight">
+        <li><strong>Acceso a datos bloqueante.</strong> JDBC y JPA bloquean el hilo y rompen el modelo. Envolverlos con <code>subscribeOn(Schedulers.boundedElastic())</code> solo mitiga el problema: el hilo sigue bloqueado, aunque sea uno del pool elástico.</li>
+        <li><strong>Depuración.</strong> Las trazas de error muestran internos de los operadores y no la línea que ensambló el pipeline. Existen ayudas (<code>checkpoint("...")</code>, <code>Hooks.onOperatorDebug()</code>, ReactorDebugAgent de reactor-tools), con costo de rendimiento en algunos casos.</li>
+        <li><strong>Curva de aprendizaje.</strong> Hilos, orden, hot/cold y backpressure son fuente de errores sutiles para un equipo sin experiencia.</li>
+        <li><strong>Propagación.</strong> Cuando un método devuelve <code>Mono</code>, quienes lo llaman también tienden a volverse reactivos.</li>
+        <li><strong>Trabajo intensivo en CPU.</strong> No hay ganancia frente a un pool de hilos.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Alternativa: hilos virtuales (Java 21)</h3>
+  <p>Los hilos virtuales (JEP 444) hacen barato bloquear: el hilo virtual se desmonta del hilo de plataforma mientras espera E/S. Para muchos servicios dominados por E/S, esto da la escalabilidad del modelo no bloqueante con código imperativo, trazas de error legibles y drivers JDBC normales. En Java 21 un bloque <code>synchronized</code> fija (<em>pin</em>) el hilo de plataforma; Java 24 corrige esa limitación (JEP 491).</p>
+  <div class="grid2">
+<pre data-hl>// Estilo bloqueante, un hilo virtual por tarea
+try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+    Future&lt;Pedido> f = executor.submit(() -> repositorio.buscar(id));
+}
+// Spring Boot 3.2+: spring.threads.virtual.enabled=true</pre>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>Reactivo</th><th>Hilos virtuales</th></tr></thead>
+      <tbody>
+        <tr><th>Estilo de código</th><td>Pipelines de operadores</td><td>Imperativo</td></tr>
+        <tr><th>Backpressure</th><td>Incluido en el contrato</td><td>Hay que construirlo</td></tr>
+        <tr><th>Streaming / SSE</th><td>Natural</td><td>Posible, más manual</td></tr>
+        <tr><th>JDBC</th><td>Rompe el modelo</td><td>Funciona</td></tr>
+        <tr><th>Trazas de error</th><td>Difíciles de leer</td><td>Normales</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============================ 10 ============================ -->
+<section id="taller"><div class="wrap">
+  <h2>10. Conexión con el taller</h2>
+  <p class="sec-note">Repositorio <code>DYAS-Programacion_reactiva</code>: taller base de operadores y prueba guía de maestría en 5 estaciones (<code>docs/prueba-guia-maestria.md</code>). El proyecto usa Java 21, Spring Boot 4.1 (que gestiona Reactor y reactor-test) y RxJava 3.</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Actividad</th><th>Sección de este material</th><th>Archivo de partida</th></tr></thead>
+    <tbody>
+      <tr><th>Taller base: map, filter, flatMap, merge, zip y un ejemplo propio con 5 operadores</th><td>2. Operadores básicos</td><td><code>RxJavaExample.java</code>, <code>ReactorExample.java</code></td></tr>
+      <tr><th>Estación 1: backpressure</th><td>4. Backpressure</td><td><code>retos/BackpressureChallenge.java</code></td></tr>
+      <tr><th>Estación 2: StepVerifier y tiempo virtual</th><td>7. Pruebas con StepVerifier</td><td><code>src/test/.../retos/StepVerifierChallengeTest.java</code></td></tr>
+      <tr><th>Estación 3: errores y resiliencia</th><td>6. Manejo de errores</td><td><code>retos/ResilientPipelineChallenge.java</code></td></tr>
+      <tr><th>Estación 4: hot/cold y subscribeOn</th><td>5. Hot y Cold, 3. Hilos</td><td><code>retos/HotColdChallenge.java</code></td></tr>
+      <tr><th>Estación 5: streaming con WebFlux</th><td>8. WebFlux y SSE</td><td><code>Controllers/ReactiveController.java</code> (<code>getStream()</code>)</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout">
+    <strong>Detalles del repositorio que conviene tener presentes.</strong>
+    <ul class="tight">
+      <li>Los ejemplos imprimen el hilo de cada etapa (sección 3) y esperan con un <code>CountDownLatch</code> a que el flujo termine: los hilos de los Schedulers son daemon y, si <code>main</code> termina antes, la JVM no espera la salida asíncrona.</li>
+      <li>Las pruebas de la Estación 2 vienen marcadas con <code>@Disabled</code>. Al implementarlas hay que quitar la anotación y comprobar que el reporte de Maven diga <code>Skipped: 0</code>.</li>
+      <li>En PowerShell el parámetro de Maven va entre comillas: <code>mvn exec:java "-Dexec.mainClass=com.example.ReactorExample"</code>.</li>
+    </ul>
+  </div>
+</div></section>
+
+</main>
+
+<footer><div class="wrap">
+  <span>Diseño y Arquitectura de Software · Universidad de La Sabana</span>
+  <span>Material de apoyo — Módulo 7</span>
+</div></footer>
+
+<script>
+(function(){
+'use strict';
+var RM = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+var COL = {navy:'#1F2D4E', ink:'#16223c', terra:'#C9722F', muted:'#5A6480', line:'#D5DAE4', ok:'#2F6F4F', warn:'#9A3B2C', soft:'#EDF0F6', amber:'#B7791F'};
+var MC = ['#1F2D4E','#C9722F','#2F6F4F','#7A4E9C','#2B7A99','#9A3B2C'];
+var TH = {main:'#5A6480', boundedElastic:'#C9722F', parallel:'#2B7A99', single:'#7A4E9C'};
+var THL = {main:'#B9C6E2', boundedElastic:'#E7B36B', parallel:'#7FD0E8', single:'#C9A6E8'};
+var redraws = [];
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function r1(v){ return Math.round(v*10)/10; }
+function A(o){ var s=''; for (var k in o){ if (o[k]!==null && o[k]!==undefined) s+=' '+k+'="'+o[k]+'"'; } return s; }
+function rect(x,y,w,h,o){ return '<rect'+A({x:r1(x),y:r1(y),width:r1(Math.max(0,w)),height:r1(Math.max(0,h))})+A(o||{})+'/>'; }
+function line(x1,y1,x2,y2,o){ return '<line'+A({x1:r1(x1),y1:r1(y1),x2:r1(x2),y2:r1(y2)})+A(o||{})+'/>'; }
+function circ(x,y,r,o){ return '<circle'+A({cx:r1(x),cy:r1(y),r:r1(Math.max(0,r))})+A(o||{})+'/>'; }
+function text(x,y,t,o){ return '<text'+A({x:r1(x),y:r1(y)})+A(o||{})+'>'+esc(t)+'</text>'; }
+function xmark(x,y,r,c,op){ var o={stroke:c,'stroke-width':2.6,'stroke-linecap':'round',opacity:op==null?1:r1(op*100)/100}; return line(x-r,y-r,x+r,y+r,o)+line(x-r,y+r,x+r,y-r,o); }
+function fmt(n,d){ var s=(d?Number(n).toFixed(d):String(Math.round(n))).split('.'); s[0]=s[0].replace(/\B(?=(\d{3})+(?!\d))/g,' '); return s.join(','); }
+function ease(p){ return p<0.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2; }
+function backOut(p){ var c1=1.70158, c3=c1+1; return 1+c3*Math.pow(p-1,3)+c1*Math.pow(p-1,2); }
+function widthOf(svg){ var w=svg.parentNode.getBoundingClientRect().width; return Math.max(260, Math.floor(w||640)); }
+function mulberry(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+/* ---------- resaltado de código ---------- */
+var HLRE = /("(?:[^"\\]|\\.)*")|(\/\/.*$)|(@[A-Za-z]+)|\b(public|private|protected|static|final|class|interface|return|new|void|int|long|boolean|import|extends|implements|throws|try|catch|if|else|var|const|function|true|false|null)\b/g;
+function hl(src){
+  return src.split('\n').map(function(ln){
+    var e = ln.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    e = e.replace(HLRE, function(m, s, c){
+      if (s) return '<span class="g">'+s+'</span>';
+      if (c) return '<span class="c">'+c+'</span>';
+      return '<span class="k">'+m+'</span>';
+    });
+    return e.replace(/⟦/g,'<span class="r">').replace(/⟧/g,'</span>').replace(/⟪/g,'<span class="mark">').replace(/⟫/g,'</span>');
+  }).join('\n');
+}
+Array.prototype.forEach.call(document.querySelectorAll('pre[data-hl]'), function(p){ p.innerHTML = hl(p.textContent); });
+
+/* ---------- pestañas ---------- */
+function tabGroup(el, onSelect){
+  var btns = Array.prototype.slice.call(el.querySelectorAll('button.tab'));
+  function sel(b, focus, silent){
+    btns.forEach(function(o){ var on=(o===b); o.setAttribute('aria-selected', on?'true':'false'); o.tabIndex = on?0:-1; });
+    if (focus) b.focus();
+    if (!silent) onSelect(b.getAttribute('data-k'), b);
+  }
+  btns.forEach(function(b, i){
+    b.addEventListener('click', function(){ sel(b); });
+    b.addEventListener('keydown', function(e){
+      var j=-1;
+      if (e.key==='ArrowRight') j=(i+1)%btns.length;
+      else if (e.key==='ArrowLeft') j=(i-1+btns.length)%btns.length;
+      else if (e.key==='Home') j=0; else if (e.key==='End') j=btns.length-1;
+      if (j>=0){ e.preventDefault(); sel(btns[j], true); }
+    });
+  });
+  var init = btns.filter(function(b){ return b.getAttribute('aria-selected')==='true'; })[0] || btns[0];
+  sel(init, false, true);
+  return { value: function(){ var b=btns.filter(function(x){return x.getAttribute('aria-selected')==='true';})[0]; return b?b.getAttribute('data-k'):null; } };
+}
+
+/* ---------- reproductor de líneas de tiempo ---------- */
+function Player(o){
+  var self={t:0, playing:false}, raf=0, last=0;
+  function sync(){
+    if (o.range) o.range.value = Math.round(self.t/o.T*1000);
+    if (o.label && o.fmt) o.label.textContent = o.fmt(self.t);
+    if (o.btn) o.btn.textContent = self.playing ? 'Pausa' : (self.t>=o.T ? 'Repetir' : 'Reproducir');
+  }
+  function frame(ts){
+    if (!self.playing) return;
+    var dt=Math.min(64, ts-last); last=ts;
+    self.t=Math.min(o.T, self.t + dt*o.T/o.dur);
+    o.draw(self.t);
+    if (self.t>=o.T) self.playing=false;
+    sync();
+    if (self.playing) raf=requestAnimationFrame(frame);
+  }
+  self.play=function(){
+    if (self.t>=o.T) self.t=0;
+    if (RM){ self.t=o.T; o.draw(self.t); sync(); return; }
+    self.playing=true; last=performance.now(); cancelAnimationFrame(raf); raf=requestAnimationFrame(frame); sync();
+  };
+  self.pause=function(){ self.playing=false; cancelAnimationFrame(raf); sync(); };
+  self.toggle=function(){ if (self.playing) self.pause(); else self.play(); };
+  self.seek=function(t){ self.pause(); self.t=t; o.draw(t); sync(); };
+  self.reset=function(T, dur){ self.pause(); if (T) o.T=T; if (dur) o.dur=dur; self.t = RM ? o.T : 0; o.draw(self.t); sync(); };
+  self.redraw=function(){ o.draw(self.t); };
+  if (o.btn) o.btn.addEventListener('click', self.toggle);
+  if (o.range) o.range.addEventListener('input', function(){ self.seek(o.range.value/1000*o.T); });
+  redraws.push(self.redraw);
+  return self;
+}
+function whenVisible(el, fn){
+  if (RM || !('IntersectionObserver' in window)) return;
+  var io=new IntersectionObserver(function(es){ es.forEach(function(e){ if (e.isIntersecting){ io.disconnect(); fn(); } }); }, {threshold:0.3});
+  io.observe(el);
+}
+
+/* ---------- renderizador genérico de líneas de tiempo ---------- */
+function tl(svg, spec, t){
+  var W=widthOf(svg), narrow=W<600;
+  var L = narrow ? 10 : (spec.labelW || 118), R = W - (narrow ? 10 : 18);
+  var T = spec.T;
+  function X(tt){ return L + (R-L)*Math.max(0, Math.min(T, tt))/T; }
+  var rows={}, y=6, s=[];
+  spec.rows.forEach(function(r){
+    var h = r.h || (r.kind==='op' ? 40 : r.kind==='inner' ? 26 : 40);
+    if (narrow && r.kind!=='op' && (r.label || r.chip)) y += 16;
+    rows[r.id]={r:r, top:y, h:h, y:y+h/2};
+    y += h + (r.gap!=null ? r.gap : 8);
+  });
+  var H=Math.round(y+18);
+  var mr = spec.mr ? (narrow ? spec.mr-1 : spec.mr) : (narrow ? 10 : 12);
+  var hid='h-'+svg.id;
+  s.push('<defs><pattern id="'+hid+'" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#F7E4E0"/><line x1="0" y1="0" x2="0" y2="6" stroke="#9A3B2C" stroke-width="2" stroke-opacity=".45"/></pattern></defs>');
+  spec.rows.forEach(function(r){
+    var o=rows[r.id];
+    if (r.kind==='lane') s.push(rect(2, o.top, W-4, o.h, {rx:6, fill:r.bg||COL.soft, 'fill-opacity':r.bgo!=null?r.bgo:0.55}));
+  });
+  (spec.markers||[]).forEach(function(m){
+    if (t < m.t && !m.always) return;
+    var x=X(m.t), op = t<m.t ? 0.4 : 1, anchor = x > W*0.62 ? 'end' : 'start';
+    s.push(line(x, 2, x, H-16, {stroke:m.c||COL.terra, 'stroke-width':1.4, 'stroke-dasharray':'4 4', opacity:op}));
+    s.push(text(anchor==='end'? x-4 : x+4, H-4, m.text, {'font-size':11, fill:m.c||COL.terra, 'text-anchor':anchor, opacity:op, 'font-weight':600}));
+  });
+  spec.rows.forEach(function(r){
+    var o=rows[r.id];
+    if (r.kind==='op'){
+      s.push(rect(L, o.top, R-L, o.h, {rx:7, fill:r.fill||COL.navy, stroke:r.stroke||'none', 'stroke-width':r.stroke?1.4:null, 'stroke-dasharray':r.dash?'5 4':null}));
+      var tx = typeof r.text==='function' ? r.text(t, narrow) : r.text;
+      s.push(text((L+R)/2, o.y+4.5, tx, {'text-anchor':'middle', fill:r.tc||'#fff', 'font-size':narrow?11:12.5, 'class':'m'}));
+      return;
+    }
+    if (r.label || r.chip){
+      if (narrow){
+        s.push('<text'+A({x:L+2, y:r1(o.top-4), 'font-size':11.5, fill:COL.ink, 'class':r.mono?'m':null})+'>'+esc(r.label||'')+(r.chip?'<tspan'+A({fill:r.chipC||COL.muted,'font-weight':600})+'>'+esc((r.label?'  · ':'')+r.chip)+'</tspan>':'')+'</text>');
+      } else {
+        s.push(text(L-12, o.y+(r.chip?-2:4), r.label||'', {'text-anchor':'end', 'font-size':12.5, fill:COL.ink, 'class':r.mono?'m':null}));
+        if (r.chip) s.push(text(L-12, o.y+13, r.chip, {'text-anchor':'end', 'font-size':11, fill:r.chipC||COL.muted, 'font-weight':600}));
+      }
+    }
+    if (r.kind==='lane'){
+      if (r.axis) s.push(line(L, o.y, R, o.y, {stroke:COL.line, 'stroke-width':1.2}));
+      return;
+    }
+    var t0=r.start||0, t1=(r.end!=null) ? r.end : T;
+    if (r.kind!=='inner') s.push(line(X(t0), o.y, X(t1), o.y, {stroke:COL.line, 'stroke-width':1.5, 'stroke-dasharray':'3 4'}));
+    if (t>=t0){ var te=Math.min(t,t1); s.push(line(X(t0), o.y, X(te), o.y, {stroke:r.kind==='inner'?COL.muted:COL.navy, 'stroke-width':r.kind==='inner'?1.5:2})); }
+    if (r.end!=null && t>=r.end){ var xe=X(r.end); if (r.err) s.push(xmark(xe,o.y,7,COL.warn)); else s.push(line(xe, o.y-10, xe, o.y+10, {stroke:COL.navy, 'stroke-width':2.5})); }
+  });
+  (spec.bars||[]).forEach(function(b){
+    if (t<b.t0) return;
+    var o=rows[b.row]; if (!o) return;
+    var x0=X(b.t0), x1=X(Math.min(t,b.t1)), bh=b.h||16;
+    var yy = b.align==='bottom' ? o.top+o.h-3-bh : o.y-bh/2;
+    var st={rx:b.rx!=null?b.rx:3};
+    if (b.style==='wait'){ st.fill='#fff'; st.stroke=b.c||COL.muted; st['stroke-dasharray']='4 3'; st['stroke-width']=1.3; }
+    else if (b.style==='hatch'){ st.fill='url(#'+hid+')'; st.stroke=COL.warn; st['stroke-width']=1; }
+    else { st.fill=b.c||COL.navy; if (b.op) st['fill-opacity']=b.op; }
+    s.push(rect(x0, yy, x1-x0, bh, st));
+    if (b.text && t>=b.t1){
+      var w=x1-x0, tx=null;
+      if (w > b.text.length*6.2+8) tx=b.text; else if (b.short && w > b.short.length*6.2+6) tx=b.short;
+      if (tx) s.push(text((x0+x1)/2, yy+bh/2+4, tx, {'text-anchor':'middle', 'font-size':11, 'font-weight':600, fill: b.tc || ((b.style==='wait') ? COL.muted : (b.style==='hatch' ? COL.warn : '#fff'))}));
+    }
+  });
+  (spec.links||[]).forEach(function(l){
+    var a=rows[l.from], b=rows[l.to]; if (!a || !b) return;
+    var x0=X(l.t0), y0=a.y, x1=X(l.t1), y1=b.y;
+    if (l.trail && t>=l.t1) s.push(line(x0,y0,x1,y1,{stroke:l.c, 'stroke-width':1.4, opacity:0.3}));
+    if (t>=l.t0 && t<l.t1){
+      var p=ease((t-l.t0)/(l.t1-l.t0)), x=x0+(x1-x0)*p, yy=y0+(y1-y0)*p;
+      s.push(line(x0,y0,x,yy,{stroke:l.c, 'stroke-width':1.5, opacity:0.35}));
+      s.push(circ(x,yy,5,{fill:l.c}));
+    }
+    if (l.drop && t>=l.t1){
+      var fd=T*0.07, f=1-(t-l.t1)/fd;
+      if (f>0) s.push(xmark(x1, y1, 7, COL.warn, f));
+    }
+  });
+  (spec.ev||[]).forEach(function(e){
+    if (t<e.t) return;
+    var o=rows[e.row]; if (!o) return;
+    var p=Math.min(1, (t-e.t)/(T*0.03)), sc = RM ? 1 : backOut(p);
+    var r=(o.r.kind==='inner' ? mr-2 : mr)*(e.big?1.2:1)*sc, x=X(e.t), yy=o.y, c=e.c||COL.navy;
+    if (e.shape==='x'){ s.push(xmark(x, yy, 6*Math.min(1,sc), c)); return; }
+    s.push(circ(x, yy, r, {fill:c, stroke:'#fff', 'stroke-width':1.5}));
+    if (e.v!=null && sc>0.6) s.push(text(x, yy+(narrow?3.5:4), String(e.v), {'text-anchor':'middle', fill:'#fff', 'font-size': String(e.v).length>2 ? (narrow?8.5:9.5) : (narrow?10:11.5), 'font-weight':700}));
+  });
+  if (t>0 && t<T) s.push(line(X(t), 2, X(t), H-16, {stroke:COL.terra, 'stroke-width':1.2, opacity:0.55}));
+  s.push(text(R, H-4, spec.axisLabel || 'tiempo →', {'text-anchor':'end', 'font-size':11, fill:COL.muted}));
+  svg.setAttribute('viewBox', '0 0 '+W+' '+H);
+  svg.innerHTML = s.join('');
+}
+
+function metric(n, l, cls){ return '<div><span class="n '+(cls||'')+'">'+n+'</span><span class="l">'+l+'</span></div>'; }
+
+/* =============== 1. Hilo por petición vs event loop =============== */
+(function(){
+  var svg=$('io-svg'); if (!svg) return;
+  var N=8, spec, res;
+  function build(){
+    var CPU=0.5, IO=6, P=4, i, j, k, rows=[], bars=[], free=[], doneB=[], doneE=[];
+    rows.push({id:'hb', kind:'op', h:30, gap:6, text:function(t,n){ var c=doneB.filter(function(x){return x<=t+1e-9;}).length; return (n?'Bloqueante · 4 hilos · ':'Hilo por petición · pool de 4 hilos · ')+'respondidas '+c+'/'+N; }});
+    for (j=0;j<P;j++){ rows.push({id:'b'+j, kind:'lane', label:'hilo '+(j+1), h:24, gap:j===P-1?18:4}); free[j]=0; }
+    for (i=0;i<N;i++){
+      j=0; for (k=1;k<P;k++) if (free[k]<free[j]) j=k;
+      var s0=free[j];
+      bars.push({row:'b'+j, t0:s0, t1:s0+CPU, c:COL.navy, h:14});
+      bars.push({row:'b'+j, t0:s0+CPU, t1:s0+CPU+IO, style:'hatch', h:14, text:'#'+(i+1)+' bloqueado', short:'#'+(i+1)});
+      bars.push({row:'b'+j, t0:s0+CPU+IO, t1:s0+2*CPU+IO, c:COL.ok, h:14});
+      free[j]=s0+2*CPU+IO; doneB.push(free[j]);
+    }
+    var totB=Math.max.apply(null, free);
+    rows.push({id:'he', kind:'op', h:30, gap:6, text:function(t,n){ var c=doneE.filter(function(x){return x<=t+1e-9;}).length; return (n?'No bloqueante · 1 hilo · ':'Event loop · 1 hilo · ')+'respondidas '+c+'/'+N; }});
+    rows.push({id:'el', kind:'lane', label:'event loop', h:24, gap:4});
+    rows.push({id:'io', kind:'lane', label:'E/S en vuelo', h:34});
+    var q=[], now=0, seq=0, ios=[];
+    for (i=0;i<N;i++) q.push({ready:0, kind:'p', i:i, seq:seq++});
+    while (q.length){
+      q.sort(function(a,b){ return a.ready-b.ready || a.seq-b.seq; });
+      var tk=q.shift(); if (tk.ready>now) now=tk.ready;
+      bars.push({row:'el', t0:now, t1:now+CPU, c:tk.kind==='p'?COL.navy:COL.ok, h:14});
+      now+=CPU;
+      if (tk.kind==='p'){ ios.push([now, now+IO]); q.push({ready:now+IO, kind:'r', i:tk.i, seq:seq++}); }
+      else doneE.push(now);
+    }
+    var totE=now, pts=[];
+    ios.forEach(function(x){ pts.push(x[0], x[1]); });
+    pts.sort(function(a,b){return a-b;});
+    pts=pts.filter(function(v,ix,arr){ return ix===0 || v!==arr[ix-1]; });
+    for (i=0;i<pts.length-1;i++){
+      var a=pts[i], b=pts[i+1], m=(a+b)/2, c=0;
+      ios.forEach(function(x){ if (x[0]<=m && m<x[1]) c++; });
+      if (c>0) bars.push({row:'io', t0:a, t1:b, c:COL.terra, op:0.8, h:3+25*c/N, align:'bottom', rx:0});
+    }
+    spec={T:Math.max(totB,totE)+0.6, rows:rows, bars:bars, labelW:100, axisLabel:'tiempo (u) →'};
+    res={totB:totB, totE:totE, blocked:N*IO};
+  }
+  function info(){
+    $('io-metrics').innerHTML =
+      metric(fmt(res.totB,1)+' u', 'Tiempo total con hilo por petición', res.totB>res.totE?'bad':'good') +
+      metric(fmt(res.totE,1)+' u', 'Tiempo total con event loop', res.totE>res.totB?'bad':'good') +
+      metric('4 / 1', 'Hilos ocupados (pool / event loop)') +
+      metric(fmt(res.blocked)+' / 0', 'Unidades·hilo bloqueadas esperando E/S');
+    var notes={
+      '4':'Con 4 peticiones el pool alcanza: cada petición tiene su hilo. El event loop, que ejecuta toda la CPU en un solo hilo, termina incluso un poco después.',
+      '8':'Con 8 peticiones la mitad espera en cola a que se libere un hilo. Los hilos están ocupados esperando E/S, no calculando.',
+      '16':'Con 16 peticiones la diferencia crece. Cada hilo del pool pasa el 86 % de su tiempo bloqueado (6 de cada 7 unidades).'
+    };
+    $('io-note').textContent = notes[String(N)];
+  }
+  build(); info();
+  var P=Player({T:spec.T, dur:2500+spec.T*170, draw:function(t){ tl(svg, spec, t); }, btn:$('io-play'), range:$('io-range'), label:$('io-t'), fmt:function(t){ return 't = '+fmt(t,1)+' u'; }});
+  P.reset();
+  tabGroup($('io-tabs'), function(k){ N=+k; build(); info(); P.reset(spec.T, 2500+spec.T*170); P.play(); });
+  whenVisible($('io-lab'), P.play);
+})();
+
+/* =============== 2. Operadores =============== */
+var OPD = {
+  map:{
+    d:'<strong>map</strong> transforma cada elemento de forma síncrona, en el mismo hilo en que llega. No cambia la cantidad de elementos ni su orden. Si la función devuelve un <code>Mono</code> o un <code>Flux</code>, se necesita <code>flatMap</code> o <code>concatMap</code>; con <code>map</code> el resultado sería un <code>Flux&lt;Mono&lt;T&gt;&gt;</code>.',
+    rx:'Flux.just(1, 2, 3, 4)\n    .map(x -> x * 10)\n    .subscribe(System.out::println);   // 10, 20, 30, 40',
+    rj:'Observable.just(1, 2, 3, 4)\n    .map(x -> x * 10)\n    .subscribe(System.out::println);   // 10, 20, 30, 40'
+  },
+  filter:{
+    d:'<strong>filter</strong> deja pasar solo los elementos que cumplen el predicado. Por cada elemento descartado, filter pide uno más a la fuente (<code>request(1)</code>), de modo que la demanda del suscriptor se cuenta en elementos que sí pasan.',
+    rx:'Flux.range(1, 5)\n    .filter(x -> x % 2 == 1)\n    .subscribe(System.out::println);   // 1, 3, 5',
+    rj:'Observable.range(1, 5)\n    .filter(x -> x % 2 == 1)\n    .subscribe(System.out::println);   // 1, 3, 5'
+  },
+  flatMap:{
+    d:'<strong>flatMap</strong> se suscribe a cada publisher interno en cuanto llega el elemento (en Reactor, hasta 256 a la vez por defecto) y emite los resultados a medida que terminan. Se obtiene concurrencia y menor tiempo total, pero <strong>el orden no está garantizado</strong> cuando los internos son asíncronos: aquí la salida es 2, 4, 1, 3. Tiempo en unidades de 100 ms.',
+    rx:'Flux.just(1, 2, 3, 4)\n    .delayElements(Duration.ofMillis(100))   // llegan en t = 100, 200, 300, 400 ms\n    .flatMap(id -> consultarPrecio(id))      // se suscribe a todos de inmediato\n    .doOnNext(System.out::println)           // 2, 4, 1, 3\n    .blockLast();\n\n// latencia simulada: 1 → 400 ms, 2 → 100 ms, 3 → 250 ms, 4 → 80 ms\nstatic final long[] LATENCIA = {0, 400, 100, 250, 80};\n\nstatic Mono<Integer> consultarPrecio(int id) {\n    return Mono.just(id).delayElement(Duration.ofMillis(LATENCIA[id]));\n}',
+    rj:'Observable.interval(100, TimeUnit.MILLISECONDS).take(4)\n    .map(i -> (int) (i + 1))                         // 1, 2, 3, 4\n    .flatMap(id -> consultarPrecio(id).toObservable())\n    .blockingSubscribe(System.out::println);         // 2, 4, 1, 3\n\nstatic final long[] LATENCIA = {0, 400, 100, 250, 80};\n\nstatic Single<Integer> consultarPrecio(int id) {\n    return Single.just(id).delay(LATENCIA[id], TimeUnit.MILLISECONDS);\n}'
+  },
+  concatMap:{
+    d:'<strong>concatMap</strong> se suscribe a un interno a la vez y pasa al siguiente solo cuando el anterior completa; los elementos que llegan mientras tanto esperan en cola. Preserva el orden 1, 2, 3, 4, pero las latencias se suman: termina en t ≈ 9,5 frente a t ≈ 5,7 con flatMap. Mismas latencias que en la pestaña flatMap.',
+    rx:'Flux.just(1, 2, 3, 4)\n    .delayElements(Duration.ofMillis(100))\n    .⟪concatMap⟫(id -> consultarPrecio(id))    // uno a la vez\n    .doOnNext(System.out::println)           // 1, 2, 3, 4\n    .blockLast();',
+    rj:'Observable.interval(100, TimeUnit.MILLISECONDS).take(4)\n    .map(i -> (int) (i + 1))\n    .⟪concatMap⟫(id -> consultarPrecio(id).toObservable())\n    .blockingSubscribe(System.out::println);   // 1, 2, 3, 4'
+  },
+  merge:{
+    d:'<strong>merge</strong> se suscribe a todas las fuentes a la vez y emite cada elemento en el momento en que llega, sin ordenar nada. Con estas dos fuentes intercaladas en el tiempo la salida es 1, 2, 3, 4, 5, 6. Tiempo en unidades de 100 ms.',
+    rx:'Flux<Long> a = Flux.interval(Duration.ofMillis(100)).take(3)\n                   .map(i -> 2 * i + 1);        // 1, 3, 5 en 100, 200, 300 ms\nFlux<Long> b = Flux.interval(Duration.ofMillis(150), Duration.ofMillis(100)).take(3)\n                   .map(i -> 2 * i + 2);        // 2, 4, 6 en 150, 250, 350 ms\n\nFlux.merge(a, b)\n    .doOnNext(System.out::println)   // 1, 2, 3, 4, 5, 6\n    .blockLast();',
+    rj:'Observable<Long> a = Observable.interval(100, TimeUnit.MILLISECONDS).take(3)\n                               .map(i -> 2 * i + 1);\nObservable<Long> b = Observable.interval(150, 100, TimeUnit.MILLISECONDS).take(3)\n                               .map(i -> 2 * i + 2);\n\nObservable.merge(a, b)\n    .blockingSubscribe(System.out::println);   // 1, 2, 3, 4, 5, 6'
+  },
+  zip:{
+    d:'<strong>zip</strong> empareja por posición: el primero de cada fuente, luego el segundo, etc. Emite cuando llega el más tardío de cada par, así que avanza al ritmo de la fuente más lenta, y completa cuando una fuente se agota. Los elementos de la fuente más rápida esperan en un buffer. Tiempos ilustrativos.',
+    rx:'Flux<Integer> numeros = Flux.just(1, 2, 3);\nFlux<String>  letras  = Flux.just("A", "B", "C");\n\nFlux.zip(numeros, letras, (n, l) -> n + l)\n    .subscribe(System.out::println);   // 1A, 2B, 3C',
+    rj:'Observable<Integer> numeros = Observable.just(1, 2, 3);\nObservable<String>  letras  = Observable.just("A", "B", "C");\n\nObservable.zip(numeros, letras, (n, l) -> n + l)\n    .subscribe(System.out::println);   // 1A, 2B, 3C'
+  },
+  reduce:{
+    d:'<strong>reduce</strong> acumula y emite un único valor cuando la fuente completa. En Reactor el resultado es un <code>Mono</code>; en RxJava, un <code>Single</code> si se da valor inicial o un <code>Maybe</code> si no. Sobre un flujo infinito nunca emite. Para ver los valores intermedios del acumulador se usa <code>scan</code>.',
+    rx:'Flux.range(1, 4)\n    .reduce(0, (acc, x) -> acc + x)    // Mono<Integer>\n    .subscribe(System.out::println);   // 10',
+    rj:'Observable.range(1, 4)\n    .reduce(0, (acc, x) -> acc + x)    // Single<Integer>\n    .subscribe(System.out::println);   // 10'
+  }
+};
+function opSpec(op){
+  var S={rows:[], ev:[], links:[], bars:[], markers:[], out:[]}, D=0.6;
+  function srow(id,label,end){ var r={id:id, label:label, end:end}; S.rows.push(r); return r; }
+  function oprow(text){ S.rows.push({id:'op', kind:'op', text:text}); }
+  function e(row,t,v,c,o){ var x={row:row, t:t, v:v, c:c}; if (o) for (var k in o) x[k]=o[k]; S.ev.push(x); }
+  function ln(f,to,t0,t1,c,o){ var x={from:f, to:to, t0:t0, t1:t1, c:c}; if (o) for (var k in o) x[k]=o[k]; S.links.push(x); }
+  function out(t,v,c){ e('o',t,v,c); S.out.push({t:t, v:v}); }
+  switch(op){
+  case 'map':
+    S.T=10; srow('a','fuente',8.5); oprow('map(x -> x * 10)'); srow('o','salida',8.5+D);
+    [1,2,3,4].forEach(function(v,i){ var t=1+2*i; e('a',t,v,MC[i]); ln('a','o',t,t+D,MC[i]); out(t+D,v*10,MC[i]); });
+    break;
+  case 'filter':
+    S.T=10; srow('a','fuente',8.5); oprow('filter(x -> x % 2 == 1)'); srow('o','salida',8.5+D);
+    [1,2,3,4,5].forEach(function(v,i){ var t=1+1.5*i; e('a',t,v,MC[i]); if (v%2){ ln('a','o',t,t+D,MC[i]); out(t+D,v,MC[i]); } else ln('a','op',t,t+D*0.6,MC[i],{drop:true}); });
+    break;
+  case 'flatMap': case 'concatMap':
+    var lat={1:4, 2:1, 3:2.5, 4:0.8}, seq=(op==='concatMap'), free=0, last=0, inner={};
+    S.T=10; srow('a','fuente',4.3);
+    oprow(function(t,n){ return (seq?'concatMap':'flatMap')+(n?'(id -> consultar(id))':'(id -> consultarPrecio(id))'); });
+    [1,2,3,4].forEach(function(v){ var r={id:'i'+v, kind:'inner', label:'interno '+v}; inner[v]=r; S.rows.push(r); });
+    var orow=srow('o','salida',null);
+    [1,2,3,4].forEach(function(v,i){
+      var t=v, st=seq?Math.max(t,free):t, en=st+lat[v];
+      if (seq) free=en;
+      inner[v].start=st; inner[v].end=en+0.12;
+      e('a',t,v,MC[i]);
+      if (seq && st>t) S.bars.push({row:'i'+v, t0:t, t1:st, style:'wait', text:'en cola', h:12, c:COL.terra, tc:COL.terra});
+      ln('a','i'+v,t,t+0.35,MC[i]);
+      e('i'+v,en,v,MC[i]);
+      ln('i'+v,'o',en,en+0.25,MC[i]);
+      out(en+0.25,v,MC[i]);
+      last=Math.max(last,en+0.25);
+    });
+    orow.end=last+0.12;
+    S.unit=' (×100 ms)';
+    break;
+  case 'merge':
+    S.T=4.5; srow('a','fuente A',3.15); srow('b','fuente B',3.65); oprow('merge(a, b)'); srow('o','salida',3.85);
+    [[1,1],[3,2],[5,3]].forEach(function(p){ e('a',p[1],p[0],MC[0]); ln('a','o',p[1],p[1]+0.2,MC[0]); out(p[1]+0.2,p[0],MC[0]); });
+    [[2,1.5],[4,2.5],[6,3.5]].forEach(function(p){ e('b',p[1],p[0],MC[1]); ln('b','o',p[1],p[1]+0.2,MC[1]); out(p[1]+0.2,p[0],MC[1]); });
+    S.out.sort(function(x,y){ return x.t-y.t; });
+    S.unit=' (×100 ms)';
+    break;
+  case 'zip':
+    S.T=7; srow('a','números',6); srow('b','letras',4.5);
+    oprow(function(t,n){ return n?'zip(a, b, (n, l) -> n + l)':'zip(numeros, letras, (n, l) -> n + l)'; });
+    srow('o','salida',5.95);
+    var A1=[[1,1],[2,2],[3,5.5]], B1=[['A',1.8],['B',3.5],['C',4]];
+    A1.forEach(function(p,i){ e('a',p[1],p[0],MC[i]); });
+    B1.forEach(function(p,i){ e('b',p[1],p[0],MC[i]); });
+    for (var i=0;i<3;i++){ var tt=Math.max(A1[i][1],B1[i][1])+0.2; ln('a','o',A1[i][1],tt,MC[i]); ln('b','o',B1[i][1],tt,MC[i]); out(tt, A1[i][0]+B1[i][0], MC[i]); }
+    S.markers.push({t:4.5, text:'letras completa', c:COL.muted});
+    break;
+  case 'reduce':
+    S.T=6.5; srow('a','fuente',5);
+    oprow(function(t,n){ var acc=0; [1,2,3,4].forEach(function(v){ if (t>=v+0.35) acc+=v; }); return (n?'reduce(0, +)':'reduce(0, (acc, x) -> acc + x)')+'   acc = '+acc; });
+    srow('o','salida',5.55);
+    [1,2,3,4].forEach(function(v,i){ e('a',v,v,MC[i]); ln('a','op',v,v+0.35,MC[i]); });
+    ln('op','o',5,5.35,MC[2]); out(5.35,10,MC[2]);
+    break;
+  }
+  return S;
+}
+(function(){
+  var svg=$('mb-svg'); if (!svg) return;
+  var spec=opSpec('map');
+  function draw(t){
+    tl(svg, spec, t);
+    var o=spec.out.filter(function(e){ return e.t<=t+1e-9; }).map(function(e){ return e.v; });
+    var orow=spec.rows.filter(function(r){ return r.id==='o'; })[0];
+    var done = orow && orow.end!=null && t>=orow.end;
+    $('mb-out').textContent = 'Salida: ' + (o.length ? o.join(' · ') : '(nada todavía)') + (done ? '  |  completa' : '');
+  }
+  var P=Player({T:spec.T, dur:7000, draw:draw, btn:$('mb-play'), range:$('mb-range'), label:$('mb-t'), fmt:function(t){ return 't = '+fmt(t,1)+(spec.unit||''); }});
+  function show(k, play){
+    spec=opSpec(k);
+    $('mb-desc').innerHTML=OPD[k].d; $('mb-rx').innerHTML=hl(OPD[k].rx); $('mb-rj').innerHTML=hl(OPD[k].rj);
+    P.reset(spec.T, k==='flatMap'||k==='concatMap' ? 9000 : 7000);
+    if (play) P.play();
+  }
+  show('map', false);
+  tabGroup($('mb-tabs'), function(k){ show(k, true); });
+  whenVisible($('mb-lab'), P.play);
+})();
+
+/* =============== 3. Hilos =============== */
+(function(){
+  var svg=$('th-svg'); if (!svg) return;
+  var OPTS=[['','(nada)'],['sub:boundedElastic','subscribeOn(boundedElastic())'],['sub:single','subscribeOn(single())'],['pub:parallel','publishOn(parallel())'],['pub:single','publishOn(single())'],['pub:boundedElastic','publishOn(boundedElastic())']];
+  var PRE={repo:{s:['','','','','sub:boundedElastic'], inner:true}, none:{s:['','','','',''], inner:false}, pub:{s:['','pub:parallel','','',''], inner:false}, dos:{s:['sub:single','','','','sub:boundedElastic'], inner:false}, mix:{s:['','','','pub:single','sub:boundedElastic'], inner:true}};
+  var sels=[0,1,2,3,4].map(function(i){ return $('th-s'+i); }), chk=$('th-inner');
+  sels.forEach(function(s){ s.innerHTML = OPTS.map(function(o){ return '<option value="'+o[0]+'">'+o[1]+'</option>'; }).join(''); });
+  var seed=7, sim, spec, lastLog=-1;
+  function key(name){ return name.split('-')[0]; }
+  function simulate(SL, inner, rnd){
+    var LBL=['range(1, 10)','filter','map','flatMap','doOnNext','subscribe'];
+    var subIdx=-1; SL.forEach(function(v,i){ if (subIdx<0 && v.indexOf('sub:')===0) subIdx=i; });
+    var src = subIdx>=0 ? SL[subIdx].slice(4) : 'main';
+    var pool=[src], hop=[false], fromInner=[false], cur=src, fi=false, i, v;
+    for (i=1;i<6;i++){
+      var sl=SL[i-1]; hop[i]=false;
+      if (sl.indexOf('pub:')===0){ cur=sl.slice(4); hop[i]=true; fi=false; }
+      pool[i]=cur; fromInner[i]=fi;
+      if (i===3 && inner){ cur='parallel'; fi=true; }
+    }
+    function tn(p){ return p==='main'?'main':p==='boundedElastic'?'boundedElastic-1':p==='single'?'single-1':'parallel-1'; }
+    var DT=0.22, HP=0.6, tt={}, nm={}, drain={}, rows=[], ev=[], links=[], logs=[];
+    for (v=1; v<=10; v++){
+      var t=v*0.95; tt[v]=[t]; nm[v]=[tn(pool[0])];
+      for (i=1;i<=3;i++){ t += hop[i]?HP:DT; tt[v][i]=t; nm[v][i]=tn(pool[i]); if (i===1 && v%2===0) break; }
+    }
+    var odd=[1,3,5,7,9];
+    odd.forEach(function(v, idx){
+      tt[v][4] = tt[v][3] + (inner ? 0.3 + rnd()*4.5 : 0) + (hop[4]?HP:DT);
+      drain[v] = inner && !hop[4] && rnd()<0.02;
+      nm[v][4] = hop[4] ? tn(pool[4]) : (inner ? (drain[v] ? tn(pool[3]) : 'parallel-'+(1+idx%4)) : tn(pool[4]));
+    });
+    var ord=odd.slice().sort(function(a,b){ return tt[a][4]-tt[b][4]; }), prev=-1;
+    ord.forEach(function(v){ if (tt[v][4] < prev+0.15) tt[v][4]=prev+0.15; prev=tt[v][4]; });
+    ord.forEach(function(v){ tt[v][5] = tt[v][4] + (hop[5]?HP:DT); nm[v][5] = hop[5] ? tn(pool[5]) : nm[v][4]; });
+    var maxT=0;
+    for (i=0;i<6;i++){
+      if (i>0 && SL[i-1]){
+        (function(s, slot){
+          var isSub=s.indexOf('sub:')===0, p=s.slice(4), ign=isSub && slot!==subIdx;
+          rows.push({id:'k'+slot, kind:'op', h:22, gap:6, fill:isSub?'#fff':TH[p], stroke:isSub?(ign?COL.line:TH[p]):null, dash:isSub, tc:isSub?(ign?COL.muted:TH[p]):'#fff',
+            text:function(t,n){ return (isSub?'subscribeOn(':'publishOn(')+p+'())'+(ign?(n?'  (sin efecto)':'  · sin efecto en la fuente'):''); }});
+        })(SL[i-1], i-1);
+      }
+      var chip, chipC;
+      if (i>=4 && fromInner[i]){ chip='parallel-N (varía)'; chipC=TH.parallel; }
+      else { chip=tn(pool[i]); chipC=TH[pool[i]]; }
+      rows.push({id:'s'+i, kind:'lane', axis:true, label:LBL[i], mono:true, h:32, gap:6, bg:chipC, bgo:0.1, chip:chip, chipC:chipC});
+    }
+    for (v=1; v<=10; v++){
+      for (i=0;i<tt[v].length;i++){
+        if (i===1 && v%2===0){ ev.push({row:'s1', t:tt[v][1], shape:'x', c:COL.muted}); links.push({from:'s0', to:'s1', t0:tt[v][0], t1:tt[v][1], c:COL.muted, trail:true}); continue; }
+        var c=TH[key(nm[v][i])];
+        ev.push({row:'s'+i, t:tt[v][i], v:v, c:c});
+        if (i>0) links.push({from:'s'+(i-1), to:'s'+i, t0:tt[v][i-1], t1:tt[v][i], c:c, trail:true});
+        if (tt[v][i]>maxT) maxT=tt[v][i];
+      }
+    }
+    odd.forEach(function(v){
+      logs.push({t:tt[v][4], th:nm[v][4], m:'Procesando Number: '+v, drain:drain[v]});
+      logs.push({t:tt[v][5]+0.001, th:nm[v][5], m:'Received: Number: '+v});
+    });
+    logs.sort(function(a,b){ return a.t-b.t; });
+    var order=odd.slice().sort(function(a,b){ return tt[a][5]-tt[b][5]; });
+    return {spec:{T:maxT+0.8, rows:rows, ev:ev, links:links, labelW:136, mr:9, axisLabel:'orden de procesamiento →'}, logs:logs, order:order, src:src, subIdx:subIdx, subs:SL.filter(function(x){return x.indexOf('sub:')===0;}).length, hop:hop, inner:inner, end:maxT};
+  }
+  function code(SL, inner, subIdx){
+    var Lr=['Flux.range(1, 10)','    .filter(i -> i % 2 == 1)','    .map(i -> "Number: " + i)', inner?'    .flatMap(s -> Mono.just(s).subscribeOn(Schedulers.parallel()))':'    .flatMap(s -> Mono.just(s))','    .doOnNext(s -> log("Procesando " + s))','    .subscribe(s -> log("Received: " + s));'];
+    var out=[Lr[0]];
+    for (var i=1;i<6;i++){
+      var s=SL[i-1];
+      if (s){ var isSub=s.indexOf('sub:')===0; out.push('    ⟪.'+(isSub?'subscribeOn':'publishOn')+'(Schedulers.'+s.slice(4)+'())⟫'+(isSub && (i-1)!==subIdx ? '   // no cambia la fuente' : '')); }
+      out.push(Lr[i]);
+    }
+    out.push('', '// log(m): System.out.println("[" + Thread.currentThread().getName() + "] " + m)');
+    return out.join('\n');
+  }
+  function notes(){
+    var h=[];
+    h.push('<p style="margin-top:0"><strong>Fuente.</strong> <code>range</code> corre en <strong>'+(sim.src==='main'?'main':sim.src)+'</strong> porque '+(sim.subIdx>=0 ? 'el <code>subscribeOn</code> más cercano a la fuente está en la posición «tras '+['range','filter','map','flatMap','doOnNext'][sim.subIdx]+'».' : 'no hay <code>subscribeOn</code>: la fuente arranca en el hilo que llama a <code>subscribe()</code>.')+'</p>');
+    if (sim.subs>1) h.push('<p>Hay '+sim.subs+' <code>subscribeOn</code> en la misma cadena: solo el más cercano a la fuente define dónde emite.</p>');
+    if (sim.hop.some(Boolean)) h.push('<p><code>publishOn</code> cambia el hilo de todo lo que está debajo y conserva el orden en que recibe los elementos (cola FIFO).</p>');
+    if (sim.inner) h.push('<p>El <code>subscribeOn(parallel())</code> dentro de flatMap aplica a cada Mono interno, que es otra suscripción. Por eso no compite con el exterior: después de flatMap los elementos llegan en hilos <code>parallel-N</code>, en el orden en que terminan.</p>');
+    if (sim.src!=='main' || sim.inner || sim.hop.some(Boolean)) h.push('<p><code>subscribe()</code> retorna de inmediato y los hilos de los Schedulers son daemon. Sin <code>Thread.sleep</code> o <code>blockLast()</code>, <code>main</code> termina antes de ver la salida.</p>');
+    else h.push('<p>Sin schedulers todo corre de forma síncrona en <code>main</code>, dentro de la llamada a <code>subscribe()</code>.</p>');
+    $('th-note').innerHTML=h.join('');
+  }
+  function current(){ return {s:sels.map(function(x){ return x.value; }), inner:chk.checked}; }
+  function rebuild(play){
+    var c=current();
+    sim=simulate(c.s, c.inner, mulberry(seed)); spec=sim.spec; lastLog=-1;
+    $('th-code').innerHTML=hl(code(c.s, c.inner, sim.subIdx));
+    notes();
+    P.reset(spec.T, 8500);
+    if (play) P.play();
+  }
+  function drawLog(t){
+    var shown=sim.logs.filter(function(l){ return l.t<=t; });
+    if (shown.length===lastLog) return;
+    var grew = shown.length>lastLog && lastLog>=0;
+    lastLog=shown.length;
+    var el=$('th-log');
+    el.innerHTML = shown.length ? shown.map(function(l, i){ return '<div'+(grew && i===shown.length-1?' class="new"':'')+'><span style="color:'+THL[key(l.th)]+'">['+esc(l.th)+']</span> '+esc(l.m)+(l.drain?' <span class="comp">(entregado en el drain loop)</span>':'')+'</div>'; }).join('') : '<div class="dim">(sin salida todavía)</div>';
+    el.scrollTop=el.scrollHeight;
+  }
+  function draw(t){
+    tl(svg, spec, t); drawLog(t);
+    var got=sim.order.filter(function(v){ return sim.logs.some(function(l){ return l.m==='Received: Number: '+v && l.t<=t; }); });
+    got.sort(function(a,b){ var ta=0, tb=0; sim.logs.forEach(function(l){ if (l.m==='Received: Number: '+a) ta=l.t; if (l.m==='Received: Number: '+b) tb=l.t; }); return ta-tb; });
+    var full = got.length===5, pres = full && got.join()==='1,3,5,7,9';
+    $('th-order').textContent='Orden en el suscriptor: '+(got.length?got.join(', '):'(nada todavía)')+(full?(pres?'  · orden preservado':'  · orden NO preservado'):'');
+  }
+  var P=Player({T:10, dur:8500, draw:function(t){ if (spec) draw(t); }, btn:$('th-play'), range:$('th-range')});
+  function load(p){ var x=PRE[p]; sels.forEach(function(s,i){ s.value=x.s[i]; }); chk.checked=x.inner; seed++; rebuild(true); }
+  Array.prototype.forEach.call(document.querySelectorAll('#th-lab [data-p]'), function(b){ b.addEventListener('click', function(){ load(b.getAttribute('data-p')); }); });
+  sels.forEach(function(s){ s.addEventListener('change', function(){ rebuild(true); }); });
+  chk.addEventListener('change', function(){ rebuild(true); });
+  $('th-again').addEventListener('click', function(){ seed++; rebuild(true); });
+  var x=PRE.repo; sels.forEach(function(s,i){ s.value=x.s[i]; }); chk.checked=x.inner;
+  rebuild(false);
+  whenVisible($('th-lab'), P.play);
+})();
+
+/* =============== 4. Backpressure =============== */
+(function(){
+  var svg=$('bp-svg'); if (!svg) return;
+  var BP={N:5000, PROD:40, CT:2, PRE:128, LIM:96, CAP:256};
+  var strat='obs', speed=10, bytes=16, st, parts=[], raf=0, running=false, frameN=0;
+  var NAMES={obs:'sin operador (Observable)', flow:'sin onBackpressureX (Flowable)', drop:'onBackpressureDrop()', latest:'onBackpressureLatest()', buffer:'onBackpressureBuffer(256, DROP_OLDEST)'};
+  var DESC={
+    obs:'<strong>Observable</strong> no tiene backpressure: <code>range</code> emite los 5 000 elementos tan rápido como puede y la cola interna de <code>observeOn</code> los guarda todos. No hay error ni pérdida, pero la cola crece sin límite. Cambie a <em>byte[1024]</em> para ver el efecto en memoria.',
+    flow:'<strong>Flowable</strong> respeta la demanda: <code>observeOn</code> pide 128 elementos y, cada vez que el consumidor procesa 96, pide 96 más. El productor queda frenado al ritmo del consumidor, la cola nunca supera 128 y no se pierde nada. A cambio, el productor tarda tanto como el consumidor. Use ×50 para verlo completo.',
+    drop:'<strong>onBackpressureDrop</strong> pide todo a la fuente y descarta los elementos que llegan cuando no hay demanda pendiente. <code>range</code> termina en unos pocos ticks y solo entran los 128 primeros: se descartan 4 872, el mismo número que se midió en la preparación de la Estación 1.',
+    latest:'<strong>onBackpressureLatest</strong> funciona como Drop pero conserva siempre el último elemento recibido. Cuando el consumidor vuelve a pedir, recibe ese último valor (aquí, 5 000). Resultado: 1..128 y luego 5 000; se pierden los intermedios.',
+    buffer:'<strong>onBackpressureBuffer(256, DROP_OLDEST)</strong> guarda hasta 256 elementos además de la cola de observeOn. Al llenarse descarta el más antiguo, así que al final quedan los 256 más recientes (4 745..5 000). Se procesan 1..128 y 4 745..5 000, y se descartan 4 616.'
+  };
+  var CODE={
+    obs:['Observable.range(1, 5_000)                  // sin backpressure\n    .observeOn(Schedulers.computation())    // ⟦cola interna sin límite⟧\n    .subscribe(x -> guardarLento(x));       // ~1 ms por elemento',
+         '// Reactor no tiene un tipo sin backpressure.\n// Lo más parecido es un buffer sin límite:\nFlux.range(1, 5_000)\n    .onBackpressureBuffer()                 // ⟦sin límite⟧\n    .publishOn(Schedulers.parallel())\n    .subscribe(x -> guardarLento(x));'],
+    flow:['Flowable.range(1, 5_000)\n    .observeOn(Schedulers.computation())    // request(128), repone de a 96\n    .subscribe(x -> guardarLento(x));',
+          'Flux.range(1, 5_000)\n    .publishOn(Schedulers.parallel())       // prefetch 256, repone de a 192\n    .subscribe(x -> guardarLento(x));\n\n// limitRate(n) ajusta el tamaño de los request hacia arriba\nFlux.range(1, 5_000).limitRate(64)'],
+    drop:['Flowable.range(1, 5_000)\n    .⟪onBackpressureDrop(x -> descartados.incrementAndGet())⟫\n    .observeOn(Schedulers.computation())\n    .subscribe(x -> guardarLento(x));',
+          'Flux.range(1, 5_000)\n    .⟪onBackpressureDrop(x -> descartados.incrementAndGet())⟫\n    .publishOn(Schedulers.parallel())\n    .subscribe(x -> guardarLento(x));'],
+    latest:['Flowable.range(1, 5_000)\n    .⟪onBackpressureLatest()⟫\n    .observeOn(Schedulers.computation())\n    .subscribe(x -> guardarLento(x));',
+            'Flux.range(1, 5_000)\n    .⟪onBackpressureLatest()⟫\n    .publishOn(Schedulers.parallel())\n    .subscribe(x -> guardarLento(x));'],
+    buffer:['Flowable.range(1, 5_000)\n    .⟪onBackpressureBuffer(256,\n        () -> log("overflow"),\n        BackpressureOverflowStrategy.DROP_OLDEST)⟫\n    .observeOn(Schedulers.computation())\n    .subscribe(x -> guardarLento(x));',
+            'Flux.range(1, 5_000)\n    .⟪onBackpressureBuffer(256,\n        x -> descartados.incrementAndGet(),\n        BufferOverflowStrategy.DROP_OLDEST)⟫\n    .publishOn(Schedulers.parallel())\n    .subscribe(x -> guardarLento(x));']
+  };
+  function init(){ return {tick:0, emitted:0, delivered:0, consumed:0, dropped:0, q:[], qh:0, buf:[], latest:null, req:BP.PRE, since:0, last:null, done:false}; }
+  function qlen(s){ return s.q.length - s.qh; }
+  function deliver(s,v){ s.q.push(v); s.req--; s.delivered++; }
+  function step(s){
+    s.tick++;
+    if (s.emitted < BP.N){
+      var k=Math.min(BP.PROD, BP.N - s.emitted);
+      if (strat==='flow') k=Math.min(k, s.req);
+      for (var i=0;i<k;i++){
+        var v=++s.emitted;
+        if (strat==='obs'){ s.q.push(v); s.delivered++; }
+        else if (strat==='flow') deliver(s,v);
+        else if (strat==='drop'){ if (s.req>0) deliver(s,v); else s.dropped++; }
+        else if (strat==='latest'){ if (s.req>0 && s.latest===null) deliver(s,v); else { if (s.latest!==null) s.dropped++; s.latest=v; } }
+        else if (strat==='buffer'){ if (s.req>0 && s.buf.length===0) deliver(s,v); else { s.buf.push(v); if (s.buf.length>BP.CAP){ s.buf.shift(); s.dropped++; } } }
+      }
+    }
+    if (strat==='buffer') while (s.req>0 && s.buf.length) deliver(s, s.buf.shift());
+    if (strat==='latest' && s.req>0 && s.latest!==null){ deliver(s, s.latest); s.latest=null; }
+    if (s.tick % BP.CT===0 && qlen(s)>0){
+      s.last=s.q[s.qh++]; s.consumed++;
+      if (strat!=='obs'){ s.since++; if (s.since===BP.LIM){ s.since=0; s.req+=BP.LIM; } }
+    }
+    if (s.qh>4096){ s.q=s.q.slice(s.qh); s.qh=0; }
+    s.done = s.emitted===BP.N && qlen(s)===0 && s.buf.length===0 && s.latest===null;
+  }
+  function boxes(W){
+    if (W>=600){ var y=46, h=96; return {H:178, narrow:false, prod:{x:W*0.01,y:y,w:W*0.17,h:h}, op:{x:W*0.24,y:y,w:W*0.22,h:h}, tank:{x:W*0.52,y:y,w:W*0.26,h:h}, cons:{x:W*0.84,y:y,w:W*0.15,h:h}}; }
+    var bw=W-64, x=2, hh=88, g=26;
+    return {H:4*hh+3*g+8, narrow:true, prod:{x:x,y:4,w:bw,h:hh}, op:{x:x,y:4+hh+g,w:bw,h:hh}, tank:{x:x,y:4+2*(hh+g),w:bw,h:hh}, cons:{x:x,y:4+3*(hh+g),w:bw,h:hh}};
+  }
+  function exitPt(b, nar){ return nar ? [b.x+b.w/2, b.y+b.h] : [b.x+b.w, b.y+b.h/2]; }
+  function entryPt(b, nar){ return nar ? [b.x+b.w/2, b.y] : [b.x, b.y+b.h/2]; }
+  function draw(){
+    var W=widthOf(svg), B=boxes(W), s=[], S=st, nar=B.narrow;
+    s.push('<defs><marker id="bp-arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#5A6480"/></marker></defs>');
+    [['prod','op'],['op','tank'],['tank','cons']].forEach(function(p){ var a=exitPt(B[p[0]],nar), b=entryPt(B[p[1]],nar); s.push(line(a[0]+(nar?0:3), a[1]+(nar?3:0), b[0]-(nar?0:5), b[1]-(nar?5:0), {stroke:COL.muted, 'stroke-width':1.4, 'marker-end':'url(#bp-arr)'})); });
+    function box(b, title, lines, fill, stroke){
+      s.push(rect(b.x, b.y, b.w, b.h, {rx:8, fill:fill||'#fff', stroke:stroke||COL.navy, 'stroke-width':1.4}));
+      s.push(text(b.x+10, b.y+19, title, {'font-size':12.5, 'font-weight':700, fill:COL.navy}));
+      lines.forEach(function(l,i){ s.push(text(b.x+10, b.y+36+i*15, l[0], {'font-size':11.5, fill:l[1]||COL.muted, 'class':l[2]?'m':null})); });
+    }
+    box(B.prod, 'Productor', [['range(1, 5 000)', COL.muted, true], ['emitidos: '+fmt(S.emitted), COL.ink], [S.emitted===BP.N?'terminó':(strat==='flow' && S.req===0?'frenado: sin demanda':'emitiendo'), S.emitted===BP.N?COL.ok:(strat==='flow'&&S.req===0?COL.terra:COL.muted)]]);
+    var opl=[[strat==='buffer'?'onBackpressureBuffer':NAMES[strat].replace(' (Observable)','').replace(' (Flowable)',''), COL.ink, true]];
+    if (strat==='buffer') opl.push(['buffer: '+fmt(S.buf.length)+' / 256', COL.ink]);
+    else if (strat==='latest') opl.push(['último guardado: '+(S.latest===null?'(ninguno)':fmt(S.latest)), COL.ink]);
+    else if (strat==='obs' || strat==='flow') opl.push(['(no hay operador)', COL.muted]);
+    if (S.dropped) opl.push(['descartados: '+fmt(S.dropped), COL.warn]);
+    box(B.op, 'Operador', opl);
+    if (strat==='buffer'){ var bx=B.op.x+10, bw2=B.op.w-20; s.push(rect(bx, B.op.y+B.op.h-14, bw2, 7, {rx:2, fill:COL.soft})); s.push(rect(bx, B.op.y+B.op.h-14, bw2*S.buf.length/256, 7, {rx:2, fill:COL.terra})); }
+    var ql=qlen(S), over=(strat==='obs' && ql>BP.PRE);
+    box(B.tank, 'Cola de observeOn', [[strat==='obs'?'sin límite':'prefetch 128', over?COL.warn:COL.muted], ['en cola: '+fmt(ql), over?COL.warn:COL.ink], [strat==='obs'?'':'request pendiente: '+fmt(Math.max(0,S.req)), COL.muted]], over?'#F7E4E0':'#fff', over?COL.warn:COL.navy);
+    var tx=B.tank.x+10, tw=B.tank.w-20, ty=B.tank.y+B.tank.h-14;
+    s.push(rect(tx, ty, tw, 7, {rx:2, fill:COL.soft})); s.push(rect(tx, ty, tw*Math.min(1, ql/BP.PRE), 7, {rx:2, fill:over?COL.warn:COL.navy}));
+    box(B.cons, 'Consumidor', [['1 cada 2 ticks', COL.muted], ['consumidos: '+fmt(S.consumed), COL.ink], ['último: '+(S.last===null?'(nada)':fmt(S.last)), COL.muted]]);
+    if (!RM){
+      parts.forEach(function(p){
+        var age=(frameN-p.f)/p.d; if (age<0 || age>1) return;
+        var a, b, x, y;
+        if (p.k==='drop'){
+          a = nar ? [B.op.x+B.op.w, B.op.y+B.op.h/2] : [B.op.x+B.op.w/2, B.op.y+B.op.h];
+          b = nar ? [a[0]+40, a[1]+30] : [a[0]+10, a[1]+26];
+          x=a[0]+(b[0]-a[0])*age; y=a[1]+(b[1]-a[1])*age*age;
+          s.push(circ(x,y,4.5,{fill:COL.warn, opacity:r1((1-age)*100)/100}));
+          return;
+        }
+        a=exitPt(B[p.from],nar); b=entryPt(B[p.to],nar);
+        var e=ease(age); x=a[0]+(b[0]-a[0])*e; y=a[1]+(b[1]-a[1])*e;
+        s.push(circ(x,y,4.5,{fill:p.c}));
+      });
+    }
+    svg.setAttribute('viewBox','0 0 '+W+' '+B.H);
+    svg.innerHTML=s.join('');
+  }
+  function metrics(){
+    var S=st, mem=(qlen(S)+S.buf.length+(S.latest===null?0:1))*bytes, memS = mem<1024 ? fmt(mem)+' B' : (mem<1048576 ? fmt(mem/1024,1)+' KB' : fmt(mem/1048576,1)+' MB');
+    $('bp-metrics').innerHTML =
+      metric(fmt(S.emitted), 'Emitidos por el productor') +
+      metric(fmt(S.consumed), 'Consumidos', 'good') +
+      metric(fmt(S.dropped), 'Descartados', S.dropped?'bad':'') +
+      metric(fmt(qlen(S)), 'En cola de observeOn', qlen(S)>BP.PRE?'bad':'') +
+      metric('≈ '+memS, 'Memoria retenida (estimada)', mem>1048576?'bad':'') +
+      metric(fmt(S.tick), 'Ticks simulados');
+  }
+  function loop(){
+    if (!running) return;
+    frameN++;
+    var e0=st.emitted, d0=st.delivered, x0=st.dropped, c0=st.consumed;
+    for (var i=0;i<speed && !st.done;i++) step(st);
+    if (!RM){
+      if (st.emitted>e0) parts.push({k:'mv', from:'prod', to:'op', f:frameN, d:22, c:COL.navy});
+      if (st.delivered>d0) parts.push({k:'mv', from:'op', to:'tank', f:frameN+6, d:22, c:COL.navy});
+      if (st.dropped>x0) parts.push({k:'drop', f:frameN, d:26});
+      if (st.consumed>c0 && frameN%2===0) parts.push({k:'mv', from:'tank', to:'cons', f:frameN, d:22, c:COL.ok});
+      parts=parts.filter(function(p){ return frameN-p.f<=p.d; });
+    }
+    draw(); metrics();
+    if (st.done){ running=false; parts=[]; draw(); $('bp-play').textContent='Ejecutar'; return; }
+    raf=requestAnimationFrame(loop);
+  }
+  function reset(){ running=false; cancelAnimationFrame(raf); st=init(); parts=[]; frameN=0; draw(); metrics(); $('bp-play').textContent='Ejecutar'; }
+  function setStrat(k){ strat=k; $('bp-desc').innerHTML=DESC[k]; $('bp-rj').innerHTML=hl(CODE[k][0]); $('bp-rx').innerHTML=hl(CODE[k][1]); reset(); }
+  $('bp-play').addEventListener('click', function(){
+    if (running){ running=false; cancelAnimationFrame(raf); $('bp-play').textContent='Continuar'; return; }
+    if (st.done) reset();
+    running=true; $('bp-play').textContent='Pausa'; raf=requestAnimationFrame(loop);
+  });
+  $('bp-reset').addEventListener('click', reset);
+  tabGroup($('bp-tabs'), function(k){ setStrat(k); });
+  tabGroup($('bp-speed'), function(k){ speed=+k; });
+  tabGroup($('bp-payload'), function(k){ bytes=+k; metrics(); });
+  setStrat('obs');
+  redraws.push(draw);
+})();
+
+/* =============== 5. Hot y Cold =============== */
+(function(){
+  var svg=$('hc-svg'); if (!svg) return;
+  var mode='cold', a=2.5, spec, recA=[], recB=[];
+  function build(){
+    var S={T:10.5, rows:[], ev:[], links:[], bars:[], markers:[], labelW:128, axisLabel:'tiempo (s) →'}, D=0.3, k, te;
+    recA=[]; recB=[];
+    function e(row,t,v,c,o){ var x={row:row,t:t,v:v,c:c}; if (o) for (var q in o) x[q]=o[q]; S.ev.push(x); }
+    if (mode==='cold'){
+      S.rows.push({id:'sa', label:'fuente (sub. A)', start:0, end:5.2});
+      S.rows.push({id:'sb', label:'fuente (sub. B)', start:a, end:a+5.2, gap:14});
+      for (k=0;k<5;k++){
+        e('sa',k+1,k,MC[k]); S.links.push({from:'sa',to:'pa',t0:k+1,t1:k+1+D,c:MC[k]}); e('pa',k+1+D,k,MC[k]); recA.push([k+1+D,k]);
+        e('sb',a+k+1,k,MC[k]); S.links.push({from:'sb',to:'pb',t0:a+k+1,t1:a+k+1+D,c:MC[k]}); e('pb',a+k+1+D,k,MC[k]); recB.push([a+k+1+D,k]);
+      }
+      S.rows.push({id:'pa', label:'Panel A', start:0, end:5.2+D});
+      S.rows.push({id:'pb', label:'Panel B', start:a, end:a+5.2+D});
+      S.markers.push({t:a, text:'B se suscribe: nueva ejecución', c:COL.terra});
+    } else {
+      var c0 = mode==='hot2' ? a : 0;
+      S.rows.push({id:'s', label:'fuente compartida', start:c0, end:c0+5.2, gap:14});
+      for (k=0;k<5;k++){
+        te=c0+k+1; e('s',te,k,MC[k]);
+        S.links.push({from:'s',to:'pa',t0:te,t1:te+D,c:MC[k]}); e('pa',te+D,k,MC[k]); recA.push([te+D,k]);
+        if (mode==='hot2' || te>a){ S.links.push({from:'s',to:'pb',t0:te,t1:te+D+0.15,c:MC[k]}); e('pb',te+D+0.15,k,MC[k]); recB.push([te+D+0.15,k]); }
+      }
+      if (mode==='replay'){
+        var past=[]; for (k=0;k<5;k++) if (k+1<=a) past.push(k);
+        past.slice(-2).forEach(function(k2,i){ var tr=a+0.2+i*0.38; S.links.push({from:'s',to:'pb',t0:a,t1:tr,c:MC[k2]}); e('pb',tr,k2,MC[k2]); recB.push([tr,k2]); });
+        recB.sort(function(x,y){ return x[0]-y[0]; });
+      }
+      S.rows.push({id:'pa', label:'Panel A', start:0, end:c0+5.2+D});
+      S.rows.push({id:'pb', label:'Panel B', start:a, end:c0+5.2+D+0.15});
+      if (mode==='hot2'){ S.bars.push({row:'pa', t0:0, t1:a, style:'wait', h:12, text:'esperando 2.º suscriptor', short:'espera', c:COL.terra, tc:COL.terra}); S.markers.push({t:a, text:'B llega → se conecta', c:COL.terra}); }
+      else S.markers.push({t:a, text:mode==='replay'?'B llega: recibe los 2 últimos':'B se suscribe', c:COL.terra});
+    }
+    spec=S;
+  }
+  function received(rec, t){ return rec.filter(function(x){ return x[0]<=t; }).map(function(x){ return x[1]; }); }
+  function codeFor(){
+    var ms=Math.round(a*1000), finB=recB.map(function(x){return x[1];}).join(', ');
+    if (mode==='cold') return 'Flux<Long> fuente = Flux.interval(Duration.ofSeconds(1)).take(5);   // cold\n\nfuente.subscribe(v -> log("Panel A", v));\nThread.sleep('+ms+');\nfuente.subscribe(v -> log("Panel B", v));   // nueva ejecución: '+finB;
+    if (mode==='hot2') return 'Flux<Long> caliente = Flux.interval(Duration.ofSeconds(1)).take(5)\n    .publish()\n    .⟦autoConnect(2)⟧;          // no emite hasta tener 2 suscriptores\n\ncaliente.subscribe(v -> log("Panel A", v));   // A espera\nThread.sleep('+ms+');\ncaliente.subscribe(v -> log("Panel B", v));   // se conecta aquí: ambos ven '+finB;
+    if (mode==='hot1') return 'ConnectableFlux<Long> caliente =\n    Flux.interval(Duration.ofSeconds(1)).take(5).publish();\n\ncaliente.subscribe(v -> log("Panel A", v));\ncaliente.⟪connect()⟫;                   // empieza a emitir ya (igual que autoConnect(1))\nThread.sleep('+ms+');\ncaliente.subscribe(v -> log("Panel B", v));   // recibe solo: '+(finB||'nada');
+    return 'Flux<Long> caliente = Flux.interval(Duration.ofSeconds(1)).take(5)\n    .⟪replay(2)⟫                   // guarda los 2 últimos\n    .autoConnect(1);\n\ncaliente.subscribe(v -> log("Panel A", v));\nThread.sleep('+ms+');\ncaliente.subscribe(v -> log("Panel B", v));   // recibe: '+finB;
+  }
+  var DESC={
+    cold:'Cada <code>subscribe()</code> crea una ejecución nueva e independiente de la fuente. El panel B recibe la secuencia completa desde 0, desplazada en el tiempo.',
+    hot2:'La fuente es compartida, pero <code>autoConnect(2)</code> no se conecta hasta que llega el segundo suscriptor. Como A ya estaba esperando, los dos reciben 0..4 y el resultado coincide con el de Cold.',
+    hot1:'La fuente se conecta con el primer suscriptor y emite una sola vez para todos. El panel B solo recibe lo que se emite después de su llegada.',
+    replay:'<code>replay(2)</code> comparte la emisión como un publisher hot y además guarda los 2 últimos elementos. El panel B los recibe al suscribirse y luego sigue en vivo.'
+  };
+  function draw(t){
+    tl(svg, spec, t);
+    var ra=received(recA,t), rb=received(recB,t);
+    $('hc-sum').textContent='Panel A: '+(ra.length?ra.join(', '):'(nada)')+'   ·   Panel B: '+(rb.length?rb.join(', '):'(nada)');
+  }
+  function refresh(play){
+    build(); $('hc-code').innerHTML=hl(codeFor()); $('hc-desc').innerHTML=DESC[mode];
+    $('hc-bl').textContent='t = '+fmt(a,1)+' s';
+    P.reset(spec.T, 9000); if (play) P.play();
+  }
+  var P=Player({T:10.5, dur:9000, draw:function(t){ if (spec) draw(t); }, btn:$('hc-play'), range:$('hc-range'), label:$('hc-t'), fmt:function(t){ return 't = '+fmt(t,1)+' s'; }});
+  $('hc-b').addEventListener('input', function(){ a=+this.value+0.5; refresh(true); });
+  tabGroup($('hc-tabs'), function(k){ mode=k; refresh(true); });
+  refresh(false);
+  whenVisible($('hc-lab'), P.play);
+})();
+
+/* =============== 6. Errores y resiliencia =============== */
+(function(){
+  var svg=$('rs-svg'); if (!svg) return;
+  var cfg='ok', pF=0.10, pS=0.05, sim, spec, lastLog=-1, TO=500;
+  var CODE={
+    ok:'FlakyExternalService.call()                    // Mono.fromCallable: perezoso\n    .timeout(Duration.ofMillis(500))           // límite por intento\n    .retryWhen(Retry.backoff(3, Duration.ofMillis(100)))\n    .onErrorResume(e -> Mono.just("respaldo")) // e: RetryExhaustedException\n    .subscribe(System.out::println);',
+    bad:'FlakyExternalService.call()\n    .timeout(Duration.ofMillis(500))\n    .⟦onErrorResume(e -> Mono.just("respaldo"))⟧ // el error ya es un valor...\n    .retryWhen(Retry.backoff(3, Duration.ofMillis(100)))   // ...nunca reintenta\n    .subscribe(System.out::println);',
+    budget:'FlakyExternalService.call()\n    .retryWhen(Retry.backoff(3, Duration.ofMillis(100)))\n    .⟪timeout(Duration.ofMillis(500))⟫           // presupuesto total\n    .onErrorResume(e -> Mono.just("respaldo")) // e: TimeoutException\n    .subscribe(System.out::println);'
+  };
+  function backoff(i, rnd){ var base=100*Math.pow(2,i), off=base*0.5, lo=Math.max(100-base, -off), hi=off; return Math.round(base+lo+rnd()*(hi-lo)); }
+  function simulate(rnd, quiet){
+    var at=[], waits=[], log=[], t=0, retries=0, end=null;
+    function L(tt,m,c){ if (!quiet) log.push({t:tt, m:m, c:c||''}); }
+    while (!end){
+      var n=at.length+1, r=rnd(), o, d;
+      if (r<pF){ o='err'; d=60+rnd()*100; } else if (r<pF+pS){ o='slow'; d=1500; } else { o='ok'; d=60+rnd()*100; }
+      d=Math.round(d);
+      L(t, 'intento '+n+' → FlakyExternalService.call()', 'dim');
+      if (cfg==='budget' && t+d>TO){
+        at.push({t0:t, t1:TO, o:'cut', n:n});
+        L(TO, '✗ TimeoutException: se agotó el presupuesto de 500 ms; se cancela el intento '+n, 'ko');
+        end={t:TO, kind:'fallback', err:'TimeoutException'}; break;
+      }
+      if (o==='slow' && cfg!=='budget'){ o='timeout'; d=TO; }
+      at.push({t0:t, t1:t+d, o:o, n:n}); t+=d;
+      if (o==='ok' || o==='slow'){ L(t, '✓ "resultado-ok"', 'okl'); end={t:t, kind:'value'}; break; }
+      L(t, o==='timeout' ? '✗ TimeoutException: sin respuesta en 500 ms' : '✗ RuntimeException: Servicio externo no disponible', 'ko');
+      var errName = o==='timeout' ? 'TimeoutException' : 'RuntimeException';
+      if (cfg==='bad'){ L(t, 'onErrorResume convierte '+errName+' en "respaldo"; retryWhen no ve ningún error (intentos = 1)', 'comp'); end={t:t, kind:'fallback', err:errName}; break; }
+      if (retries===3){ L(t, '✗ RetryExhaustedException: Retries exhausted: 3/3 (causa: '+errName+')', 'ko'); end={t:t, kind:'fallback', err:'RetryExhaustedException'}; break; }
+      var w=backoff(retries, rnd); retries++;
+      if (cfg==='budget' && t+w>TO){
+        waits.push({t0:t, t1:TO, ms:w});
+        L(TO, '✗ TimeoutException: se agotó el presupuesto de 500 ms durante el backoff', 'ko');
+        end={t:TO, kind:'fallback', err:'TimeoutException'}; break;
+      }
+      L(t, 'Retry.backoff: reintento '+retries+'/3 en '+w+' ms', 'comp');
+      waits.push({t0:t, t1:t+w, ms:w}); t+=w;
+    }
+    if (end.kind==='fallback') L(end.t, 'onErrorResume recibe '+end.err+' → "respaldo"', 'comp');
+    return {at:at, waits:waits, log:log, end:end};
+  }
+  function buildSpec(){
+    var T=Math.max(700, sim.end.t*1.08+40), bars=[], ev=[], markers=[];
+    sim.at.forEach(function(a){
+      var c = a.o==='ok'||a.o==='slow' ? COL.ok : (a.o==='err' ? COL.warn : COL.amber);
+      bars.push({row:'at', t0:a.t0, t1:a.t1, c:c, h:16, text:'intento '+a.n, short:String(a.n)});
+      if (a.o==='err' || a.o==='timeout' || a.o==='cut') ev.push({row:'at', t:a.t1, shape:'x', c:COL.warn});
+      if (a.o==='timeout') markers.push({t:a.t1, text:'timeout', c:COL.amber});
+    });
+    sim.waits.forEach(function(w){ bars.push({row:'at', t0:w.t0, t1:w.t1, style:'wait', h:12, text:w.ms+' ms', short:'', c:COL.muted}); });
+    if (cfg==='budget') markers.push({t:TO, text:'timeout total 500 ms', c:COL.warn, always:true});
+    ev.push({row:'su', t:sim.end.t, v:sim.end.kind==='value'?'ok':'R', c:sim.end.kind==='value'?COL.ok:COL.terra, big:true});
+    spec={T:T, labelW:96, axisLabel:'tiempo (ms) →', bars:bars, ev:ev, markers:markers,
+      rows:[{id:'at', kind:'lane', label:'servicio', h:30, gap:12}, {id:'su', label:'suscriptor', end:sim.end.t+T*0.025}]};
+  }
+  function drawLog(t){
+    var shown=sim.log.filter(function(l){ return l.t<=t+0.5; });
+    if (shown.length===lastLog) return;
+    var grew = shown.length>lastLog && lastLog>=0; lastLog=shown.length;
+    var el=$('rs-log');
+    el.innerHTML = shown.map(function(l,i){ return '<div class="'+l.c+(grew && i===shown.length-1?' new':'')+'">t='+fmt(l.t)+' ms  '+esc(l.m)+'</div>'; }).join('') || '<div class="dim">(pulse «Ejecutar una petición»)</div>';
+    el.scrollTop=el.scrollHeight;
+  }
+  var P=Player({T:700, dur:1800, draw:function(t){ if (spec){ tl(svg, spec, t); drawLog(t); } }, btn:null, range:$('rs-range'), label:$('rs-t'), fmt:function(t){ return 't = '+fmt(t)+' ms'; }});
+  function run(play){ sim=simulate(Math.random); buildSpec(); lastLog=-1; P.reset(spec.T, Math.max(1800, spec.T*2.4)); if (play) P.play(); }
+  function many(){
+    var n=1000, first=0, after=0, fb=0, calls=0, i, s;
+    for (i=0;i<n;i++){ s=simulate(Math.random, true); calls+=s.at.length; if (s.end.kind==='value'){ if (s.at.length===1) first++; else after++; } else fb++; }
+    $('rs-stats').innerHTML =
+      metric(fmt(first/n*100,1)+' %', 'Éxito al primer intento', 'good') +
+      metric(fmt(after/n*100,1)+' %', 'Éxito después de reintentar') +
+      metric(fmt(fb/n*100,1)+' %', 'Terminan en respaldo', fb?'bad':'') +
+      metric(fmt(calls), 'Llamadas al servicio por cada 1 000 peticiones ('+(calls>n?'+':'')+fmt((calls-n)/n*100,1)+' %)');
+  }
+  function setCfg(k){ cfg=k; $('rs-code').innerHTML=hl(CODE[k]); $('rs-stats').innerHTML=''; run(true); }
+  $('rs-fail').addEventListener('input', function(){ pF=this.value/100; $('rs-failv').textContent=this.value+' %'; $('rs-stats').innerHTML=''; });
+  $('rs-slow').addEventListener('input', function(){ pS=this.value/100; $('rs-slowv').textContent=this.value+' %'; $('rs-stats').innerHTML=''; });
+  $('rs-run').addEventListener('click', function(){ run(true); });
+  $('rs-many').addEventListener('click', many);
+  tabGroup($('rs-tabs'), function(k){ setCfg(k); });
+  $('rs-code').innerHTML=hl(CODE.ok);
+  run(false);
+})();
+
+/* =============== 7. Tiempo virtual =============== */
+(function(){
+  var svg=$('vt-svg'); if (!svg) return;
+  var mode='virtual', raf=0, vNow=0, rNow=0, active=-1;
+  var STEPS={
+    virtual:[['StepVerifier.withVirtualTime(...)',0,0],['.expectSubscription()',0,0],['.expectNoEvent(5 s) → expectNext("a")',5,600],['.thenAwait(5 s) → expectNext("b")',10,600],['.thenAwait(5 s) → expectNext("c")',15,600],['.verifyComplete()',15,250]],
+    real:[['StepVerifier.create(...)',0,0],['.expectNext("a")   (espera real 5 s)',5,1000],['.expectNext("b")   (espera real 5 s)',10,1000],['.expectNext("c")   (espera real 5 s)',15,1000],['.verifyComplete()',15,250]]
+  };
+  function dial(cx, cy, r, sec, label, val, col){
+    var s=[];
+    s.push(circ(cx,cy,r,{fill:'#fff', stroke:COL.navy, 'stroke-width':2}));
+    for (var i=0;i<15;i++){ var a=i/15*2*Math.PI-Math.PI/2, big=i%5===0, r0=r-(big?10:5); s.push(line(cx+Math.cos(a)*r0, cy+Math.sin(a)*r0, cx+Math.cos(a)*(r-2), cy+Math.sin(a)*(r-2), {stroke:big?COL.navy:COL.line, 'stroke-width':big?2:1.2})); }
+    var ang=(sec%15)/15*2*Math.PI-Math.PI/2; if (sec>=15) ang=-Math.PI/2+2*Math.PI*0.9999;
+    if (sec>0) s.push('<path d="M'+cx+' '+cy+' L'+cx+' '+(cy-r+12)+' A'+(r-12)+' '+(r-12)+' 0 '+(sec%15>7.5||sec>=15?1:0)+' 1 '+r1(cx+Math.cos(ang)*(r-12))+' '+r1(cy+Math.sin(ang)*(r-12))+' Z" fill="'+col+'" fill-opacity=".18"/>');
+    s.push(line(cx, cy, cx+Math.cos(ang)*(r-14), cy+Math.sin(ang)*(r-14), {stroke:col, 'stroke-width':3, 'stroke-linecap':'round'}));
+    s.push(circ(cx,cy,4,{fill:col}));
+    s.push(text(cx, cy-r-12, label, {'text-anchor':'middle', 'font-size':12.5, 'font-weight':700, fill:COL.navy}));
+    s.push(text(cx, cy+r+22, val, {'text-anchor':'middle', 'font-size':15, 'font-weight':700, fill:col, 'class':'m'}));
+    return s.join('');
+  }
+  function draw(){
+    var W=widthOf(svg), r=Math.min(64, W/4-14), H=2*r+70;
+    svg.setAttribute('viewBox','0 0 '+W+' '+H);
+    svg.innerHTML = dial(W*0.25, r+30, r, vNow, 'Reloj virtual', fmt(vNow,1)+' s', COL.terra) + dial(W*0.75, r+30, r, rNow, 'Reloj real', rNow<1 ? fmt(rNow,3)+' s' : fmt(rNow,1)+' s', COL.navy);
+    var steps=STEPS[mode];
+    $('vt-steps').innerHTML = steps.map(function(s,i){ return '<li class="'+(i===active?'on':(i<active?'done':''))+'">'+esc(s[0])+'</li>'; }).join('');
+  }
+  function finish(){ var st=STEPS[mode]; vNow=15; rNow= mode==='virtual' ? 0.04 : 15; active=st.length; draw(); }
+  function run(){
+    cancelAnimationFrame(raf); vNow=0; rNow=0; active=0;
+    if (RM){ finish(); return; }
+    var steps=STEPS[mode], i=0, t0=performance.now(), v0=0, total=0, el=0;
+    steps.forEach(function(s){ total+=s[2]; });
+    function frame(ts){
+      var s=steps[i], d=s[2], p=d? Math.min(1,(ts-t0)/d) : 1;
+      vNow = v0 + (s[1]-v0)*ease(p);
+      var done = el + d*p;
+      rNow = mode==='virtual' ? 0.04*done/total : vNow;
+      active=i; draw();
+      if (p>=1){ v0=s[1]; el+=d; i++; t0=ts; if (i>=steps.length){ finish(); return; } }
+      raf=requestAnimationFrame(frame);
+    }
+    raf=requestAnimationFrame(frame);
+  }
+  function note(){ $('vt-note').textContent = mode==='virtual' ? 'Con withVirtualTime los 15 s se simulan: el test termina en milisegundos reales (valor ilustrativo). verify() devuelve la duración real.' : 'Sin tiempo virtual el test espera de verdad: 15 s reales por cada ejecución. La animación está acelerada ×5.'; }
+  tabGroup($('vt-tabs'), function(k){ mode=k; cancelAnimationFrame(raf); vNow=0; rNow=0; active=-1; note(); draw(); run(); });
+  $('vt-run').addEventListener('click', run);
+  note(); draw(); redraws.push(draw);
+  whenVisible($('vt-lab'), run);
+})();
+
+/* =============== 8. SSE =============== */
+(function(){
+  var go=$('sse-go'); if (!go) return;
+  var stop=$('sse-stop'), A=$('sse-a'), B=$('sse-b'), S=$('sse-srv'), timer=0, tick=0, plain='';
+  function add(el, html){ el.insertAdjacentHTML('beforeend', html); el.scrollTop=el.scrollHeight; }
+  function srv(m, c){ add(S, '<div class="'+(c||'')+(RM?'':' new')+'">'+esc(m)+'</div>'); }
+  function end(reason){
+    clearInterval(timer); timer=0; go.disabled=false; stop.disabled=true;
+    srv(reason, 'comp'); srv('doOnCancel → "cliente desconectado"; Flux.interval deja de emitir', 'comp');
+    add(A, '<span class="h">\n[conexión cerrada]</span>'); add(B, '<span class="h">\n[conexión cerrada]</span>');
+  }
+  go.addEventListener('click', function(){
+    clearInterval(timer); tick=0; plain='';
+    A.innerHTML='<span class="h">HTTP/1.1 200 OK\nContent-Type: text/event-stream;charset=UTF-8\nTransfer-Encoding: chunked\n\n</span>';
+    B.innerHTML='<span class="h">HTTP/1.1 200 OK\nContent-Type: text/plain;charset=UTF-8\nTransfer-Encoding: chunked\n\n</span><span class="ev" id="sse-plain"></span>';
+    S.innerHTML=''; srv('GET /reactive/stream: WebFlux se suscribe al Flux', 'dim');
+    go.disabled=true; stop.disabled=false;
+    timer=setInterval(function(){
+      var i=tick++;
+      if (i%2===0){
+        srv('tick '+i+' → filter OK → map → "evento '+i+'"', 'okl');
+        add(A, '<span class="ev'+(RM?'':' new')+'">data:evento '+i+'\n\n</span><span class="p">  → EventSource.onmessage: "evento '+i+'"\n</span>');
+        plain+='evento '+i; $('sse-plain').textContent=plain;
+      } else srv('tick '+i+' → descartado por filter', 'dim');
+      if (tick>=12) end('el cliente se desconecta (fin de la simulación)');
+    }, 800);
+  });
+  stop.addEventListener('click', function(){ if (timer) end('el cliente cierra la conexión'); });
+})();
+
+/* ---------- redibujar al cambiar el ancho ---------- */
+var rt=0, lastW=window.innerWidth;
+window.addEventListener('resize', function(){
+  if (window.innerWidth===lastW) return; lastW=window.innerWidth;
+  cancelAnimationFrame(rt); rt=requestAnimationFrame(function(){ redraws.forEach(function(f){ try { f(); } catch(e){} }); });
+});
+})();
+</script>
+</body>
+</html>

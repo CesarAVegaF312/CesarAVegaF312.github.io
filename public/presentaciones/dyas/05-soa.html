@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOA — Arquitectura Orientada a Servicios | Diplomado en Diseño y Arquitectura de Software</title>
+<style>
+  :root{
+    --navy:#1F2D4E;
+    --navy-2:#2C3E68;
+    --navy-ink:#16223c;
+    --terra:#C9722F;
+    --terra-soft:#F3E2D4;
+    --paper:#FFFFFF;
+    --surface:#F1F3F7;
+    --line:#D5DAE4;
+    --muted:#5A6480;
+    --ok:#2F6F4F;
+    --warn:#9A3B2C;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--surface); color:var(--navy-ink);
+    font-family:var(--sans); font-size:16.5px; line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1040px; margin:0 auto; padding:0 24px}
+  header.hero{background:var(--navy); color:#fff; padding:64px 0 56px; position:relative; overflow:hidden}
+  header.hero .wrap{position:relative; z-index:2}
+  .kicker{font-family:var(--mono); font-size:12.5px; letter-spacing:.08em; color:#9FB0D4; margin:0 0 14px}
+  h1{font-family:var(--serif); font-weight:700; font-size:clamp(34px,5.2vw,54px); line-height:1.08; margin:0 0 18px; max-width:20ch}
+  .lede{font-size:19px; color:#D6DEF0; max-width:62ch; margin:0}
+  .hexline{position:absolute; inset:0; opacity:.13; z-index:1}
+  main{padding:0 0 90px}
+  section{padding:54px 0 10px}
+  section + section{border-top:1px solid var(--line)}
+  h2{font-family:var(--serif); font-size:clamp(25px,3.4vw,34px); line-height:1.15; margin:0 0 6px; color:var(--navy)}
+  .sec-note{color:var(--muted); margin:0 0 26px; max-width:70ch; font-size:15.5px}
+  h3{font-size:18px; margin:30px 0 10px; color:var(--navy)}
+  p{max-width:74ch}
+  .card{background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:22px 24px}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
+  @media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+  figure{margin:0}
+  svg{display:block; width:100%; height:auto}
+  .lab{background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:24px}
+  .lab-head{display:flex; flex-wrap:wrap; gap:14px; align-items:baseline; justify-content:space-between; margin-bottom:16px}
+  .lab-title{font-weight:700; font-size:17px; color:var(--navy)}
+  .ctrl{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:14px 0 6px}
+  input[type=range]{accent-color:var(--terra); width:230px}
+  button.tab{
+    font:inherit; font-size:14.5px; padding:8px 14px; border-radius:999px; cursor:pointer;
+    background:#fff; border:1px solid var(--line); color:var(--muted);
+  }
+  button.tab[aria-selected=true]{background:var(--navy); border-color:var(--navy); color:#fff}
+  button.tab:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid var(--terra); outline-offset:2px}
+  .metric{display:flex; gap:28px; flex-wrap:wrap; margin-top:14px}
+  .metric div span{display:block}
+  .metric .n{font-family:var(--serif); font-size:38px; line-height:1; color:var(--navy)}
+  .metric .n.bad{color:var(--warn)}
+  .metric .l{font-size:13px; color:var(--muted); margin-top:6px}
+  table{border-collapse:collapse; width:100%; font-size:15px; background:var(--paper)}
+  caption{text-align:left; color:var(--muted); font-size:14px; padding-bottom:8px}
+  th,td{border:1px solid var(--line); padding:10px 12px; vertical-align:top; text-align:left}
+  th{background:var(--navy); color:#fff; font-weight:600}
+  tbody th{background:#EDF0F6; color:var(--navy)}
+  code,pre{font-family:var(--mono); font-size:13.5px}
+  pre{background:var(--navy-ink); color:#E6ECF8; padding:16px 18px; border-radius:8px; overflow:auto}
+  pre .c{color:#8FA6CE}
+  .callout{border-left:4px solid var(--terra); background:var(--terra-soft); padding:16px 20px; border-radius:0 8px 8px 0; margin:22px 0}
+  .callout strong{color:#7C441A}
+  .callout.warn{border-left-color:var(--warn); background:#F7E4E0}
+  .callout.warn strong{color:var(--warn)}
+  ul.tight{margin:8px 0; padding-left:20px}
+  ul.tight li{margin:5px 0}
+  .yesno{display:grid; grid-template-columns:1fr 1fr; gap:0; border:1px solid var(--line); border-radius:10px; overflow:hidden}
+  @media(max-width:820px){.yesno{grid-template-columns:1fr}}
+  .yesno > div{padding:20px 22px; background:var(--paper)}
+  .yesno > div + div{border-left:1px solid var(--line)}
+  @media(max-width:820px){.yesno > div + div{border-left:0; border-top:1px solid var(--line)}}
+  .yesno h4{margin:0 0 10px; font-size:15px; color:var(--navy)}
+  .tagline{font-family:var(--serif); font-style:italic; font-size:19px; color:var(--navy); max-width:60ch}
+  footer{background:var(--navy); color:#B9C6E2; padding:34px 0; font-size:14px}
+  footer .wrap{display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap}
+  .pill{font-family:var(--mono); font-size:11.5px; padding:3px 8px; border-radius:4px; background:#EDF0F6; color:var(--navy); border:1px solid var(--line)}
+  .swap{cursor:pointer}
+  @media (prefers-reduced-motion: no-preference){
+    .anim{transition:opacity .28s ease, transform .28s ease}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg class="hexline" viewBox="0 0 1200 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g fill="none" stroke="#7E93C4" stroke-width="1.2">
+      <path d="M120 40 L260 40 L330 160 L260 280 L120 280 L50 160 Z"/>
+      <path d="M400 40 L540 40 L610 160 L540 280 L400 280 L330 160 Z"/>
+      <path d="M680 40 L820 40 L890 160 L820 280 L680 280 L610 160 Z"/>
+      <path d="M960 40 L1100 40 L1170 160 L1100 280 L960 280 L890 160 Z"/>
+      <path d="M260 280 L400 280 L470 400 L400 420 L260 420 L190 400 Z"/>
+      <path d="M820 280 L960 280 L1030 400 L960 420 L820 420 L750 400 Z"/>
+    </g>
+  </svg>
+  <div class="wrap">
+    <p class="kicker">Diplomado en Diseño y Arquitectura de Software · Módulo 4 · Estilo 1 de 3</p>
+    <h1>SOA: integrar lo que la empresa ya construyó</h1>
+    <p class="lede">SOA no nació para construir sistemas nuevos. Nació para que el ERP en COBOL, el core bancario en C y el CRM en .NET pudieran hablar entre sí sin reescribirse. Entender ese problema explica cada una de sus decisiones — y también sus costos.</p>
+  </div>
+</header>
+
+<main>
+
+<section id="problema"><div class="wrap">
+  <h2>1. El problema que existía antes de SOA</h2>
+  <p class="sec-note">Toda decisión arquitectónica se juzga contra la alternativa que reemplazó. La alternativa a SOA era la integración punto a punto.</p>
+
+  <p>A finales de los noventa, una compañía mediana ya operaba entre 15 y 40 sistemas comprados o hechos a la medida en tecnologías incompatibles: nómina, inventarios, contabilidad, cartera, CRM. Cada necesidad de integración se resolvía con un conector dedicado: un FTP con archivos planos a medianoche, una tabla compartida en la base de datos del otro, un binario DCOM o CORBA. Cada conector era código propietario, con su propio formato, su propia ventana de ejecución y su propio dueño.</p>
+
+  <div class="lab" style="margin-top:26px">
+    <div class="lab-head">
+      <span class="lab-title">La aritmética de la integración punto a punto</span>
+      <span class="pill">n(n−1)/2</span>
+    </div>
+    <p style="margin-top:0">Mueva el control para ver cuántas interfaces bilaterales debe construir y mantener una organización con <strong><span id="soa-n">6</span> sistemas</strong>, frente al mismo escenario mediado por un bus.</p>
+    <div class="ctrl">
+      <label for="soa-range">Sistemas en el portafolio</label>
+      <input id="soa-range" type="range" min="3" max="40" value="6" step="1">
+    </div>
+    <div class="metric">
+      <div><span class="n bad" id="soa-p2p">15</span><span class="l">interfaces punto a punto</span></div>
+      <div><span class="n" id="soa-bus">6</span><span class="l">conexiones al bus (una por sistema)</span></div>
+      <div><span class="n" id="soa-ratio">2,5×</span><span class="l">factor de reducción de interfaces</span></div>
+    </div>
+    <figure style="margin-top:22px">
+      <svg id="soa-svg" viewBox="0 0 900 300" role="img" aria-label="Comparación entre integración punto a punto y bus de servicios">
+        <text x="10" y="20" font-family="Georgia, serif" font-size="16" fill="#1F2D4E">Punto a punto</text>
+        <text x="470" y="20" font-family="Georgia, serif" font-size="16" fill="#1F2D4E">Mediado por bus (ESB)</text>
+        <g id="p2p-edges" stroke="#9A3B2C" stroke-width="1" opacity="0.55"></g>
+        <g id="p2p-nodes"></g>
+        <g id="bus-edges" stroke="#1F2D4E" stroke-width="1.4" opacity="0.75"></g>
+        <g id="bus-nodes"></g>
+        <ellipse cx="680" cy="165" rx="66" ry="30" fill="#1F2D4E"></ellipse>
+        <text x="680" y="170" text-anchor="middle" fill="#fff" font-size="14" font-family="-apple-system, sans-serif">ESB</text>
+      </svg>
+    </figure>
+    <p style="font-size:14.5px; color:var(--muted); margin-bottom:0">Nota de rigor: el bus no elimina la complejidad de integración, la <em>centraliza</em>. Las 435 transformaciones de formato que existían en 30 sistemas siguen existiendo; ahora viven dentro del bus, y el bus tiene un dueño, un presupuesto y una ventana de mantenimiento.</p>
+  </div>
+</div></section>
+
+<section id="definicion"><div class="wrap">
+  <h2>2. Qué es SOA, con precisión</h2>
+  <p class="sec-note">Una definición operativa, no una lista de adjetivos.</p>
+
+  <p>SOA es un estilo arquitectónico en el que la funcionalidad del negocio se expone como <strong>servicios con contrato explícito, descubribles e independientes de la tecnología de quien los consume</strong>. Un servicio SOA no es «una función remota»: representa una capacidad de negocio completa —verificar la capacidad de endeudamiento de un cliente, liquidar una nómina, emitir una póliza— y su contrato es un artefacto de primera clase, versionado y gobernado.</p>
+
+  <div class="grid3" style="margin-top:24px">
+    <div class="card"><h3 style="margin-top:0">Contrato antes que implementación</h3><p style="font-size:15px; margin:0">El WSDL/XSD se publica y se acuerda antes de escribir código. El consumidor programa contra el contrato, no contra el proveedor.</p></div>
+    <div class="card"><h3 style="margin-top:0">Interoperabilidad como restricción</h3><p style="font-size:15px; margin:0">Estándares abiertos (SOAP, WS-*) precisamente porque los extremos son heterogéneos y no se pueden cambiar.</p></div>
+    <div class="card"><h3 style="margin-top:0">Reutilización empresarial</h3><p style="font-size:15px; margin:0">Un servicio se diseña para varios consumidores desconocidos. Ese objetivo es el origen de su virtud y de su rigidez.</p></div>
+  </div>
+
+  <div class="callout">
+    <strong>Corrección frecuente en clase.</strong> SOA no es sinónimo de SOAP. SOAP es el protocolo dominante en la generación 2000–2012 de SOA, pero el estilo se define por las restricciones (contrato explícito, autonomía del servicio, abstracción, composición), no por el formato del sobre. Existen implementaciones SOA sobre REST/JSON y sobre mensajería binaria.
+  </div>
+</div></section>
+
+<section id="esb"><div class="wrap">
+  <h2>3. El ESB: qué resuelve y qué rompe</h2>
+  <p class="sec-note">Es el componente más citado y peor entendido del estilo.</p>
+
+  <figure class="card" style="padding:26px">
+    <svg viewBox="0 0 900 340" role="img" aria-label="Diagrama de un Enterprise Service Bus con sistemas conectados y responsabilidades transversales">
+      <defs>
+        <marker id="arw" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#5A6480"/></marker>
+      </defs>
+      <g font-family="-apple-system, sans-serif" font-size="13">
+        <g fill="#EDF0F6" stroke="#1F2D4E" stroke-width="1.5">
+          <rect x="30" y="30" width="150" height="46" rx="6"/><rect x="30" y="98" width="150" height="46" rx="6"/>
+          <rect x="30" y="166" width="150" height="46" rx="6"/><rect x="30" y="234" width="150" height="46" rx="6"/>
+        </g>
+        <g fill="#1F2D4E">
+          <text x="105" y="58" text-anchor="middle">ERP · SAP</text>
+          <text x="105" y="126" text-anchor="middle">Core bancario · COBOL</text>
+          <text x="105" y="194" text-anchor="middle">CRM · .NET</text>
+          <text x="105" y="262" text-anchor="middle">Portal web · Java</text>
+        </g>
+        <rect x="330" y="24" width="230" height="292" rx="10" fill="#1F2D4E"/>
+        <text x="445" y="52" text-anchor="middle" fill="#fff" font-size="15" font-family="Georgia, serif">Enterprise Service Bus</text>
+        <g fill="#C9722F">
+          <rect x="352" y="70" width="186" height="34" rx="5"/><rect x="352" y="112" width="186" height="34" rx="5"/>
+          <rect x="352" y="154" width="186" height="34" rx="5"/><rect x="352" y="196" width="186" height="34" rx="5"/>
+          <rect x="352" y="238" width="186" height="34" rx="5"/>
+        </g>
+        <g fill="#fff" font-size="12.5">
+          <text x="445" y="92" text-anchor="middle">Transformación de formato</text>
+          <text x="445" y="134" text-anchor="middle">Enrutamiento por contenido</text>
+          <text x="445" y="176" text-anchor="middle">Seguridad y auditoría</text>
+          <text x="445" y="218" text-anchor="middle">Orquestación de procesos</text>
+          <text x="445" y="260" text-anchor="middle">Reintentos y compensación</text>
+        </g>
+        <g stroke="#5A6480" stroke-width="1.4" marker-end="url(#arw)" fill="none">
+          <path d="M182 53 L326 90"/><path d="M182 121 L326 132"/><path d="M182 189 L326 174"/><path d="M182 257 L326 216"/>
+          <path d="M562 120 L706 88"/><path d="M562 170 L706 170"/><path d="M562 220 L706 252"/>
+        </g>
+        <g fill="#EDF0F6" stroke="#1F2D4E" stroke-width="1.5">
+          <rect x="710" y="66" width="160" height="46" rx="6"/><rect x="710" y="148" width="160" height="46" rx="6"/><rect x="710" y="230" width="160" height="46" rx="6"/>
+        </g>
+        <g fill="#1F2D4E">
+          <text x="790" y="94" text-anchor="middle">Canal móvil</text>
+          <text x="790" y="176" text-anchor="middle">Socio externo B2B</text>
+          <text x="790" y="258" text-anchor="middle">Entes de control</text>
+        </g>
+      </g>
+    </svg>
+    <figcaption style="font-size:14px; color:var(--muted); margin-top:14px">El ESB concentra la lógica de mediación. Cada caja naranja es una responsabilidad que <em>desaparece</em> de los extremos — y que aparece en un único componente compartido.</figcaption>
+  </figure>
+
+  <div class="yesno" style="margin-top:26px">
+    <div>
+      <h4 style="color:var(--ok)">Lo que el ESB resuelve de verdad</h4>
+      <ul class="tight">
+        <li>Un solo punto donde imponer cifrado, no repudio y trazas de auditoría exigidas por el regulador.</li>
+        <li>Desacople temporal: el core bancario puede estar en ventana batch y el bus encola.</li>
+        <li>Traducción de protocolos legados (MQ, FTP, SOAP 1.1) a interfaces modernas sin tocar el legado.</li>
+        <li>Medición centralizada de invocaciones, latencia y errores por servicio.</li>
+      </ul>
+    </div>
+    <div>
+      <h4 style="color:var(--warn)">Lo que el ESB rompe</h4>
+      <ul class="tight">
+        <li><strong>Punto único de falla y de despliegue.</strong> Una regla de ruteo mal desplegada afecta a todos los canales.</li>
+        <li><strong>Cuello de botella organizacional.</strong> El equipo de integración se vuelve la cola por la que pasan todos los proyectos.</li>
+        <li><strong>Lógica de negocio migrando al bus.</strong> Empieza como transformación de formato y termina con reglas de tarifación dentro del ESB, invisibles para el equipo de producto.</li>
+        <li><strong>Latencia acumulada.</strong> Cada salto agrega serialización, validación de esquema y política de seguridad.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <strong>Anti-patrón: el ESB como monolito distribuido.</strong> Cuando el bus contiene reglas de negocio, un cambio de producto exige coordinar dos equipos y dos despliegues. La reacción de la industria a este anti-patrón —<em>«smart endpoints, dumb pipes»</em>— es literalmente la tesis fundacional de los microservicios.
+  </div>
+</div></section>
+
+<section id="soap"><div class="wrap">
+  <h2>4. El contrato en la práctica</h2>
+  <p class="sec-note">Para un arquitecto, la diferencia entre estilos se ve mejor en el contrato que en el diagrama.</p>
+  <div class="grid2">
+    <div>
+      <h3 style="margin-top:0">SOAP · contrato fuerte, verboso</h3>
+<pre><span class="c">&lt;!-- Contrato descrito en WSDL, tipos en XSD --&gt;</span>
+&lt;soap:Envelope&gt;
+  &lt;soap:Header&gt;
+    &lt;wsse:Security&gt;...&lt;/wsse:Security&gt;
+  &lt;/soap:Header&gt;
+  &lt;soap:Body&gt;
+    &lt;ns:EvaluarCapacidadPago&gt;
+      &lt;ns:documento&gt;CC 79345112&lt;/ns:documento&gt;
+      &lt;ns:montoSolicitado&gt;48000000&lt;/ns:montoSolicitado&gt;
+      &lt;ns:plazoMeses&gt;60&lt;/ns:plazoMeses&gt;
+    &lt;/ns:EvaluarCapacidadPago&gt;
+  &lt;/soap:Body&gt;
+&lt;/soap:Envelope&gt;</pre>
+      <ul class="tight" style="font-size:15px">
+        <li>Validación automática contra XSD antes de tocar el negocio.</li>
+        <li>WS-Security y WS-AtomicTransaction resuelven firma, cifrado y transacción distribuida a nivel de mensaje.</li>
+        <li>Costo: 3–10× el tamaño de un JSON equivalente y acoplamiento a la generación de <em>stubs</em>.</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="margin-top:0">Qué pregunta hacerse frente a un contrato</h3>
+      <div class="card">
+        <ul class="tight" style="margin:0">
+          <li><strong>¿Quién puede romperlo?</strong> Si el proveedor puede cambiarlo unilateralmente, no es un contrato: es documentación.</li>
+          <li><strong>¿Cómo se versiona?</strong> Namespace nuevo, endpoint nuevo, o campos opcionales aditivos. Sin política explícita, la reutilización se vuelve deuda.</li>
+          <li><strong>¿Quién lo prueba?</strong> Sin <em>contract testing</em> automatizado, la promesa de interoperabilidad se verifica en producción.</li>
+          <li><strong>¿Qué pasa con los consumidores que no conozco?</strong> Es la pregunta que define SOA y la que hace su gobierno caro.</li>
+        </ul>
+      </div>
+      <div class="callout" style="margin-top:18px">
+        <strong>Vigente en 2026.</strong> SOAP sigue siendo obligatorio en interfaces reguladas: mensajería ISO 20022 en banca, facturación electrónica DIAN, interoperabilidad HL7 en salud, y buena parte de los servicios de entidades públicas. No es «legado a eliminar»: es un contrato con requisitos de no repudio que REST resuelve peor.
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section id="vs"><div class="wrap">
+  <h2>5. SOA frente a microservicios</h2>
+  <p class="sec-note">La comparación más pedida en entrevistas de arquitectura y la peor respondida. No es «SOA es viejo y microservicios es nuevo».</p>
+  <table>
+    <caption>Ambos son estilos de servicios distribuidos. Difieren en la unidad de reutilización, el dueño del dato y dónde vive la lógica de mediación.</caption>
+    <thead><tr><th style="width:22%">Dimensión</th><th>SOA</th><th>Microservicios</th></tr></thead>
+    <tbody>
+      <tr><th>Propósito de origen</th><td>Integrar sistemas heterogéneos existentes</td><td>Desplegar y escalar de forma independiente equipos y funcionalidades</td></tr>
+      <tr><th>Unidad de diseño</th><td>Capacidad de negocio reutilizable a nivel empresa</td><td>Contexto delimitado (bounded context) con un equipo dueño</td></tr>
+      <tr><th>Datos</th><td>Frecuentemente comparten la base de datos corporativa</td><td>Base de datos privada por servicio; compartirla es anti-patrón</td></tr>
+      <tr><th>Mediación</th><td>Bus inteligente, extremos simples</td><td>Extremos inteligentes, tuberías simples (HTTP, broker sin lógica)</td></tr>
+      <tr><th>Granularidad</th><td>Gruesa: pocos servicios grandes</td><td>Fina: muchos servicios pequeños</td></tr>
+      <tr><th>Gobierno</th><td>Centralizado: comité de arquitectura, catálogo, estándares únicos</td><td>Federado: estándares mínimos, autonomía tecnológica por equipo</td></tr>
+      <tr><th>Reutilización</th><td>Objetivo explícito y métrica de éxito</td><td>Se evita: duplicar código es preferible a acoplar dos servicios</td></tr>
+      <tr><th>Despliegue</th><td>Coordinado, por ventanas</td><td>Independiente y continuo</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <strong>La frase que conviene memorizar.</strong> SOA optimiza <em>reutilización</em>; microservicios optimizan <em>autonomía de cambio</em>. Son objetivos que se contradicen: todo lo que se reutiliza acopla a quien lo reutiliza. Elegir el estilo es elegir cuál de los dos duele menos en su organización.
+  </div>
+</div></section>
+
+<section id="caso"><div class="wrap">
+  <h2>6. Caso: banco colombiano de tamaño medio</h2>
+  <p class="sec-note">Un escenario realista para discutir en clase, con cifras que hacen la decisión no trivial.</p>
+  <div class="card">
+    <p style="margin-top:0"><strong>Situación.</strong> Un banco con core en AS/400 (transacciones de cuentas, 40 años de reglas), un motor de originación de crédito comprado, un CRM SaaS, y cinco canales: sucursal, app móvil, web, IVR y corresponsales. El regulador exige trazabilidad completa de cada consulta a datos del cliente. La app móvil necesita responder en menos de 800 ms p95; el core solo garantiza 1,2 s p95 y no admite más de 60 sesiones concurrentes.</p>
+    <div class="grid2" style="margin-top:20px">
+      <div>
+        <h4 style="margin:0 0 8px; font-size:15px">Por qué aquí SOA es defendible</h4>
+        <ul class="tight" style="font-size:15px">
+          <li>El core no se puede modificar: la mediación tiene que vivir fuera de él.</li>
+          <li>La exigencia de auditoría centralizada favorece un punto único de control.</li>
+          <li>Cinco canales consumiendo la misma capacidad: la reutilización es real, no aspiracional.</li>
+          <li>El límite de 60 sesiones obliga a un componente que haga <em>pooling</em> y encolamiento.</li>
+        </ul>
+      </div>
+      <div>
+        <h4 style="margin:0 0 8px; font-size:15px">Dónde va a doler</h4>
+        <ul class="tight" style="font-size:15px">
+          <li>El p95 de 800 ms no se logra si cada consulta atraviesa el bus hasta el AS/400: exige caché de lectura con política de frescura acordada con riesgo.</li>
+          <li>Cada nuevo producto financiero pasará por el equipo de integración: mida esa cola antes de prometer time-to-market.</li>
+          <li>Si el bus cae, caen los cinco canales. ¿Existe modo degradado por canal?</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout" style="margin-bottom:0">
+      <strong>Pregunta de discusión.</strong> ¿Qué evidencia pediría antes de aprobar el ESB: la latencia del core bajo carga, el número de integraciones proyectadas a 3 años, o el tamaño del equipo de integración? Defienda un orden de prioridad y sustente el costo de equivocarse en cada uno.
+    </div>
+  </div>
+</div></section>
+
+<section id="decision"><div class="wrap">
+  <h2>7. Marco de decisión</h2>
+  <p class="sec-note">Ninguna tecnología es la mejor opción. Estas son las condiciones bajo las cuales SOA gana o pierde.</p>
+  <div class="yesno">
+    <div>
+      <h4 style="color:var(--ok)">Adopte SOA cuando</h4>
+      <ul class="tight">
+        <li>Existe un portafolio grande de sistemas que no se pueden reescribir ni modificar.</li>
+        <li>La interoperabilidad entre stacks heterogéneos es un requisito, no una preferencia.</li>
+        <li>Hay obligaciones regulatorias de auditoría, firma o no repudio que conviene centralizar.</li>
+        <li>La misma capacidad de negocio la consumen múltiples canales con contratos estables.</li>
+        <li>La organización tiene madurez para sostener gobierno de servicios (catálogo, versionado, SLA).</li>
+      </ul>
+    </div>
+    <div>
+      <h4 style="color:var(--warn)">Evite SOA cuando</h4>
+      <ul class="tight">
+        <li>El sistema es nuevo y un único equipo lo construye completo: el bus solo agrega latencia y ceremonia.</li>
+        <li>El atributo dominante es rendimiento o baja latencia extrema (trading, streaming, IoT de alta frecuencia).</li>
+        <li>La organización no puede sostener un equipo dedicado a la plataforma de integración.</li>
+        <li>Se necesita despliegue independiente y frecuente por equipo: el gobierno centralizado lo bloqueará.</li>
+        <li>El volumen de datos por mensaje es masivo: el costo de serialización XML domina el tiempo total.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Impacto sobre atributos de calidad</h3>
+  <table>
+    <thead><tr><th style="width:26%">Atributo</th><th style="width:14%">Efecto</th><th>Razón arquitectónica</th></tr></thead>
+    <tbody>
+      <tr><th>Interoperabilidad</th><td style="color:var(--ok)">↑↑ mejora</td><td>Contratos estándar independientes del stack de cada extremo.</td></tr>
+      <tr><th>Modificabilidad del legado</th><td style="color:var(--ok)">↑ mejora</td><td>La mediación absorbe cambios de formato sin tocar los sistemas fuente.</td></tr>
+      <tr><th>Auditabilidad</th><td style="color:var(--ok)">↑↑ mejora</td><td>Un solo punto de instrumentación para todas las invocaciones.</td></tr>
+      <tr><th>Latencia</th><td style="color:var(--warn)">↓↓ empeora</td><td>Saltos adicionales, serialización XML y validación de esquema por mensaje.</td></tr>
+      <tr><th>Disponibilidad</th><td style="color:var(--warn)">↓ empeora</td><td>El bus es dependencia común de todos los consumidores.</td></tr>
+      <tr><th>Despliegue independiente</th><td style="color:var(--warn)">↓↓ empeora</td><td>Los cambios se coordinan a través del equipo y las ventanas del bus.</td></tr>
+    </tbody>
+  </table>
+  <p class="tagline" style="margin-top:28px">SOA no está obsoleta. Está confinada al problema para el que fue diseñada: hacer hablar a sistemas que nadie puede reescribir.</p>
+</div></section>
+
+</main>
+
+<footer><div class="wrap">
+  <span>Diplomado en Diseño y Arquitectura de Software · Universidad de La Sabana</span>
+  <span>Material de apoyo — Módulo 4</span>
+</div></footer>
+
+<script>
+(function(){
+  var range = document.getElementById('soa-range');
+  var nOut  = document.getElementById('soa-n');
+  var p2pOut= document.getElementById('soa-p2p');
+  var busOut= document.getElementById('soa-bus');
+  var ratio = document.getElementById('soa-ratio');
+  var pe = document.getElementById('p2p-edges');
+  var pn = document.getElementById('p2p-nodes');
+  var be = document.getElementById('bus-edges');
+  var bn = document.getElementById('bus-nodes');
+  var NS = 'http://www.w3.org/2000/svg';
+
+  function ring(cx, cy, r, n){
+    var pts = [];
+    for (var i=0;i<n;i++){
+      var a = -Math.PI/2 + i*2*Math.PI/n;
+      pts.push([cx + r*Math.cos(a), cy + r*Math.sin(a)]);
+    }
+    return pts;
+  }
+  function dot(g, x, y, fill){
+    var c = document.createElementNS(NS,'circle');
+    c.setAttribute('cx',x); c.setAttribute('cy',y); c.setAttribute('r',7);
+    c.setAttribute('fill',fill); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5');
+    g.appendChild(c);
+  }
+  function line(g,x1,y1,x2,y2){
+    var l = document.createElementNS(NS,'line');
+    l.setAttribute('x1',x1); l.setAttribute('y1',y1); l.setAttribute('x2',x2); l.setAttribute('y2',y2);
+    g.appendChild(l);
+  }
+  function render(n){
+    [pe,pn,be,bn].forEach(function(g){ while(g.firstChild) g.removeChild(g.firstChild); });
+    var A = ring(215,165,115,n);
+    for (var i=0;i<n;i++) for (var j=i+1;j<n;j++) line(pe, A[i][0],A[i][1],A[j][0],A[j][1]);
+    A.forEach(function(p){ dot(pn,p[0],p[1],'#9A3B2C'); });
+    var B = ring(680,165,120,n);
+    B.forEach(function(p){ line(be,p[0],p[1],680,165); });
+    B.forEach(function(p){ dot(bn,p[0],p[1],'#1F2D4E'); });
+  }
+  function update(){
+    var n = +range.value;
+    var p2p = n*(n-1)/2;
+    nOut.textContent = n;
+    p2pOut.textContent = p2p;
+    busOut.textContent = n;
+    ratio.textContent = (p2p/n).toFixed(1).replace('.',',') + '×';
+    render(n);
+  }
+  range.addEventListener('input', update);
+  update();
+})();
+</script>
+</body>
+</html>

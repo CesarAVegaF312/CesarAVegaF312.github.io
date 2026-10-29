@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Microservicios — Autonomía y su factura | Diplomado en Diseño y Arquitectura de Software</title>
+<style>
+  :root{
+    --navy:#1F2D4E; --navy-ink:#16223c; --terra:#C9722F; --terra-soft:#F3E2D4;
+    --paper:#FFFFFF; --surface:#F1F3F7; --line:#D5DAE4; --muted:#5A6480;
+    --ok:#2F6F4F; --warn:#9A3B2C;
+    --mono: ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+    --sans: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --serif: Georgia,"Iowan Old Style","Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--surface);color:var(--navy-ink);font-family:var(--sans);font-size:16.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+  header.hero{background:var(--navy);color:#fff;padding:64px 0 56px;position:relative;overflow:hidden}
+  header.hero .wrap{position:relative;z-index:2}
+  .kicker{font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;color:#9FB0D4;margin:0 0 14px}
+  h1{font-family:var(--serif);font-weight:700;font-size:clamp(34px,5.2vw,54px);line-height:1.08;margin:0 0 18px;max-width:20ch}
+  .lede{font-size:19px;color:#D6DEF0;max-width:64ch;margin:0}
+  .hexline{position:absolute;inset:0;opacity:.13;z-index:1}
+  main{padding:0 0 90px}
+  section{padding:54px 0 10px}
+  section + section{border-top:1px solid var(--line)}
+  h2{font-family:var(--serif);font-size:clamp(25px,3.4vw,34px);line-height:1.15;margin:0 0 6px;color:var(--navy)}
+  .sec-note{color:var(--muted);margin:0 0 26px;max-width:70ch;font-size:15.5px}
+  h3{font-size:18px;margin:30px 0 10px;color:var(--navy)}
+  h4{font-size:15px;margin:0 0 10px;color:var(--navy)}
+  p{max-width:74ch}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:22px 24px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+  figure{margin:0}
+  svg{display:block;width:100%;height:auto}
+  .lab{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:24px}
+  .lab-head{display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;justify-content:space-between;margin-bottom:16px}
+  .lab-title{font-weight:700;font-size:17px;color:var(--navy)}
+  .ctrl{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:14px 0 6px}
+  input[type=range]{accent-color:var(--terra);width:220px}
+  button{font:inherit;cursor:pointer}
+  button.tab{font-size:14.5px;padding:8px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--muted)}
+  button.tab[aria-selected=true]{background:var(--navy);border-color:var(--navy);color:#fff}
+  button.act{font-size:14.5px;padding:9px 16px;border-radius:6px;background:var(--terra);border:1px solid var(--terra);color:#fff;font-weight:600}
+  button.act.ghost{background:#fff;color:var(--navy);border-color:var(--line);font-weight:500}
+  button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--terra);outline-offset:2px}
+  .metric{display:flex;gap:30px;flex-wrap:wrap;margin-top:14px}
+  .metric .n{display:block;font-family:var(--serif);font-size:38px;line-height:1;color:var(--navy)}
+  .metric .n.bad{color:var(--warn)}
+  .metric .l{display:block;font-size:13px;color:var(--muted);margin-top:6px}
+  table{border-collapse:collapse;width:100%;font-size:15px;background:var(--paper)}
+  caption{text-align:left;color:var(--muted);font-size:14px;padding-bottom:8px}
+  th,td{border:1px solid var(--line);padding:10px 12px;vertical-align:top;text-align:left}
+  th{background:var(--navy);color:#fff;font-weight:600}
+  tbody th{background:#EDF0F6;color:var(--navy)}
+  code,pre{font-family:var(--mono);font-size:13.5px}
+  pre{background:var(--navy-ink);color:#E6ECF8;padding:16px 18px;border-radius:8px;overflow:auto;line-height:1.55}
+  pre .c{color:#8FA6CE}
+  pre .k{color:#E7B36B}
+  .callout{border-left:4px solid var(--terra);background:var(--terra-soft);padding:16px 20px;border-radius:0 8px 8px 0;margin:22px 0}
+  .callout strong{color:#7C441A}
+  .callout.warn{border-left-color:var(--warn);background:#F7E4E0}
+  .callout.warn strong{color:var(--warn)}
+  ul.tight{margin:8px 0;padding-left:20px}
+  ul.tight li{margin:5px 0}
+  .yesno{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  @media(max-width:820px){.yesno{grid-template-columns:1fr}}
+  .yesno > div{padding:20px 22px;background:var(--paper)}
+  .yesno > div + div{border-left:1px solid var(--line)}
+  @media(max-width:820px){.yesno > div + div{border-left:0;border-top:1px solid var(--line)}}
+  .tagline{font-family:var(--serif);font-style:italic;font-size:19px;color:var(--navy);max-width:62ch}
+  footer{background:var(--navy);color:#B9C6E2;padding:34px 0;font-size:14px}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .pill{font-family:var(--mono);font-size:11.5px;padding:3px 8px;border-radius:4px;background:#EDF0F6;color:var(--navy);border:1px solid var(--line)}
+  .log{font-family:var(--mono);font-size:13px;background:#0F1830;color:#CBD8F2;border-radius:8px;padding:14px 16px;min-height:150px;max-height:230px;overflow:auto}
+  .log div{padding:2px 0}
+  .log .ko{color:#F0A08E}
+  .log .comp{color:#E7B36B}
+  .log .okl{color:#8ED9A9}
+  .checklist label{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px}
+  .checklist label:last-child{border-bottom:0}
+  .checklist input{margin-top:5px;accent-color:var(--terra);width:17px;height:17px}
+  .verdict{margin-top:16px;padding:16px 18px;border-radius:8px;font-size:15.5px;background:#EDF0F6;border:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg class="hexline" viewBox="0 0 1200 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g fill="none" stroke="#7E93C4" stroke-width="1.2">
+      <circle cx="150" cy="120" r="46"/><circle cx="330" cy="230" r="46"/><circle cx="520" cy="90" r="46"/>
+      <circle cx="700" cy="250" r="46"/><circle cx="880" cy="110" r="46"/><circle cx="1060" cy="240" r="46"/>
+      <path d="M196 120 L284 230 M376 230 L474 90 M566 90 L654 250 M746 250 L834 110 M926 110 L1014 240"/>
+    </g>
+  </svg>
+  <div class="wrap">
+    <p class="kicker">Diplomado en Diseño y Arquitectura de Software · Módulo 4 · Estilo 2 de 3</p>
+    <h1>Microservicios: comprar autonomía con complejidad distribuida</h1>
+    <p class="lede">Un microservicio no es «un servicio pequeño». Es una unidad de despliegue con dueño único, datos propios y libertad de cambio. Todo lo demás del estilo —sagas, outbox, gateway, observabilidad— es la factura que se paga por esa libertad.</p>
+  </div>
+</header>
+
+<main>
+
+<section id="definicion"><div class="wrap">
+  <h2>1. La definición útil (y la que induce a error)</h2>
+  <p class="sec-note">La granularidad no es el criterio. La autonomía sí.</p>
+
+  <div class="grid2">
+    <div class="card" style="border-top:3px solid var(--warn)">
+      <h4>Definición que produce malas arquitecturas</h4>
+      <p style="font-size:15px;margin:0">«Servicios pequeños que hacen una sola cosa y se comunican por API.» Aplicada literalmente, lleva a decenas de servicios anémicos que no pueden atender una sola petición sin llamarse entre sí en cadena. El resultado es un monolito distribuido: la complejidad del monolito más la latencia y los modos de falla de la red.</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--ok)">
+      <h4>Definición que resiste el escrutinio</h4>
+      <p style="font-size:15px;margin:0">Un servicio que se <strong>despliega, escala, falla y evoluciona de forma independiente</strong>, porque es dueño exclusivo de sus datos y su contrato está versionado. Si dos servicios deben desplegarse juntos para no romperse, no son dos microservicios: son un servicio con una llamada de red innecesaria en el medio.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>Prueba práctica de autonomía.</strong> ¿Puede su equipo desplegar el servicio A un martes a las 3 p.m. sin avisar a ningún otro equipo, sin coordinar una migración de esquema ajena y sin que ninguna otra prueba de integración falle? Si la respuesta es no, tiene servicios distribuidos, no microservicios.
+  </div>
+
+  <h3>Los tres tipos de límite que definen un servicio</h3>
+  <div class="grid3">
+    <div class="card"><h4>Límite de negocio</h4><p style="font-size:15px;margin:0">Un contexto delimitado del DDD: «Pagos» y «Pedidos» usan la palabra <em>orden</em> con significados distintos. Esa diferencia semántica es la costura natural.</p></div>
+    <div class="card"><h4>Límite de datos</h4><p style="font-size:15px;margin:0">Un conjunto de entidades que cambian juntas y necesitan consistencia inmediata entre sí. Ese conjunto no se puede partir sin introducir sagas.</p></div>
+    <div class="card"><h4>Límite organizacional</h4><p style="font-size:15px;margin:0">Un equipo que pueda mantenerlo de punta a punta. Ley de Conway: la arquitectura tenderá a copiar la estructura de comunicación de la empresa, la reconozca usted o no.</p></div>
+  </div>
+</div></section>
+
+<section id="disponibilidad"><div class="wrap">
+  <h2>2. La aritmética que casi nadie hace antes de migrar</h2>
+  <p class="sec-note">Cada llamada síncrona en la ruta crítica multiplica probabilidades de falla. Esta es la cuenta que convierte una decisión de moda en una decisión de ingeniería.</p>
+
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">Disponibilidad compuesta en una cadena síncrona</span>
+      <span class="pill">A<sub>total</sub> = A<sup>n</sup></span>
+    </div>
+    <p style="margin-top:0">Una petición del usuario atraviesa <strong><span id="ms-n">4</span> servicios</strong> en cadena, cada uno con disponibilidad individual de <strong><span id="ms-a">99,9</span>%</strong>.</p>
+    <div class="ctrl">
+      <label for="ms-range-n">Servicios en la ruta crítica</label>
+      <input id="ms-range-n" type="range" min="1" max="20" value="4">
+      <label for="ms-range-a" style="margin-left:12px">Disponibilidad por servicio</label>
+      <input id="ms-range-a" type="range" min="9000" max="99990" value="99900">
+    </div>
+    <div class="metric">
+      <div><span class="n" id="ms-total">99,60%</span><span class="l">disponibilidad efectiva de la ruta</span></div>
+      <div><span class="n bad" id="ms-down">35,0 h</span><span class="l">indisponibilidad anual esperada</span></div>
+      <div><span class="n" id="ms-nines">2,4</span><span class="l">«nueves» efectivos</span></div>
+    </div>
+    <figure style="margin-top:20px">
+      <svg id="ms-chain" viewBox="0 0 900 120" role="img" aria-label="Cadena de servicios en la ruta crítica"></svg>
+    </figure>
+    <div class="callout warn" style="margin-bottom:0">
+      <strong>Lectura arquitectónica.</strong> Con seis servicios de 99,9% en cadena usted no tiene 99,9%: tiene 99,4%, es decir más de dos días de indisponibilidad al año. La respuesta no es exigir más nueves a cada equipo, sino <em>sacar servicios de la ruta crítica</em>: caché, valores por defecto, comunicación asíncrona y degradación funcional. Un servicio que responde con datos de hace 30 segundos casi siempre es mejor que uno que no responde.
+    </div>
+  </div>
+</div></section>
+
+<section id="datos"><div class="wrap">
+  <h2>3. El dato es el límite real</h2>
+  <p class="sec-note">La mayoría de las migraciones fallidas partieron el código y dejaron la base de datos intacta.</p>
+
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">Base compartida frente a datos privados</span>
+      <div style="display:flex;gap:8px">
+        <button class="tab" data-db="shared" aria-selected="true">Base compartida</button>
+        <button class="tab" data-db="private" aria-selected="false">Datos privados</button>
+      </div>
+    </div>
+    <figure>
+      <svg id="db-svg" viewBox="0 0 900 300" role="img" aria-label="Comparación entre base de datos compartida y datos privados por servicio"></svg>
+    </figure>
+    <div id="db-text" style="margin-top:16px;font-size:15.5px"></div>
+  </div>
+
+  <h3>Lo que se pierde al partir la base de datos</h3>
+  <p>Se pierde la transacción ACID que abarcaba varias tablas. Ese es el costo central del estilo, y no tiene solución gratuita: se sustituye por <strong>consistencia eventual</strong> y por protocolos explícitos de compensación. Cualquier presentación que muestre microservicios sin nombrar esta pérdida está incompleta.</p>
+
+  <div class="callout warn">
+    <strong>Precisión conceptual.</strong> Es incorrecto decir que «los microservicios cumplen ACID». Cada servicio mantiene ACID <em>dentro de su propia base</em>; entre servicios rige BASE (<em>Basically Available, Soft state, Eventually consistent</em>). El teorema de CAP y el modelo BASE describen el régimen entre servicios; ACID describe el régimen interno. Confundirlos produce diseños que prometen atomicidad que el sistema no puede entregar.
+  </div>
+</div></section>
+
+<section id="saga"><div class="wrap">
+  <h2>4. Saga: la transacción que ya no existe</h2>
+  <p class="sec-note">Simulador de una compra en un marketplace. Ejecute el flujo feliz, luego inyecte una falla y observe las compensaciones.</p>
+
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">Simulador de saga — checkout de marketplace</span>
+      <div style="display:flex;gap:8px">
+        <button class="tab" data-saga="orq" aria-selected="true">Orquestación</button>
+        <button class="tab" data-saga="cor" aria-selected="false">Coreografía</button>
+      </div>
+    </div>
+    <div class="grid2" style="gap:22px">
+      <div>
+        <figure><svg id="saga-svg" viewBox="0 0 440 320" role="img" aria-label="Diagrama de la saga de checkout"></svg></figure>
+        <div class="ctrl">
+          <button class="act" id="saga-run">Ejecutar flujo feliz</button>
+          <button class="act ghost" id="saga-fail">Fallar en Envíos</button>
+          <button class="act ghost" id="saga-reset">Reiniciar</button>
+        </div>
+      </div>
+      <div>
+        <div class="log" id="saga-log" aria-live="polite"><div>Listo. Seleccione un escenario.</div></div>
+        <p id="saga-note" style="font-size:14.5px;color:var(--muted);margin-top:12px"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:24px">
+    <div class="card">
+      <h4>Orquestación</h4>
+      <ul class="tight" style="font-size:15px;margin-bottom:0">
+        <li>Un coordinador explícito conoce el estado de la saga y decide el siguiente paso.</li>
+        <li>Ventaja: el flujo es legible, depurable y auditable en un solo lugar.</li>
+        <li>Costo: el orquestador acopla a los participantes y puede convertirse en el nuevo cuello de botella organizacional.</li>
+        <li>Usar cuando el proceso tiene reglas de negocio propias y debe ser auditado por un regulador.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Coreografía</h4>
+      <ul class="tight" style="font-size:15px;margin-bottom:0">
+        <li>Cada servicio reacciona a eventos y publica los suyos. No hay coordinador.</li>
+        <li>Ventaja: acoplamiento mínimo; agregar un participante no exige modificar a nadie.</li>
+        <li>Costo: nadie conoce el estado global. Sin trazabilidad distribuida, diagnosticar una saga trabada es forense.</li>
+        <li>Usar cuando los pasos son reacciones independientes y el orden no es una regla de negocio.</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="outbox"><div class="wrap">
+  <h2>5. Outbox: el bug que aparece una vez cada diez mil pedidos</h2>
+  <p class="sec-note">El problema de la doble escritura es el error más caro y menos visible del estilo.</p>
+
+  <div class="grid2">
+    <div>
+      <h4>El código que parece correcto</h4>
+<pre><span class="c">// Anti-patrón: dos sistemas, sin transacción común</span>
+<span class="k">@Transactional</span>
+<span class="k">public void</span> confirmar(OrderId id) {
+    Order order = repository.findById(id);
+    order.confirm();
+    repository.save(order);        <span class="c">// commit en PostgreSQL</span>
+    events.publish(<span class="k">new</span> OrderConfirmed(id));  <span class="c">// envío a Kafka</span>
+}</pre>
+      <p style="font-size:15px">Si el proceso muere entre el <em>commit</em> y el <em>publish</em>, el pedido queda confirmado y nadie lo despacha. Si el <em>publish</em> ocurre y el <em>commit</em> se revierte, se despacha un pedido que no existe. La anotación <code>@Transactional</code> no cubre al broker: son dos recursos distintos.</p>
+    </div>
+    <div>
+      <h4>Outbox: una sola transacción, dos efectos</h4>
+<pre><span class="c">// El evento se escribe en la misma base, misma transacción</span>
+<span class="k">@Transactional</span>
+<span class="k">public void</span> confirmar(OrderId id) {
+    Order order = repository.findById(id);
+    order.confirm();
+    repository.save(order);
+    outbox.save(OutboxMessage.from(<span class="k">new</span> OrderConfirmed(id)));
+}
+<span class="c">// Un relay (Debezium o poller) lee la tabla outbox
+// y publica en Kafka con garantía at-least-once.</span></pre>
+      <ul class="tight" style="font-size:15px">
+        <li>La atomicidad se recupera porque ambos escritos van a la misma base.</li>
+        <li>La entrega es <em>al menos una vez</em>: los consumidores <strong>deben</strong> ser idempotentes.</li>
+        <li>Costo: latencia adicional del relay y una tabla más que operar y purgar.</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="prerrequisitos"><div class="wrap">
+  <h2>6. Prerrequisitos organizacionales</h2>
+  <p class="sec-note">Marque lo que su organización ya tiene. La lista no es de tecnologías deseables: es de condiciones sin las cuales el estilo produce más daño que beneficio.</p>
+
+  <div class="lab">
+    <div class="checklist" id="ms-check">
+      <label><input type="checkbox"> <span><strong>Despliegue automatizado por servicio.</strong> Si desplegar exige un ticket y una ventana nocturna, la autonomía es teórica.</span></label>
+      <label><input type="checkbox"> <span><strong>Observabilidad distribuida.</strong> Trazas correlacionadas (OpenTelemetry), métricas y logs centralizados. Sin ellas, cada incidente es una investigación manual entre equipos.</span></label>
+      <label><input type="checkbox"> <span><strong>Pruebas de contrato automatizadas.</strong> Sin ellas, la promesa de despliegue independiente se verifica en producción.</span></label>
+      <label><input type="checkbox"> <span><strong>Equipos con propiedad de punta a punta.</strong> Un equipo que construye y opera («you build it, you run it»), no un equipo de desarrollo y otro de soporte.</span></label>
+      <label><input type="checkbox"> <span><strong>Dominio comprendido.</strong> Los límites correctos exigen conocer el negocio. Partir un dominio que aún no se entiende produce costuras que habrá que rehacer.</span></label>
+      <label><input type="checkbox"> <span><strong>Plataforma de ejecución.</strong> Orquestación de contenedores, gestión de configuración y secretos, descubrimiento de servicios.</span></label>
+      <label><input type="checkbox"> <span><strong>Presupuesto de operación sostenido.</strong> Más servicios significa más pipelines, más alertas, más turnos de guardia. Ese costo es permanente, no de proyecto.</span></label>
+    </div>
+    <div class="verdict" id="ms-verdict">Marque los elementos disponibles para obtener un veredicto.</div>
+  </div>
+
+  <div class="callout">
+    <strong>Recomendación fundamentada.</strong> Para un sistema nuevo, empiece con un <strong>monolito modular</strong>: módulos con límites explícitos, sin dependencias cruzadas y con esquemas de datos separados dentro de la misma base. Cuando un módulo demuestre una razón concreta para independizarse —escala desigual, cadencia de cambio distinta, o un equipo dedicado— extráigalo. La extracción desde un monolito bien modularizado es un trabajo de semanas; encontrar los límites correctos desde cero, sin conocer el dominio, cuesta años de refactorización distribuida.
+  </div>
+</div></section>
+
+<section id="decision"><div class="wrap">
+  <h2>7. Marco de decisión y atributos de calidad</h2>
+  <div class="yesno">
+    <div>
+      <h4 style="color:var(--ok)">Adopte microservicios cuando</h4>
+      <ul class="tight">
+        <li>Distintas partes del sistema tienen perfiles de carga muy distintos y escalarlas juntas es caro.</li>
+        <li>Varios equipos se bloquean mutuamente en el mismo repositorio y en la misma ventana de despliegue.</li>
+        <li>Un subdominio cambia con una frecuencia radicalmente distinta al resto.</li>
+        <li>Se necesita aislar el radio de impacto de una falla en una capacidad crítica.</li>
+        <li>Existe una razón técnica genuina para heterogeneidad tecnológica (por ejemplo, un motor de inferencia en Python junto a un core transaccional en Java).</li>
+      </ul>
+    </div>
+    <div>
+      <h4 style="color:var(--warn)">Evite microservicios cuando</h4>
+      <ul class="tight">
+        <li>El sistema es nuevo y el dominio todavía no está estabilizado.</li>
+        <li>Un solo equipo construye y opera todo el producto.</li>
+        <li>La consistencia inmediata entre entidades es un requisito de negocio no negociable.</li>
+        <li>No existe automatización de despliegue ni observabilidad distribuida.</li>
+        <li>El sistema es principalmente CRUD sobre un modelo de datos altamente relacionado.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Impacto sobre atributos de calidad</h3>
+  <table>
+    <thead><tr><th style="width:26%">Atributo</th><th style="width:14%">Efecto</th><th>Razón arquitectónica</th></tr></thead>
+    <tbody>
+      <tr><th>Escalabilidad selectiva</th><td style="color:var(--ok)">↑↑ mejora</td><td>Se replica solo el servicio saturado, no el sistema completo.</td></tr>
+      <tr><th>Modificabilidad y despliegue</th><td style="color:var(--ok)">↑↑ mejora</td><td>Cada equipo libera en su propia cadencia si los contratos se respetan.</td></tr>
+      <tr><th>Aislamiento de fallas</th><td style="color:var(--ok)">↑ mejora</td><td>Con <em>circuit breakers</em> y degradación, la caída de un servicio no propaga. Sin ellos, empeora.</td></tr>
+      <tr><th>Consistencia de datos</th><td style="color:var(--warn)">↓↓ empeora</td><td>Se pierde la transacción ACID entre servicios; se sustituye por sagas y compensaciones.</td></tr>
+      <tr><th>Latencia de operaciones compuestas</th><td style="color:var(--warn)">↓ empeora</td><td>Llamadas de red donde antes había invocaciones en memoria.</td></tr>
+      <tr><th>Testabilidad de extremo a extremo</th><td style="color:var(--warn)">↓↓ empeora</td><td>Reproducir un escenario completo exige orquestar múltiples servicios y sus datos.</td></tr>
+      <tr><th>Costo operativo</th><td style="color:var(--warn)">↓↓ empeora</td><td>Multiplica pipelines, entornos, alertas, certificados y superficie de seguridad.</td></tr>
+    </tbody>
+  </table>
+  <p class="tagline" style="margin-top:28px">La pregunta correcta no es si adoptar microservicios, sino qué parte del sistema tiene hoy una razón medible para independizarse.</p>
+</div></section>
+
+</main>
+
+<footer><div class="wrap">
+  <span>Diplomado en Diseño y Arquitectura de Software · Universidad de La Sabana</span>
+  <span>Material de apoyo — Módulo 4</span>
+</div></footer>
+
+<script>
+var NS='http://www.w3.org/2000/svg';
+function el(tag,attrs,text){var n=document.createElementNS(NS,tag);for(var k in attrs)n.setAttribute(k,attrs[k]);if(text!=null)n.textContent=text;return n;}
+
+/* ---------- 2. Disponibilidad compuesta ---------- */
+(function(){
+  var rn=document.getElementById('ms-range-n'), ra=document.getElementById('ms-range-a');
+  var chain=document.getElementById('ms-chain');
+  function fmt(x,d){return x.toFixed(d).replace('.',',');}
+  function update(){
+    var n=+rn.value, a=+ra.value/100000;
+    var total=Math.pow(a,n);
+    var downH=(1-total)*8760;
+    document.getElementById('ms-n').textContent=n;
+    document.getElementById('ms-a').textContent=fmt(a*100,3);
+    document.getElementById('ms-total').textContent=fmt(total*100,2)+'%';
+    document.getElementById('ms-down').textContent= downH>=48? fmt(downH/24,1)+' d' : fmt(downH,1)+' h';
+    var nines = total>=1?9:-Math.log10(1-total);
+    document.getElementById('ms-nines').textContent=fmt(Math.min(nines,9),1);
+    while(chain.firstChild)chain.removeChild(chain.firstChild);
+    var show=Math.min(n,10), w=860/show, bw=Math.min(w-14,90);
+    for(var i=0;i<show;i++){
+      var x=20+i*w;
+      chain.appendChild(el('rect',{x:x,y:38,width:bw,height:44,rx:6,fill:'#1F2D4E'}));
+      chain.appendChild(el('text',{x:x+bw/2,y:65,'text-anchor':'middle',fill:'#fff','font-size':'12','font-family':'-apple-system,sans-serif'},'S'+(i+1)));
+      if(i<show-1) chain.appendChild(el('line',{x1:x+bw,y1:60,x2:x+w,y2:60,stroke:'#C9722F','stroke-width':2}));
+    }
+    if(n>show) chain.appendChild(el('text',{x:880,y:65,'text-anchor':'end',fill:'#5A6480','font-size':'13','font-family':'-apple-system,sans-serif'},'+'+(n-show)));
+  }
+  rn.addEventListener('input',update); ra.addEventListener('input',update); update();
+})();
+
+/* ---------- 3. Base compartida vs privada ---------- */
+(function(){
+  var svg=document.getElementById('db-svg'), txt=document.getElementById('db-text');
+  var tabs=document.querySelectorAll('[data-db]');
+  var names=['Pedidos','Pagos','Envíos'];
+  function draw(mode){
+    while(svg.firstChild)svg.removeChild(svg.firstChild);
+    var xs=[120,420,720];
+    xs.forEach(function(x,i){
+      svg.appendChild(el('rect',{x:x-85,y:30,width:170,height:52,rx:7,fill:'#1F2D4E'}));
+      svg.appendChild(el('text',{x:x,y:62,'text-anchor':'middle',fill:'#fff','font-size':'14','font-family':'-apple-system,sans-serif'},names[i]));
+    });
+    if(mode==='shared'){
+      svg.appendChild(el('ellipse',{cx:420,cy:210,rx:170,ry:34,fill:'#9A3B2C'}));
+      svg.appendChild(el('text',{x:420,y:216,'text-anchor':'middle',fill:'#fff','font-size':'14','font-family':'-apple-system,sans-serif'},'Base de datos única'));
+      xs.forEach(function(x){svg.appendChild(el('line',{x1:x,y1:84,x2:420,y2:178,stroke:'#9A3B2C','stroke-width':2}));});
+      svg.appendChild(el('text',{x:420,y:275,'text-anchor':'middle',fill:'#9A3B2C','font-size':'14','font-family':'Georgia,serif'},'Un ALTER TABLE rompe tres despliegues'));
+    } else {
+      xs.forEach(function(x,i){
+        svg.appendChild(el('ellipse',{cx:x,cy:200,rx:78,ry:28,fill:'#2F6F4F'}));
+        svg.appendChild(el('text',{x:x,y:206,'text-anchor':'middle',fill:'#fff','font-size':'13','font-family':'-apple-system,sans-serif'},'BD '+names[i]));
+        svg.appendChild(el('line',{x1:x,y1:84,x2:x,y2:172,stroke:'#2F6F4F','stroke-width':2}));
+      });
+      svg.appendChild(el('path',{d:'M205 56 L335 56',stroke:'#C9722F','stroke-width':2,fill:'none','stroke-dasharray':'6 4'}));
+      svg.appendChild(el('path',{d:'M505 56 L635 56',stroke:'#C9722F','stroke-width':2,fill:'none','stroke-dasharray':'6 4'}));
+      svg.appendChild(el('text',{x:420,y:275,'text-anchor':'middle',fill:'#2F6F4F','font-size':'14','font-family':'Georgia,serif'},'El dato solo se comparte a través del contrato'));
+    }
+  }
+  var copy={
+    shared:'<strong>Base compartida.</strong> Es el caso más común en migraciones incompletas. El código se partió en tres despliegues, pero las tres aplicaciones siguen leyendo y escribiendo las mismas tablas. Consecuencia: un cambio de esquema obliga a coordinar tres despliegues, cualquier equipo puede corromper datos de otro dominio, y no existe despliegue independiente. Se pagó todo el costo del estilo distribuido sin obtener su beneficio principal.',
+    private:'<strong>Datos privados.</strong> Cada servicio es dueño exclusivo de su esquema y expone su información solo a través de su contrato —API síncrona o eventos publicados. Consecuencia: el esquema evoluciona sin coordinación externa. El precio es real: se pierden los <em>joins</em> entre dominios y se acepta consistencia eventual. Se resuelve con composición en el llamador, con proyecciones de lectura mantenidas por eventos, o replanteando el límite si dos entidades resultan inseparables.'
+  };
+  tabs.forEach(function(t){
+    t.addEventListener('click',function(){
+      tabs.forEach(function(o){o.setAttribute('aria-selected','false');});
+      t.setAttribute('aria-selected','true');
+      draw(t.dataset.db); txt.innerHTML=copy[t.dataset.db];
+    });
+  });
+  draw('shared'); txt.innerHTML=copy.shared;
+})();
+
+/* ---------- 4. Simulador de saga ---------- */
+(function(){
+  var mode='orq', timer=null;
+  var svg=document.getElementById('saga-svg'), log=document.getElementById('saga-log'), note=document.getElementById('saga-note');
+  var steps=[
+    {n:'Pedidos', ok:'Pedido #48120 creado (estado PENDIENTE)', comp:'Pedido #48120 marcado CANCELADO'},
+    {n:'Pagos',   ok:'Autorización de $189.900 aprobada',       comp:'Reverso de autorización emitido'},
+    {n:'Inventario', ok:'2 unidades reservadas en bodega BOG-1', comp:'Reserva liberada'},
+    {n:'Envíos',  ok:'Guía de transporte generada',              comp:'—'}
+  ];
+  function draw(active,failed,compensated){
+    while(svg.firstChild)svg.removeChild(svg.firstChild);
+    var y0=mode==='orq'?76:40;
+    if(mode==='orq'){
+      svg.appendChild(el('rect',{x:130,y:8,width:180,height:40,rx:6,fill:'#C9722F'}));
+      svg.appendChild(el('text',{x:220,y:33,'text-anchor':'middle',fill:'#fff','font-size':'13','font-family':'-apple-system,sans-serif'},'Orquestador de Checkout'));
+    }
+    steps.forEach(function(s,i){
+      var y=y0+i*(mode==='orq'?60:66);
+      var fill='#EDF0F6', stroke='#1F2D4E', tc='#1F2D4E';
+      if(compensated.indexOf(i)>-1){fill='#F3E2D4';stroke='#C9722F';tc='#7C441A';}
+      if(active===i){fill='#1F2D4E';tc='#fff';}
+      if(failed===i){fill='#9A3B2C';stroke='#9A3B2C';tc='#fff';}
+      svg.appendChild(el('rect',{x:110,y:y,width:220,height:42,rx:6,fill:fill,stroke:stroke,'stroke-width':1.6}));
+      svg.appendChild(el('text',{x:220,y:y+26,'text-anchor':'middle',fill:tc,'font-size':'13.5','font-family':'-apple-system,sans-serif'},s.n));
+      if(mode==='orq'){
+        svg.appendChild(el('path',{d:'M100 28 L100 '+(y+21)+' L104 '+(y+21),stroke:'#C9722F','stroke-width':1.4,fill:'none','stroke-dasharray':'4 3'}));
+      } else if(i<steps.length-1){
+        svg.appendChild(el('line',{x1:220,y1:y+42,x2:220,y2:y+66,stroke:'#1F2D4E','stroke-width':1.6}));
+        svg.appendChild(el('text',{x:232,y:y+58,fill:'#5A6480','font-size':'11','font-family':'ui-monospace,monospace'},'evento'));
+      }
+    });
+  }
+  function put(cls,msg){var d=document.createElement('div');if(cls)d.className=cls;d.textContent=msg;log.appendChild(d);log.scrollTop=log.scrollHeight;}
+  function clear(){log.innerHTML='';}
+  function stop(){if(timer){clearTimeout(timer);timer=null;}}
+
+  function run(failAt){
+    stop(); clear();
+    var comp=[];
+    var i=0;
+    note.textContent = mode==='orq'
+      ? 'En orquestación el coordinador conoce el estado global: puede reintentar, decidir el orden de las compensaciones y exponer el estado de la saga para auditoría.'
+      : 'En coreografía nadie conoce el estado global: la compensación depende de que cada servicio escuche el evento de falla y sepa qué deshacer. La trazabilidad distribuida deja de ser opcional.';
+    function step(){
+      if(i===failAt){
+        draw(null,i,comp);
+        put('ko','✕ '+steps[i].n+': sin capacidad de despacho para la zona destino');
+        var j=i-1;
+        (function undo(){
+          if(j<0){ put('comp','↺ Saga finalizada en estado COMPENSADA. El cliente ve: «no pudimos completar tu compra».'); draw(null,null,comp); return; }
+          comp.push(j); draw(null,failAt,comp.slice());
+          put('comp','↺ Compensación en '+steps[j].n+': '+steps[j].comp);
+          j--; timer=setTimeout(undo,850);
+        })();
+        return;
+      }
+      draw(i,null,comp);
+      put('okl','✓ '+steps[i].n+': '+steps[i].ok);
+      i++;
+      if(i<steps.length){ timer=setTimeout(step,850); }
+      else { put('okl','✓ Saga completada. Consistencia alcanzada de forma eventual, no atómica.'); draw(null,null,comp); }
+    }
+    timer=setTimeout(step,250);
+  }
+  document.getElementById('saga-run').addEventListener('click',function(){run(-1);});
+  document.getElementById('saga-fail').addEventListener('click',function(){run(3);});
+  document.getElementById('saga-reset').addEventListener('click',function(){stop();clear();put('','Listo. Seleccione un escenario.');draw(null,null,[]);note.textContent='';});
+  document.querySelectorAll('[data-saga]').forEach(function(t){
+    t.addEventListener('click',function(){
+      document.querySelectorAll('[data-saga]').forEach(function(o){o.setAttribute('aria-selected','false');});
+      t.setAttribute('aria-selected','true'); mode=t.dataset.saga==='orq'?'orq':'cor';
+      stop();clear();put('','Modo: '+(mode==='orq'?'orquestación':'coreografía')+'. Ejecute un escenario.');draw(null,null,[]);
+    });
+  });
+  draw(null,null,[]);
+})();
+
+/* ---------- 6. Checklist de prerrequisitos ---------- */
+(function(){
+  var box=document.getElementById('ms-check'), out=document.getElementById('ms-verdict');
+  var inputs=box.querySelectorAll('input');
+  function update(){
+    var n=0; inputs.forEach(function(i){if(i.checked)n++;});
+    var t=inputs.length;
+    var msg;
+    if(n<=2) msg='<strong>'+n+' de '+t+'.</strong> Adoptar microservicios en estas condiciones traslada complejidad al sistema sin capacidad de gestionarla. Recomendación: monolito modular y construcción de la plataforma antes de partir nada.';
+    else if(n<=4) msg='<strong>'+n+' de '+t+'.</strong> Base parcial. Es viable extraer <em>un</em> servicio con una justificación medible y usarlo para construir lo que falta, antes de comprometerse con el estilo completo.';
+    else if(n<t) msg='<strong>'+n+' de '+t+'.</strong> Condiciones favorables. Identifique explícitamente el elemento faltante y páguelo antes de que el número de servicios crezca: los vacíos de plataforma se vuelven exponencialmente más caros con cada servicio nuevo.';
+    else msg='<strong>'+n+' de '+t+'.</strong> La organización puede sostener el estilo. La pregunta pasa a ser de diseño: ¿cuáles son los límites correctos y qué evidencia los respalda?';
+    out.innerHTML=msg;
+  }
+  inputs.forEach(function(i){i.addEventListener('change',update);});
+})();
+</script>
+</body>
+</html>

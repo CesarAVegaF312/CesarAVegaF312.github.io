@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Integración Continua | Diseño y Arquitectura de Software</title>
+<style>
+  :root{
+    --navy:#1F2D4E; --navy-ink:#16223c; --terra:#C9722F; --terra-soft:#F3E2D4;
+    --paper:#FFFFFF; --surface:#F1F3F7; --line:#D5DAE4; --muted:#5A6480;
+    --ok:#2F6F4F; --ok-soft:#E1EFE7; --warn:#9A3B2C; --warn-soft:#F7E4E0;
+    --mono: ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+    --sans: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --serif: Georgia,"Iowan Old Style","Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--surface);color:var(--navy-ink);font-family:var(--sans);font-size:16.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+  @media(max-width:520px){.wrap{padding:0 16px}}
+  header.hero{background:var(--navy);color:#fff;padding:64px 0 56px;position:relative;overflow:hidden}
+  header.hero .wrap{position:relative;z-index:2}
+  .kicker{font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;color:#9FB0D4;margin:0 0 14px}
+  h1{font-family:var(--serif);font-weight:700;font-size:clamp(32px,5.2vw,54px);line-height:1.08;margin:0 0 18px;max-width:21ch}
+  .lede{font-size:19px;color:#D6DEF0;max-width:64ch;margin:0}
+  .heroart{position:absolute;inset:0;opacity:.16;z-index:1}
+  .heroart circle{animation:pulse 3.2s ease-in-out infinite}
+  .heroart circle:nth-child(2n){animation-delay:.8s}
+  .heroart circle:nth-child(3n){animation-delay:1.6s}
+  @keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
+  main{padding:0 0 90px}
+  section{padding:54px 0 10px}
+  section + section{border-top:1px solid var(--line)}
+  h2{font-family:var(--serif);font-size:clamp(25px,3.4vw,34px);line-height:1.15;margin:0 0 6px;color:var(--navy)}
+  .sec-note{color:var(--muted);margin:0 0 26px;max-width:70ch;font-size:15.5px}
+  h3{font-size:18px;margin:30px 0 10px;color:var(--navy)}
+  h4{font-size:15px;margin:0 0 10px;color:var(--navy)}
+  p{max-width:74ch}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:22px 24px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+  .grid2 > *, .grid3 > *{min-width:0}
+  figure{margin:0}
+  svg{display:block;width:100%;height:auto}
+  .lab{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:24px}
+  @media(max-width:520px){.lab{padding:16px}}
+  .lab-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .lab-title{font-weight:700;font-size:17px;color:var(--navy)}
+  .tabs{display:flex;flex-wrap:wrap;gap:8px}
+  button{font:inherit;cursor:pointer}
+  button.tab{font-size:14px;padding:7px 13px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--muted)}
+  button.tab[aria-selected=true]{background:var(--navy);border-color:var(--navy);color:#fff}
+  button.go{font-size:14.5px;font-weight:600;padding:9px 18px;border-radius:8px;border:0;background:var(--terra);color:#fff}
+  button.go:disabled{opacity:.55;cursor:default}
+  button.ghost{font-size:14px;padding:8px 14px;border-radius:8px;background:#fff;border:1px solid var(--line);color:var(--navy)}
+  button:focus-visible{outline:3px solid var(--terra);outline-offset:2px}
+  table{border-collapse:collapse;width:100%;font-size:15px;background:var(--paper)}
+  .tablewrap{overflow-x:auto}
+  th,td{border:1px solid var(--line);padding:10px 12px;vertical-align:top;text-align:left}
+  th{background:var(--navy);color:#fff;font-weight:600}
+  tbody th{background:#EDF0F6;color:var(--navy)}
+  code{font-family:var(--mono);font-size:13.5px;background:#EDF0F6;padding:1px 5px;border-radius:3px;overflow-wrap:anywhere}
+  pre{font-family:var(--mono);font-size:13px;background:var(--navy-ink);color:#E6ECF8;padding:16px 18px;border-radius:8px;overflow:auto;line-height:1.55;margin:0}
+  pre .c{color:#8FA6CE} pre .k{color:#E7B36B} pre .g{color:#8ED9A9} pre .r{color:#F0A08E}
+  .callout{border-left:4px solid var(--terra);background:var(--terra-soft);padding:16px 20px;border-radius:0 8px 8px 0;margin:22px 0}
+  .callout strong{color:#7C441A}
+  .callout.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .callout.warn strong{color:var(--warn)}
+  ul.tight{margin:8px 0;padding-left:20px}
+  ul.tight li{margin:5px 0}
+  .tagline{font-family:var(--serif);font-style:italic;font-size:19px;color:var(--navy);max-width:62ch}
+  footer{background:var(--navy);color:#B9C6E2;padding:34px 0;font-size:14px}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  footer a{color:#fff}
+  .pill{font-family:var(--mono);font-size:11.5px;padding:3px 8px;border-radius:4px;background:#EDF0F6;color:var(--navy);border:1px solid var(--line)}
+  .muted{color:var(--muted)}
+  .small{font-size:14px}
+
+  /* Lab 1: integración tardía */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+  @media(max-width:640px){.stats{grid-template-columns:1fr}}
+  .stat{background:var(--surface);border-radius:8px;padding:12px 14px}
+  .stat b{display:block;font-family:var(--serif);font-size:26px;color:var(--navy);line-height:1.1}
+  .stat span{font-size:13.5px;color:var(--muted)}
+  .pop{transform-box:fill-box;transform-origin:center;animation:popin .45s cubic-bezier(.2,1.4,.4,1) both}
+  @keyframes popin{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+  .fadein{animation:fadein .35s ease both}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+
+  /* Lab 2: pipeline */
+  .pipe{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+  @media(max-width:900px){.pipe{grid-template-columns:1fr}}
+  pre.yaml{font-size:12.5px;padding:12px 0;max-height:520px}
+  pre.yaml .ln{display:block;padding:0 16px;border-left:3px solid transparent;transition:background .25s,border-color .25s}
+  pre.yaml .ln.on{background:rgba(201,114,47,.28);border-left-color:var(--terra)}
+  pre.yaml .ln.bad{background:rgba(240,160,142,.22);border-left-color:#F0A08E}
+  ol.steps{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  ol.steps li{display:flex;align-items:center;gap:10px;padding:9px 14px;font-size:14.5px;border-top:1px solid var(--line);background:#fff;transition:background .25s}
+  ol.steps li:first-child{border-top:0}
+  ol.steps li.run{background:var(--terra-soft)}
+  ol.steps li.fail{background:var(--warn-soft)}
+  ol.steps .ico{width:20px;height:20px;flex:none;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff}
+  ol.steps li.run .ico{border-color:var(--terra);border-top-color:transparent;animation:spin .8s linear infinite}
+  ol.steps li.ok .ico{background:var(--ok);border-color:var(--ok)}
+  ol.steps li.fail .ico{background:var(--warn);border-color:var(--warn)}
+  ol.steps .t{margin-left:auto;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  ol.steps .tag{font-family:var(--mono);font-size:11px;color:#7C441A;background:var(--terra-soft);border-radius:4px;padding:1px 6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  pre.console{margin-top:12px;min-height:150px;max-height:260px;font-size:12.5px}
+  pre.console .e{color:#F0A08E} pre.console .w{color:#E7B36B} pre.console .s{color:#8ED9A9} pre.console .d{color:#8FA6CE}
+  .banner{margin-top:12px;border-radius:8px;padding:12px 16px;font-weight:600;display:none}
+  .banner.ok{display:block;background:var(--ok-soft);color:var(--ok);border:1px solid #B9D8C6}
+  .banner.fail{display:block;background:var(--warn-soft);color:var(--warn);border:1px solid #E7C2BA}
+  .banner .why{display:block;font-weight:400;color:var(--navy-ink);font-size:14.5px;margin-top:4px}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+
+  /* Lab 3: quiz */
+  .quiz{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  @media(max-width:820px){.quiz{grid-template-columns:1fr}}
+  .q{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;min-width:0}
+  .q p{margin:0 0 10px;font-size:15px}
+  .q .opts{display:flex;flex-wrap:wrap;gap:6px}
+  .q .opts button{font-size:13px;padding:6px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--navy)}
+  .q .opts button.right{background:var(--ok);border-color:var(--ok);color:#fff}
+  .q .opts button.wrong{background:var(--warn);border-color:var(--warn);color:#fff}
+  .q .ans{display:none;margin-top:10px;font-size:14px;border-top:1px dashed var(--line);padding-top:10px}
+  .q.done .ans{display:block;animation:fadein .35s ease both}
+  .score{font-family:var(--mono);font-size:13px;color:var(--muted)}
+
+  /* Lab 4: rama protegida */
+  .toggles{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin-bottom:12px}
+  .toggle{display:flex;gap:6px;align-items:center;font-size:14.5px}
+  .shake{animation:shake .5s}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+  #pr-msg{margin-top:12px;min-height:52px}
+
+  /* Lab 5: versiones */
+  .vers{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+
+  /* Lab 6: crecimiento del pipeline */
+  .grow-text{margin-top:14px}
+  .job{transition:opacity .4s}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg class="heroart" viewBox="0 0 1200 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g fill="none" stroke="#7E93C4" stroke-width="2"><path d="M60 210 H1140"/><path d="M300 210 C360 210 360 120 420 120 H700 C760 120 760 210 820 210"/></g>
+    <g fill="#7E93C4">
+      <circle cx="120" cy="210" r="11"/><circle cx="220" cy="210" r="11"/><circle cx="300" cy="210" r="11"/>
+      <circle cx="480" cy="120" r="11"/><circle cx="580" cy="120" r="11"/><circle cx="680" cy="120" r="11"/>
+      <circle cx="820" cy="210" r="14"/><circle cx="940" cy="210" r="11"/><circle cx="1060" cy="210" r="11"/>
+    </g>
+  </svg>
+  <div class="wrap">
+    <p class="kicker">Diseño y Arquitectura de Software · Módulo 6</p>
+    <h1>Integración Continua (CI)</h1>
+    <p class="lede">Práctica de integrar los cambios de código con frecuencia y verificar cada integración de forma automática con un build y pruebas. En este material se trabaja con GitHub Actions sobre el proyecto del taller.</p>
+  </div>
+</header>
+
+<main>
+
+<!-- 1 ─────────────────────────────────────────────── -->
+<section id="problema"><div class="wrap">
+  <h2>1. ¿Por qué integrar con frecuencia?</h2>
+  <p class="sec-note">Ejemplo: tres desarrolladores trabajan en paralelo durante dos semanas. Lo que cambia es cada cuánto integran su trabajo.</p>
+
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">¿Cada cuánto integra el equipo?</span>
+      <div class="tabs" role="tablist" aria-label="Frecuencia de integración">
+        <button class="tab" data-freq="1" aria-selected="true">Cada día</button>
+        <button class="tab" data-freq="3" aria-selected="false">Cada 3 días</button>
+        <button class="tab" data-freq="7" aria-selected="false">Cada semana</button>
+        <button class="tab" data-freq="14" aria-selected="false">Al final</button>
+      </div>
+    </div>
+    <figure><svg id="int-svg" viewBox="0 0 760 250" role="img" aria-label="Línea de tiempo de 14 días con los cambios de tres personas y los momentos de integración"></svg></figure>
+    <div class="stats">
+      <div class="stat"><b id="st-n">14</b><span>integraciones en 14 días</span></div>
+      <div class="stat"><b id="st-cost">14</b><span>esfuerzo total de integración (unidades relativas)</span></div>
+      <div class="stat"><b id="st-bug">0 días</b><span>tarda en descubrirse el defecto que Luis introdujo el día 2</span></div>
+    </div>
+    <p class="small muted" style="margin:12px 0 0">Modelo ilustrativo, no una medición: si cada persona cambia algo cada día, al integrar después de <em>n</em> días cada cambio puede chocar con los <em>n</em> cambios de los demás, así que el esfuerzo de cada integración crece aproximadamente con <em>n</em>².</p>
+  </div>
+
+  <div class="callout">
+    <strong>Conclusión.</strong> El esfuerzo de integrar crece más rápido que el tiempo que se pasa sin integrar. Por eso conviene integrar cambios pequeños con frecuencia.
+  </div>
+
+  <h3>Prácticas de CI</h3>
+  <div class="grid3">
+    <div class="card"><h4>Integrar a diario</h4><p class="small" style="margin:0">Cada persona integra su trabajo a la rama principal al menos una vez al día. Las ramas que duran semanas generan el mismo problema de la integración tardía.</p></div>
+    <div class="card"><h4>Build automático y autoverificable</h4><p class="small" style="margin:0">Un solo comando compila y ejecuta todas las pruebas, y el resultado (éxito o fallo) no requiere interpretación manual.</p></div>
+    <div class="card"><h4>Corregir el build roto de inmediato</h4><p class="small" style="margin:0">Cuando el pipeline queda en rojo, el equipo lo corrige antes de integrar nuevos cambios.</p></div>
+  </div>
+</div></section>
+
+<!-- 2 ─────────────────────────────────────────────── -->
+<section id="pipeline"><div class="wrap">
+  <h2>2. Flujo de trabajo de un pipeline</h2>
+  <p class="sec-note">Workflow del taller (<code>DAYS-Integracion_continua</code>). Seleccione un escenario y ejecute el pipeline; los mensajes del log son los que genera Maven en cada caso.</p>
+
+  <div class="lab">
+    <div class="controls">
+      <div class="tabs" role="tablist" aria-label="Escenario">
+        <button class="tab" data-scn="verde" aria-selected="true">Todo bien</button>
+        <button class="tab" data-scn="compila" aria-selected="false">Prueba sin implementación</button>
+        <button class="tab" data-scn="prueba" aria-selected="false">Cambia una regla de negocio</button>
+        <button class="tab" data-scn="cobertura" aria-selected="false">Método sin pruebas</button>
+      </div>
+      <button class="go" id="run-btn">▶ git push</button>
+    </div>
+    <p id="scn-desc" class="small" style="margin:0 0 14px"></p>
+    <div class="pipe">
+      <div><pre class="yaml" id="yaml" aria-label="Archivo .github/workflows/ci.yml"></pre></div>
+      <div>
+        <ol class="steps" id="steps" aria-live="polite"></ol>
+        <pre class="console" id="console" aria-label="Log de la ejecución"></pre>
+        <div class="banner" id="banner" role="status"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:22px">
+    <div class="card"><h4>Pasos con <code>if: always()</code></h4><p class="small" style="margin:0">Por defecto, cuando un paso falla GitHub omite los siguientes. Con <code>if: always()</code> el resumen y los reportes se ejecutan de todas formas, porque son los que permiten entender el fallo. Observe además que cuando falla la <strong>compilación</strong> no hay nada que publicar, mientras que cuando fallan las <strong>pruebas</strong> sí quedan los reportes de Surefire.</p></div>
+    <div class="card"><h4>Umbral de cobertura en el <code>pom.xml</code></h4><p class="small" style="margin:0">El pipeline solo ejecuta <code>mvn verify</code>. La regla del 80% vive en el plugin de JaCoCo, así que el mismo comando da el mismo resultado en el portátil de cualquier integrante y en el servidor. Si el pipeline ejecuta pasos que no se pueden reproducir en local, los fallos son más difíciles de depurar.</p></div>
+  </div>
+</div></section>
+
+<!-- 3 ─────────────────────────────────────────────── -->
+<section id="rojos"><div class="wrap">
+  <h2>3. Tipos de fallo en el pipeline</h2>
+  <p class="sec-note">Prediga qué hace el pipeline con cada cambio antes de ver la respuesta.</p>
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">Ejercicio: ¿qué resultado da el pipeline?</span>
+      <span class="score" id="score">0 de 6 respondidas</span>
+    </div>
+    <div class="quiz" id="quiz"></div>
+  </div>
+  <div class="callout warn">
+    <strong>Limitación de la cobertura.</strong> JaCoCo mide qué líneas se ejecutaron durante las pruebas, pero no si las pruebas verifican el resultado. Una prueba sin aserciones aumenta la cobertura sin detectar errores. El umbral del 80% ayuda, pero no reemplaza la revisión de código.
+  </div>
+</div></section>
+
+<!-- 4 ─────────────────────────────────────────────── -->
+<section id="proteccion"><div class="wrap">
+  <h2>4. Protección de la rama main</h2>
+  <p class="sec-note">Con un <em>ruleset</em>, GitHub exige que el pipeline esté en verde antes de permitir el merge de un Pull Request.</p>
+  <div class="lab">
+    <div class="toggles">
+      <div class="toggle"><span>Ruleset en <code>main</code>:</span>
+        <button class="tab" data-rule="on" aria-selected="true">Activo</button>
+        <button class="tab" data-rule="off" aria-selected="false">Inactivo</button></div>
+      <div class="toggle"><span>CI del Pull Request:</span>
+        <button class="tab" data-ci="ok" aria-selected="true">Verde</button>
+        <button class="tab" data-ci="fail" aria-selected="false">Rojo</button></div>
+      <button class="go" id="merge-btn">Intentar merge</button>
+    </div>
+    <figure><svg id="pr-svg" viewBox="0 0 760 210" role="img" aria-label="Rama de trabajo, Pull Request con su verificación de CI y merge hacia main"></svg></figure>
+    <div id="pr-msg" aria-live="polite"></div>
+  </div>
+  <p style="margin-top:20px">En el taller: <strong>Settings → Rules → Rulesets → New branch ruleset</strong>, con <em>Require a pull request before merging</em> y <em>Require status checks to pass</em> sobre el check <code>Build, pruebas y cobertura</code>.</p>
+</div></section>
+
+<!-- 5 ─────────────────────────────────────────────── -->
+<section id="versiones"><div class="wrap">
+  <h2>5. Versiones de las actions</h2>
+  <p class="sec-note">Las <em>actions</em> se ejecutan sobre un runtime de Node.js. Cuando GitHub retira una versión de Node.js, los workflows que usan versiones antiguas de las actions dejan de estar soportados.</p>
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">¿Qué pasa hoy con <code>actions/checkout</code>…?</span>
+      <div class="vers tabs" role="tablist" aria-label="Versión de la action">
+        <button class="tab" data-ver="v2" aria-selected="false">@v2</button>
+        <button class="tab" data-ver="v4" aria-selected="false">@v4</button>
+        <button class="tab" data-ver="v7" aria-selected="true">@v7</button>
+      </div>
+    </div>
+    <figure><svg id="ver-svg" viewBox="0 0 760 200" role="img" aria-label="Línea de tiempo de los runtimes de Node.js en GitHub Actions entre 2023 y 2026"></svg></figure>
+    <p class="small muted" style="margin:6px 0 0">Hitos (○): 14 ago 2023, Node 12 retirado · 3 jun 2024, se fuerza Node 20 sobre <code>node16</code> · 16 jun 2026, Node 24 por defecto · 23 sep 2026, Node 20 retirado.</p>
+    <div id="ver-text" style="margin-top:10px"></div>
+  </div>
+  <div class="callout">
+    <strong>Recomendaciones.</strong> <code>actionlint</code> marca <code>@v2</code> como obsoleta, pero no <code>@v4</code>, así que el linter no basta para saber si una versión sigue vigente. Antes de copiar un workflow de un tutorial, revise la página de <em>releases</em> de cada action.
+  </div>
+  <p class="small muted">Fuentes: GitHub Changelog, <a href="https://github.blog/changelog/2023-07-17-github-actions-removal-of-node12-from-the-actions-runner/">retiro de Node 12 (2023-07-17)</a>, <a href="https://github.blog/changelog/2024-03-06-github-actions-all-actions-will-run-on-node20-instead-of-node16-by-default/">Node 16 → Node 20 (2024-03-06)</a>, <a href="https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/">deprecación de Node 20 (2025-09-19)</a> y <a href="https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/">retiro de Node 20 (2026-09-23)</a>.</p>
+</div></section>
+
+<!-- 6 ─────────────────────────────────────────────── -->
+<section id="herramientas"><div class="wrap">
+  <h2>6. Herramientas de CI</h2>
+  <p class="sec-note">Equivalencias entre GitHub Actions, GitLab CI y Jenkins.</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Concepto</th><th>GitHub Actions</th><th>GitLab CI</th><th>Jenkins</th></tr></thead>
+    <tbody>
+      <tr><th>Dónde se define</th><td><code>.github/workflows/*.yml</code></td><td><code>.gitlab-ci.yml</code> en la raíz</td><td><code>Jenkinsfile</code> (pipeline declarativo)</td></tr>
+      <tr><th>Qué lo dispara</th><td><code>on: push / pull_request</code></td><td>push, merge request, <code>rules:</code></td><td>webhook, <code>triggers</code>, polling</td></tr>
+      <tr><th>Dónde corre</th><td>runner (<code>runs-on</code>)</td><td>runner + <code>image:</code> Docker</td><td>controller + agents</td></tr>
+      <tr><th>Unidad de trabajo</th><td>job → steps</td><td>stage → jobs → script</td><td>stage → steps</td></tr>
+      <tr><th>Reutilización</th><td>actions (<code>uses:</code>)</td><td><code>include:</code>, templates, components</td><td>plugins, shared libraries</td></tr>
+      <tr><th>Evidencias</th><td><code>upload-artifact</code>, step summary</td><td><code>artifacts:</code>, <code>reports: junit</code></td><td><code>archiveArtifacts</code>, <code>junit</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout warn">
+    <strong>Detalles a tener en cuenta.</strong> En GitLab, si el job no declara <code>image:</code>, en los runners compartidos de GitLab.com corre sobre una imagen de Ruby sin Java ni Maven. En Jenkins, la terminología actual es <em>controller</em> y <em>agent</em>; «master/slave» es la nomenclatura antigua que aún aparece en documentación vieja.
+  </div>
+</div></section>
+
+<!-- 7 ─────────────────────────────────────────────── -->
+<section id="proyecto"><div class="wrap">
+  <h2>7. Pipeline del Proyecto 3</h2>
+  <p class="sec-note">La entrega 3 exige un pipeline completo (secciones 2 a 5 del enunciado). Se construye por etapas sobre el mismo workflow.</p>
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">Etapas del pipeline</span>
+      <div class="tabs" role="tablist" aria-label="Etapa">
+        <button class="tab" data-grow="0" aria-selected="true">1 · CI</button>
+        <button class="tab" data-grow="1" aria-selected="false">2 · Docker</button>
+        <button class="tab" data-grow="2" aria-selected="false">3 · DevSecOps</button>
+        <button class="tab" data-grow="3" aria-selected="false">4 · CD</button>
+      </div>
+    </div>
+    <figure><svg id="grow-svg" viewBox="0 0 760 300" role="img" aria-label="Jobs del pipeline del proyecto y sus dependencias"></svg></figure>
+    <div class="grow-text" id="grow-text"></div>
+  </div>
+
+  <h3>Checklist para el repositorio del proyecto</h3>
+  <ul class="tight">
+    <li>Un workflow que corra en cada push y en cada Pull Request.</li>
+    <li>Build, pruebas unitarias y pruebas de integración del Corte 2 ejecutándose en el pipeline.</li>
+    <li>Umbral de cobertura del dominio de al menos 70 % que haga fallar el build.</li>
+    <li>Reportes de pruebas y cobertura publicados como artefactos, y caché de dependencias.</li>
+    <li><code>main</code> protegida: Pull Request, revisión de otro integrante y checks en verde.</li>
+    <li>Badge de estado del pipeline en el README.</li>
+  </ul>
+  <p>Guía paso a paso: <a href="https://github.com/CesarAVegaF312/DAYS-Integracion_continua">github.com/CesarAVegaF312/DAYS-Integracion_continua</a>.</p>
+</div></section>
+
+</main>
+
+<footer><div class="wrap">
+  <span>Diseño y Arquitectura de Software · Universidad de La Sabana</span>
+  <span>Material de apoyo — Módulo 6</span>
+</div></footer>
+
+<script>
+(function(){
+  'use strict';
+  var NS = 'http://www.w3.org/2000/svg';
+  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var FONT = '-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif';
+
+  function el(tag, attrs, text){
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function clear(node){ while (node.firstChild) node.removeChild(node.firstChild); }
+  function sleep(ms){ return new Promise(function(r){ setTimeout(r, REDUCED ? 0 : ms); }); }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function tabGroup(selector, attr, onSelect){
+    var tabs = document.querySelectorAll(selector);
+    tabs.forEach(function(t){
+      t.addEventListener('click', function(){
+        tabs.forEach(function(o){ o.setAttribute('aria-selected', 'false'); });
+        t.setAttribute('aria-selected', 'true');
+        onSelect(t.getAttribute(attr));
+      });
+    });
+  }
+
+  /* ── Lab 1: integración tardía ─────────────────────────── */
+  (function(){
+    var svg = document.getElementById('int-svg');
+    var devs = [{n:'Ana', c:'#1F2D4E', y:46}, {n:'Luis', c:'#C9722F', y:96}, {n:'Sofía', c:'#5A6480', y:146}];
+    var X0 = 96, X1 = 736, DAYS = 14;
+    function x(d){ return X0 + (d - 1) * (X1 - X0) / (DAYS - 1); }
+    var token = 0;
+
+    function points(freq){
+      var p = [];
+      for (var d = freq; d < DAYS; d += freq) p.push(d);
+      p.push(DAYS);
+      return p;
+    }
+
+    async function draw(freq){
+      var my = ++token;
+      clear(svg);
+      for (var d = 1; d <= DAYS; d++){
+        svg.appendChild(el('text', {x:x(d), y:236, 'text-anchor':'middle', 'font-size':11, fill:'#5A6480', 'font-family':FONT}, d));
+      }
+      devs.forEach(function(dv){
+        svg.appendChild(el('text', {x:10, y:dv.y + 4, 'font-size':13, fill:dv.c, 'font-weight':600, 'font-family':FONT}, dv.n));
+        svg.appendChild(el('line', {x1:X0 - 12, y1:dv.y, x2:X1 + 12, y2:dv.y, stroke:'#D5DAE4', 'stroke-width':2}));
+      });
+      var integ = points(freq), last = 0, total = 0;
+      for (d = 1; d <= DAYS; d++){
+        if (my !== token) return;
+        devs.forEach(function(dv){
+          svg.appendChild(el('circle', {cx:x(d), cy:dv.y, r:6, fill:dv.c, 'class':'pop'}));
+        });
+        if (d === 2){
+          var g = el('g', {'class':'pop'});
+          g.appendChild(el('circle', {cx:x(2), cy:96, r:11, fill:'none', stroke:'#9A3B2C', 'stroke-width':2.5}));
+          g.appendChild(el('text', {x:x(2), y:80, 'text-anchor':'middle', 'font-size':11, fill:'#9A3B2C', 'font-family':FONT}, 'defecto'));
+          svg.appendChild(g);
+        }
+        if (integ.indexOf(d) >= 0){
+          var n = d - last; last = d; total += n * n;
+          var r = Math.min(26, 6 + Math.sqrt(n * n) * 1.6);
+          svg.appendChild(el('line', {x1:x(d), y1:28, x2:x(d), y2:170, stroke:'#2F6F4F', 'stroke-width':2, 'stroke-dasharray':'5 4', 'class':'fadein'}));
+          var b = el('g', {'class':'pop'});
+          b.appendChild(el('circle', {cx:x(d), cy:198, r:r, fill: n > 3 ? '#9A3B2C' : '#2F6F4F', opacity:.9}));
+          b.appendChild(el('text', {x:x(d), y:202, 'text-anchor':'middle', 'font-size':11.5, fill:'#fff', 'font-weight':700, 'font-family':FONT}, n * n));
+          svg.appendChild(b);
+        }
+        await sleep(110);
+      }
+      if (my !== token) return;
+      var found = integ.filter(function(p){ return p >= 2; })[0];
+      var arrow = el('path', {d:'M' + x(2) + ' 108 Q ' + ((x(2) + x(found)) / 2) + ' 128 ' + x(found) + ' 108', fill:'none', stroke:'#9A3B2C', 'stroke-width':1.6, 'class':'fadein'});
+      if (found !== 2) svg.appendChild(arrow);
+      document.getElementById('st-n').textContent = integ.length;
+      document.getElementById('st-cost').textContent = total;
+      var delay = found - 2;
+      document.getElementById('st-bug').textContent = delay === 0 ? 'el mismo día' : delay + (delay === 1 ? ' día' : ' días');
+    }
+    tabGroup('[data-freq]', 'data-freq', function(v){ draw(+v); });
+    draw(1);
+  })();
+
+  /* ── Lab 2: pipeline ───────────────────────────────────── */
+  (function(){
+    // [texto, paso] ; paso: 't' = disparador, número = índice del paso
+    var Y = [
+      ['<span class="k">name</span>: CI', null],
+      ['<span class="k">on</span>:', 't'],
+      ['  <span class="k">push</span>:', 't'],
+      ['  <span class="k">pull_request</span>:', 't'],
+      ['    <span class="k">branches</span>: [main]', 't'],
+      ['<span class="k">permissions</span>:', null],
+      ['  <span class="k">contents</span>: read', null],
+      ['<span class="k">jobs</span>:', null],
+      ['  <span class="k">build-y-pruebas</span>:', null],
+      ['    <span class="k">name</span>: Build, pruebas y cobertura', null],
+      ['    <span class="k">runs-on</span>: ubuntu-latest', 0],
+      ['    <span class="k">steps</span>:', null],
+      ['      - <span class="k">name</span>: Descargar el código', 1],
+      ['        <span class="k">uses</span>: <span class="g">actions/checkout@v7</span>', 1],
+      ['      - <span class="k">name</span>: Instalar Java 17', 2],
+      ['        <span class="k">uses</span>: <span class="g">actions/setup-java@v6</span>', 2],
+      ['        <span class="k">with</span>:', 2],
+      ['          <span class="k">distribution</span>: temurin', 2],
+      ['          <span class="k">java-version</span>: <span class="g">\'17\'</span>', 2],
+      ['          <span class="k">cache</span>: maven', 2],
+      ['      - <span class="k">name</span>: Compilar, probar y verificar cobertura', 3],
+      ['        <span class="k">run</span>: <span class="g">mvn -B verify</span>', 3],
+      ['      - <span class="k">name</span>: Resumen de cobertura', 4],
+      ['        <span class="k">if</span>: <span class="r">always()</span>', 4],
+      ['        <span class="k">run</span>: <span class="c"># lee jacoco.csv → $GITHUB_STEP_SUMMARY</span>', 4],
+      ['      - <span class="k">name</span>: Publicar reportes', 5],
+      ['        <span class="k">if</span>: <span class="r">always()</span>', 5],
+      ['        <span class="k">uses</span>: <span class="g">actions/upload-artifact@v7</span>', 5],
+      ['        <span class="k">with</span>:', 5],
+      ['          <span class="k">path</span>: target/surefire-reports/, target/site/jacoco/', 5]
+    ];
+    var STEPS = [
+      {n:'Set up job', t:'1s', ms:500},
+      {n:'Descargar el código', t:'1s', ms:500},
+      {n:'Instalar Java 17 (con caché)', t:'0s', ms:450},
+      {n:'Compilar, probar y verificar cobertura', t:'14s', ms:1900},
+      {n:'Resumen de cobertura', t:'0s', ms:350, always:true},
+      {n:'Publicar reportes', t:'1s', ms:450, always:true}
+    ];
+    var COMMON = [
+      ['<span class="d">Runner: ubuntu-latest (máquina virtual nueva y limpia)</span>'],
+      null,
+      ['Java 17 (Temurin) instalado', '<span class="d">Cache restored from key: setup-java-Linux-x64-maven-…</span>'],
+      null, null, null
+    ];
+    var S = {
+      verde: {
+        desc: 'Un cambio pequeño y correcto: las pruebas pasan y la cobertura está sobre el umbral.',
+        commit: 'Primer pipeline',
+        fail: -1,
+        mvn: ['[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0',
+              '[INFO] All coverage checks have been met.',
+              '<span class="s">[INFO] BUILD SUCCESS</span>'],
+        summary: 'Cobertura de líneas: 100.0% (16 de 16)',
+        artifact: ['<span class="s">Artifact reportes has been successfully uploaded</span>'],
+        banner: ['ok', '✓ Pipeline en verde en 20 s', 'El cambio se puede integrar a main.']
+      },
+      compila: {
+        desc: 'Fase Red de TDD: se empuja NotaNecesariaTest antes de que exista el método notaNecesariaTercerCorte().',
+        commit: 'Agrega NotaNecesariaTest (Red)',
+        fail: 3,
+        mvn: ['<span class="e">[ERROR] COMPILATION ERROR :</span>',
+              '<span class="e">[ERROR] …/NotaNecesariaTest.java:[22,43] cannot find symbol</span>',
+              '<span class="e">  symbol:   method notaNecesariaTercerCorte(double,double)</span>',
+              '<span class="e">[INFO] BUILD FAILURE</span>',
+              '<span class="e">Error: Process completed with exit code 1.</span>'],
+        summary: 'No se generó reporte de cobertura (¿falló la compilación o las pruebas?)',
+        artifact: ['<span class="w">Warning: No files were found with the provided path. No artifacts will be uploaded.</span>'],
+        banner: ['fail', '✗ Rojo por compilación', 'Las pruebas no se ejecutaron. En TDD este es el rojo esperado; el siguiente paso es implementar el método.']
+      },
+      prueba: {
+        desc: 'Se cambia el peso del tercer corte de 0.40 a 0.35.',
+        commit: 'Cambia peso del corte 3',
+        fail: 3,
+        mvn: ['<span class="e">[ERROR] Tests run: 11, Failures: 4, Errors: 0, Skipped: 0</span>',
+              '<span class="e">[ERROR]   CalculadoraNotasTest.calculaLaDefinitivaPonderada:25 expected: &lt;5.0&gt; but was: &lt;4.8&gt;</span>',
+              '<span class="e">[ERROR]   CalculadoraNotasTest.calculaLaDefinitivaPonderada:25 expected: &lt;3.1&gt; but was: &lt;3.0&gt;</span>',
+              '<span class="e">[INFO] BUILD FAILURE</span>',
+              '<span class="e">Error: Process completed with exit code 1.</span>'],
+        summary: 'No se generó reporte de cobertura (¿falló la compilación o las pruebas?)',
+        artifact: ['<span class="s">Artifact reportes has been successfully uploaded</span>', '<span class="d">(solo target/surefire-reports/: el detalle de las 4 pruebas fallidas)</span>'],
+        banner: ['fail', '✗ Rojo por pruebas fallidas', 'Las pruebas verifican la regla 30-30-40, así que el cambio se detecta antes de llegar a main.']
+      },
+      cobertura: {
+        desc: 'Se agrega el método concepto() con cuatro ramas y ninguna prueba nueva.',
+        commit: 'Agrega concepto() sin pruebas',
+        fail: 3,
+        mvn: ['[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0',
+              '<span class="w">[WARNING] Rule violated for bundle calculadora-notas: lines covered ratio is 0.74, but expected minimum is 0.80</span>',
+              '<span class="e">[INFO] BUILD FAILURE</span>',
+              '<span class="e">Error: Process completed with exit code 1.</span>'],
+        summary: 'Cobertura de líneas: 74.2% (23 de 31)',
+        artifact: ['<span class="s">Artifact reportes has been successfully uploaded</span>', '<span class="d">(el HTML de JaCoCo muestra en rojo las líneas sin probar)</span>'],
+        banner: ['fail', '✗ Rojo por cobertura, con todas las pruebas en verde', 'El código nuevo no tiene pruebas y la cobertura bajó a 74%, por debajo del umbral.']
+      }
+    };
+    var yamlEl = document.getElementById('yaml'), stepsEl = document.getElementById('steps'),
+        con = document.getElementById('console'), banner = document.getElementById('banner'),
+        btn = document.getElementById('run-btn'), desc = document.getElementById('scn-desc');
+    var current = 'verde', running = 0;
+
+    yamlEl.innerHTML = Y.map(function(l, i){ return '<span class="ln" data-i="' + i + '">' + l[0] + '</span>'; }).join('');
+    var lines = yamlEl.querySelectorAll('.ln');
+
+    function highlight(step, cls){
+      lines.forEach(function(ln, i){
+        ln.classList.remove('on', 'bad');
+        if (step !== null && Y[i][1] === step) ln.classList.add(cls || 'on');
+      });
+    }
+    function reset(){
+      running++;
+      stepsEl.innerHTML = STEPS.map(function(s){
+        return '<li><span class="ico"></span><span>' + s.n + (s.always ? ' <span class="tag">always()</span>' : '') + '</span><span class="t"></span></li>';
+      }).join('');
+      con.innerHTML = '<span class="d">$ git push  →  presione ▶ para ejecutar</span>';
+      banner.className = 'banner'; banner.innerHTML = '';
+      highlight(null);
+      desc.textContent = S[current].desc;
+      btn.disabled = false;
+    }
+    function log(html){ con.innerHTML += '\n' + html; con.scrollTop = con.scrollHeight; }
+
+    async function run(){
+      var my = ++running, sc = S[current];
+      btn.disabled = true;
+      var items = stepsEl.querySelectorAll('li');
+      items.forEach(function(li){ li.className = ''; li.querySelector('.ico').textContent = ''; li.querySelector('.t').textContent = ''; });
+      con.innerHTML = '<span class="d">$ git commit -m "' + esc(sc.commit) + '" &amp;&amp; git push</span>';
+      banner.className = 'banner';
+      highlight('t');
+      log('<span class="d">Evento push recibido → se encola el workflow CI</span>');
+      await sleep(700);
+      var failed = false;
+      for (var i = 0; i < STEPS.length; i++){
+        if (my !== running) return;
+        var st = STEPS[i], li = items[i];
+        if (failed && !st.always){ li.className = 'skip'; continue; }
+        li.className = 'run';
+        highlight(i);
+        log('<span class="k">▸ ' + st.n + '</span>');
+        await sleep(st.ms);
+        if (my !== running) return;
+        var out = COMMON[i];
+        if (i === 1) out = ['HEAD is now at ' + (Math.random().toString(16).slice(2, 9)) + ' ' + esc(sc.commit)];
+        if (i === 3) out = sc.mvn;
+        if (i === 4) out = ['<span class="d">Escrito en el resumen: </span>' + esc(sc.summary)];
+        if (i === 5) out = sc.artifact;
+        for (var j = 0; j < out.length; j++){ log(out[j]); await sleep(120); }
+        if (i === sc.fail){
+          li.className = 'fail'; li.querySelector('.ico').textContent = '✕';
+          highlight(i, 'bad'); failed = true;
+        } else {
+          li.className = 'ok'; li.querySelector('.ico').textContent = '✓';
+        }
+        li.querySelector('.t').textContent = st.t;
+      }
+      if (my !== running) return;
+      highlight(null);
+      banner.className = 'banner ' + sc.banner[0];
+      banner.innerHTML = sc.banner[1] + '<span class="why">' + sc.banner[2] + '</span>';
+      btn.disabled = false;
+    }
+    btn.addEventListener('click', run);
+    tabGroup('[data-scn]', 'data-scn', function(v){ current = v; reset(); });
+    reset();
+  })();
+
+  /* ── Lab 3: quiz ───────────────────────────────────────── */
+  (function(){
+    var OPTS = ['Verde', 'Rojo: no compila', 'Rojo: pruebas', 'Rojo: cobertura'];
+    var Q = [
+      {q:'Se cambia el peso del tercer corte de 0.40 a 0.35 en <code>CalculadoraNotas</code>.', a:2,
+       why:'Cuatro casos de <code>calculaLaDefinitivaPonderada</code> fallan (por ejemplo, <code>expected: &lt;5.0&gt; but was: &lt;4.8&gt;</code>). Las pruebas son la especificación ejecutable de la regla 30-30-40.'},
+      {q:'Se empuja <code>NotaNecesariaTest</code> antes de crear el método que prueba.', a:1,
+       why:'<code>cannot find symbol</code>: en Java una prueba que llama a un método inexistente no compila. Es la fase Red de TDD.'},
+      {q:'Se agrega el método <code>concepto()</code> sin escribirle pruebas.', a:3,
+       why:'Las 16 pruebas pasan, pero la cobertura cae a 0.74 y la regla de JaCoCo exige 0.80.'},
+      {q:'Se agrega una prueba que llama a <code>concepto()</code> con 4.6, 4.2, 3.5 y 2.0… sin ningún <code>assert</code>.', a:0,
+       why:'Verde, y la cobertura vuelve a subir porque todas las ramas se ejecutaron, aunque la prueba no verifica ningún resultado.'},
+      {q:'Se renombra <code>calcularDefinitiva</code> a <code>definitiva</code> en la clase, pero no en las pruebas.', a:1,
+       why:'Las pruebas siguen llamando al nombre viejo: error de compilación. Para evitarlo se usa la refactorización «Renombrar» del IDE, que actualiza todas las referencias.'},
+      {q:'Solo se edita el <code>README.md</code>.', a:0,
+       why:'Verde: el pipeline corre igual (el disparador no filtra rutas) y no hay cambios de código. Con <code>paths-ignore</code> se podría evitar la ejecución en cambios de documentación.'}
+    ];
+    var box = document.getElementById('quiz'), score = document.getElementById('score'), answered = 0, right = 0;
+    Q.forEach(function(item){
+      var d = document.createElement('div'); d.className = 'q';
+      d.innerHTML = '<p>' + item.q + '</p><div class="opts">' +
+        OPTS.map(function(o, i){ return '<button type="button" data-o="' + i + '">' + o + '</button>'; }).join('') +
+        '</div><div class="ans">' + item.why + '</div>';
+      d.querySelectorAll('button').forEach(function(b){
+        b.addEventListener('click', function(){
+          if (d.classList.contains('done')) return;
+          var o = +b.getAttribute('data-o');
+          d.classList.add('done'); answered++;
+          if (o === item.a){ right++; b.classList.add('right'); }
+          else { b.classList.add('wrong'); d.querySelector('[data-o="' + item.a + '"]').classList.add('right'); }
+          score.textContent = answered + ' de ' + Q.length + ' respondidas · ' + right + ' correctas';
+        });
+      });
+      box.appendChild(d);
+    });
+  })();
+
+  /* ── Lab 4: rama protegida ─────────────────────────────── */
+  (function(){
+    var svg = document.getElementById('pr-svg'), msg = document.getElementById('pr-msg'), btn = document.getElementById('merge-btn');
+    var rule = 'on', ci = 'ok', token = 0;
+    var GREEN = '#2F6F4F', RED = '#9A3B2C', NAVY = '#1F2D4E', TERRA = '#C9722F';
+
+    function base(mainColor){
+      clear(svg);
+      svg.appendChild(el('text', {x:24, y:52, 'font-size':13, 'font-weight':600, fill:NAVY, 'font-family':FONT}, 'main'));
+      svg.appendChild(el('line', {x1:70, y1:48, x2:740, y2:48, stroke:mainColor || NAVY, 'stroke-width':4, id:'mainline'}));
+      [110, 190, 270].forEach(function(cx){ svg.appendChild(el('circle', {cx:cx, cy:48, r:9, fill:NAVY})); });
+      svg.appendChild(el('path', {d:'M270 48 C310 48 300 140 340 140 H520', stroke:TERRA, 'stroke-width':4, fill:'none'}));
+      [370, 440].forEach(function(cx){ svg.appendChild(el('circle', {cx:cx, cy:140, r:9, fill:TERRA})); });
+      svg.appendChild(el('text', {x:330, y:178, 'font-size':12.5, fill:TERRA, 'font-family':FONT}, 'feature/nota-necesaria'));
+      var pr = el('g', {});
+      pr.appendChild(el('rect', {x:478, y:118, width:112, height:44, rx:8, fill:'#fff', stroke:NAVY, 'stroke-width':1.5}));
+      pr.appendChild(el('text', {x:496, y:136, 'font-size':12.5, 'font-weight':600, fill:NAVY, 'font-family':FONT}, 'Pull Request'));
+      pr.appendChild(el('circle', {cx:500, cy:150, r:6, fill: ci === 'ok' ? GREEN : RED}));
+      pr.appendChild(el('text', {x:512, y:154, 'font-size':11.5, fill: ci === 'ok' ? GREEN : RED, 'font-family':FONT}, ci === 'ok' ? 'CI en verde' : 'CI en rojo'));
+      svg.appendChild(pr);
+      if (rule === 'on'){
+        var r = el('g', {});
+        r.appendChild(el('rect', {x:590, y:6, width:150, height:26, rx:13, fill:'#EDF0F6', stroke:'#D5DAE4'}));
+        r.appendChild(el('text', {x:665, y:23, 'text-anchor':'middle', 'font-size':11.5, fill:NAVY, 'font-family':FONT}, 'ruleset: proteger-main'));
+        svg.appendChild(r);
+      }
+    }
+    async function attempt(){
+      var my = ++token;
+      btn.disabled = true;
+      base();
+      msg.innerHTML = '';
+      var blocked = rule === 'on' && ci === 'fail';
+      var path = el('path', {d:'M590 140 C640 140 630 48 670 48', stroke: blocked ? RED : (ci === 'ok' ? GREEN : RED), 'stroke-width':4, fill:'none', 'stroke-dasharray':'200', 'stroke-dashoffset':'200'});
+      svg.appendChild(path);
+      var len = blocked ? 90 : 200;
+      for (var k = 0; k <= 20; k++){
+        if (my !== token) return;
+        path.setAttribute('stroke-dashoffset', 200 - len * k / 20);
+        await sleep(30);
+      }
+      if (blocked){
+        var lock = el('g', {});
+        lock.appendChild(el('rect', {x:617, y:100, width:26, height:22, rx:4, fill:RED}));
+        lock.appendChild(el('path', {d:'M623 100 v-7 a7 7 0 0 1 14 0 v7', stroke:RED, 'stroke-width':3.5, fill:'none'}));
+        svg.appendChild(lock);
+        svg.classList.remove('shake'); void svg.getBoundingClientRect(); svg.classList.add('shake');
+        msg.innerHTML = '<div class="banner fail" style="display:block">🔒 Merge bloqueado<span class="why">El check requerido <code>Build, pruebas y cobertura</code> falló. Hay que corregir la rama y empujar de nuevo; el PR se vuelve a verificar solo.</span></div>';
+      } else {
+        svg.appendChild(el('circle', {cx:670, cy:48, r:11, fill: ci === 'ok' ? GREEN : RED, 'class':'pop'}));
+        if (ci === 'fail'){
+          document.getElementById('mainline').setAttribute('stroke', RED);
+          msg.innerHTML = '<div class="banner fail" style="display:block">✗ Se integró, y main quedó rota<span class="why">Sin ruleset nada impide el merge. Ahora todo el que haga <code>git pull</code> hereda el error y el siguiente pipeline de cualquier persona falla por algo que no hizo.</span></div>';
+        } else if (rule === 'off'){
+          msg.innerHTML = '<div class="banner ok" style="display:block">✓ Se integró<span class="why">Se integró porque el CI estaba en verde, pero sin ruleset nada habría impedido integrar un cambio en rojo.</span></div>';
+        } else {
+          msg.innerHTML = '<div class="banner ok" style="display:block">✓ Se integró con el check en verde<span class="why">El ruleset verificó que el PR pasara el pipeline. main sigue en verde.</span></div>';
+        }
+      }
+      btn.disabled = false;
+    }
+    tabGroup('[data-rule]', 'data-rule', function(v){ rule = v; token++; btn.disabled = false; base(); msg.innerHTML = ''; });
+    tabGroup('[data-ci]', 'data-ci', function(v){ ci = v; token++; btn.disabled = false; base(); msg.innerHTML = ''; });
+    btn.addEventListener('click', attempt);
+    base();
+  })();
+
+  /* ── Lab 5: versiones ──────────────────────────────────── */
+  (function(){
+    var svg = document.getElementById('ver-svg'), txt = document.getElementById('ver-text');
+    var T0 = new Date('2023-01-01').getTime(), T1 = new Date('2027-01-01').getTime();
+    function xt(s){ return 40 + (new Date(s).getTime() - T0) / (T1 - T0) * 680; }
+    var BANDS = [
+      {rt:'node12', from:'2023-01-01', to:'2023-08-14', y:40},
+      {rt:'node16', from:'2023-01-01', to:'2024-06-03', y:76},
+      {rt:'node20', from:'2023-10-01', to:'2026-09-23', y:112},
+      {rt:'node24', from:'2025-08-01', to:'2027-01-01', y:148}
+    ];
+    var EVENTS = [
+      {d:'2023-08-14', t:'Node 12 retirado del runner'},
+      {d:'2024-06-03', t:'node16 → se fuerza node20'},
+      {d:'2026-06-16', t:'Node 24 por defecto'},
+      {d:'2026-09-23', t:'Node 20 retirado'}
+    ];
+    var VER = {
+      v2: {rt:'node12', ok:false, html:'<strong style="color:var(--warn)">No soportada.</strong> <code>checkout@v2</code> declara <code>node12</code>, retirado de los runners el 14 de agosto de 2023. <code>actionlint</code> la marca como error: <em>«the runner of “actions/checkout@v2” action is too old to run on GitHub Actions»</em>. Es la versión que traía el taller anterior, junto con Node 14 para la aplicación (fin de vida: 30 de abril de 2023).'},
+      v4: {rt:'node20', ok:false, html:'<strong style="color:var(--warn)">No soportada desde el 23 de septiembre de 2026.</strong> <code>checkout@v4</code> declara <code>node20</code>. Desde el 16 de junio de 2026 los runners usan Node 24 por defecto, y desde el 23 de septiembre Node 20 ya no existe ni con la variable <code>ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION</code>. Ojo: es la versión que aún muestran muchos tutoriales, y <code>actionlint</code> no la marca.'},
+      v7: {rt:'node24', ok:true, html:'<strong style="color:var(--ok)">Vigente.</strong> <code>checkout@v7</code> (como <code>@v5</code> y <code>@v6</code>) declara <code>node24</code>. Es la que usa el taller, junto con <code>setup-java@v6</code> y <code>upload-artifact@v7</code>.'}
+    };
+    var token = 0;
+    async function draw(v){
+      var my = ++token, info = VER[v];
+      clear(svg);
+      for (var yr = 2023; yr <= 2027; yr++){
+        var xx = xt(yr + '-01-01');
+        svg.appendChild(el('line', {x1:xx, y1:24, x2:xx, y2:168, stroke:'#E3E7EF'}));
+        svg.appendChild(el('text', {x:xx, y:186, 'text-anchor':'middle', 'font-size':11.5, fill:'#5A6480', 'font-family':FONT}, yr));
+      }
+      var today = xt('2026-10-05');
+      svg.appendChild(el('line', {x1:today, y1:20, x2:today, y2:170, stroke:'#C9722F', 'stroke-width':2, 'stroke-dasharray':'4 3'}));
+      svg.appendChild(el('text', {x:today - 4, y:16, 'text-anchor':'end', 'font-size':11, fill:'#C9722F', 'font-family':FONT}, 'hoy'));
+      for (var i = 0; i < BANDS.length; i++){
+        if (my !== token) return;
+        var b = BANDS[i], sel = b.rt === info.rt;
+        var w = xt(b.to) - xt(b.from);
+        var r = el('rect', {x:xt(b.from), y:b.y - 12, width:REDUCED ? w : 0, height:22, rx:5,
+          fill: sel ? (info.ok ? '#2F6F4F' : '#9A3B2C') : '#C8D0DE'});
+        svg.appendChild(r);
+        svg.appendChild(el('text', {x:xt(b.from) + 8, y:b.y + 4, 'font-size':12, 'font-weight':600, fill: sel ? '#fff' : '#1F2D4E', 'font-family':'ui-monospace,Consolas,monospace'}, b.rt));
+        if (!REDUCED){ for (var k = 1; k <= 12; k++){ if (my !== token) return; r.setAttribute('width', w * k / 12); await sleep(22); } }
+      }
+      EVENTS.forEach(function(e, j){
+        var c = el('circle', {cx:xt(e.d), cy:[40, 76, 148, 112][j], r:6, fill:'#fff', stroke:'#1F2D4E', 'stroke-width':2.5, 'class':'pop'});
+        c.appendChild(el('title', {}, e.d + ': ' + e.t));
+        svg.appendChild(c);
+      });
+      txt.innerHTML = info.html;
+    }
+    tabGroup('[data-ver]', 'data-ver', draw);
+    draw('v7');
+  })();
+
+  /* ── Lab 6: crecimiento del pipeline ───────────────────── */
+  (function(){
+    var svg = document.getElementById('grow-svg'), txt = document.getElementById('grow-text');
+    var JOBS = [
+      {id:'build', s:0, x:20, y:120, l1:'build-y-pruebas', l2:'compilar · pruebas · 80%'},
+      {id:'img', s:1, x:205, y:120, l1:'imagen', l2:'docker build (multi-stage)'},
+      {id:'gitleaks', s:2, x:20, y:30, l1:'secretos', l2:'Gitleaks'},
+      {id:'deps', s:2, x:20, y:210, l1:'dependencias', l2:'Dependency-Check / Snyk'},
+      {id:'sast', s:2, x:205, y:30, l1:'SAST', l2:'Semgrep / SonarQube'},
+      {id:'trivy', s:2, x:390, y:120, l1:'escaneo de imagen', l2:'Trivy'},
+      {id:'push', s:3, x:575, y:30, l1:'publicar', l2:'imagen → registry (GHCR)'},
+      {id:'deploy', s:3, x:575, y:120, l1:'desplegar', l2:'entorno accesible + humo'},
+      {id:'dast', s:3, x:575, y:210, l1:'prueba de carga', l2:'k6 con el SLO'}
+    ];
+    var EDGES = [['build','img'],['img','trivy'],['trivy','push'],['push','deploy'],['deploy','dast'],['gitleaks','img'],['sast','trivy'],['deps','img']];
+    var TEXT = [
+      '<strong>CI.</strong> Un solo job que compila, ejecuta las pruebas y exige el umbral de cobertura. Las demás etapas dependen de este job.',
+      '<strong>Docker.</strong> Un job <code>imagen</code> que depende (<code>needs:</code>) del build y construye la imagen con un Dockerfile multi-stage. Si las pruebas fallan, no se construye ninguna imagen.',
+      '<strong>DevSecOps.</strong> Escaneos en paralelo: secretos en el historial (Gitleaks), dependencias con vulnerabilidades conocidas (Dependency-Check o Snyk), análisis estático (Semgrep o SonarQube) y la imagen ya construida (Trivy). La entrega 3 los exige todos como quality gates.',
+      '<strong>CD.</strong> Solo si todo lo anterior pasa: publicar la imagen en un registry con la versión y el SHA, desplegarla en un entorno accesible, verificarla con una prueba de humo y ejecutar una prueba de carga corta con el SLO como umbral. Kubernetes, observabilidad y DAST con OWASP ZAP son bonificaciones de la entrega 3.'
+    ];
+    function byId(id){ return JOBS.filter(function(j){ return j.id === id; })[0]; }
+    var W = 170, H = 54, token = 0;
+    async function draw(stage){
+      var my = ++token;
+      clear(svg);
+      svg.appendChild(el('defs', {})).appendChild((function(){
+        var m = el('marker', {id:'ga', markerWidth:9, markerHeight:9, refX:7, refY:3, orient:'auto'});
+        m.appendChild(el('path', {d:'M0,0 L7,3 L0,6 Z', fill:'#5A6480'})); return m; })());
+      EDGES.forEach(function(e){
+        var a = byId(e[0]), b = byId(e[1]);
+        if (a.s > stage || b.s > stage) return;
+        var x1 = a.x + W, y1 = a.y + H / 2, x2 = b.x, y2 = b.y + H / 2;
+        if (a.x === b.x){ x1 = a.x + W / 2; y1 = a.y + H; x2 = b.x + W / 2; y2 = b.y; }
+        svg.appendChild(el('path', {d:'M' + x1 + ' ' + y1 + ' C' + (x1 + 14) + ' ' + y1 + ' ' + (x2 - 14) + ' ' + y2 + ' ' + x2 + ' ' + y2,
+          stroke:'#5A6480', 'stroke-width':1.5, fill:'none', 'marker-end':'url(#ga)', 'class':'fadein'}));
+      });
+      for (var i = 0; i < JOBS.length; i++){
+        var j = JOBS[i];
+        if (j.s > stage) continue;
+        if (my !== token) return;
+        var isNew = j.s === stage;
+        var g = el('g', {'class': isNew ? 'pop' : ''});
+        g.appendChild(el('rect', {x:j.x, y:j.y, width:W, height:H, rx:8, fill: isNew ? '#1F2D4E' : '#fff', stroke:'#1F2D4E', 'stroke-width':1.5}));
+        g.appendChild(el('text', {x:j.x + 12, y:j.y + 22, 'font-size':13, 'font-weight':600, fill: isNew ? '#fff' : '#1F2D4E', 'font-family':FONT}, j.l1));
+        g.appendChild(el('text', {x:j.x + 12, y:j.y + 41, 'font-size':11.5, fill: isNew ? '#B9C6E2' : '#5A6480', 'font-family':FONT}, j.l2));
+        svg.appendChild(g);
+        if (isNew) await sleep(140);
+      }
+      txt.innerHTML = TEXT[stage];
+    }
+    tabGroup('[data-grow]', 'data-grow', function(v){ draw(+v); });
+    draw(0);
+  })();
+})();
+</script>
+</body>
+</html>

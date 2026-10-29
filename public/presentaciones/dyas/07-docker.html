@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contenerización con Docker | Diseño y Arquitectura de Software</title>
+<style>
+  :root{
+    --navy:#1F2D4E; --navy-ink:#16223c; --terra:#C9722F; --terra-soft:#F3E2D4;
+    --paper:#FFFFFF; --surface:#F1F3F7; --line:#D5DAE4; --muted:#5A6480;
+    --ok:#2F6F4F; --warn:#9A3B2C;
+    --ok-soft:#E3F0E8; --warn-soft:#F7E4E0; --ice:#EDF0F6;
+    --mono: ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+    --sans: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --serif: Georgia,"Iowan Old Style","Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--surface);color:var(--navy-ink);font-family:var(--sans);font-size:16.5px;line-height:1.62;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+  header.hero{background:var(--navy);color:#fff;padding:64px 0 50px;position:relative;overflow:hidden}
+  header.hero .wrap{position:relative;z-index:2}
+  .kicker{font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;color:#9FB0D4;margin:0 0 14px}
+  h1{font-family:var(--serif);font-weight:700;font-size:clamp(34px,5.2vw,54px);line-height:1.08;margin:0 0 18px;max-width:21ch}
+  .lede{font-size:19px;color:#D6DEF0;max-width:64ch;margin:0}
+  .hexline{position:absolute;inset:0;opacity:.14;z-index:1}
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:28px 0 0;padding:0;list-style:none}
+  .toc a{display:inline-block;color:#D6DEF0;text-decoration:none;font-size:13.5px;border:1px solid rgba(255,255,255,.24);padding:3px 11px;border-radius:999px}
+  .toc a:hover,.toc a:focus-visible{background:rgba(255,255,255,.1);outline:none}
+  main{padding:0 0 90px}
+  section{padding:54px 0 10px}
+  section + section{border-top:1px solid var(--line)}
+  h2{font-family:var(--serif);font-size:clamp(25px,3.4vw,34px);line-height:1.15;margin:0 0 6px;color:var(--navy)}
+  .sec-note{color:var(--muted);margin:0 0 26px;max-width:70ch;font-size:15.5px}
+  h3{font-size:18px;margin:30px 0 10px;color:var(--navy)}
+  h4{font-size:15px;margin:0 0 10px;color:var(--navy)}
+  p{max-width:74ch}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:22px 24px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .grid2>*,.grid3>*{min-width:0}
+  @media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+  figure{margin:0}
+  .svgscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  @media(max-width:560px){.svgscroll svg{min-width:500px}}
+  svg{display:block;width:100%;height:auto}
+  .lab{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:24px}
+  .lab-head{display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;justify-content:space-between;margin-bottom:16px}
+  .lab-title{font-weight:700;font-size:17px;color:var(--navy)}
+  button{font:inherit;cursor:pointer}
+  button.tab{font-size:14.5px;padding:8px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--muted)}
+  button.tab[aria-selected=true]{background:var(--navy);border-color:var(--navy);color:#fff}
+  button:focus-visible{outline:3px solid var(--terra);outline-offset:2px}
+  button.act{font-size:14.5px;padding:8px 16px;border-radius:6px;background:var(--terra);border:1px solid var(--terra);color:#fff;font-weight:600}
+  button.act:hover{background:#B4631F}
+  button.ghost{font-size:13.5px;padding:7px 12px;border-radius:6px;background:#fff;border:1px solid var(--line);color:var(--navy);font-family:var(--mono)}
+  button.ghost:hover{border-color:var(--navy)}
+  button.ghost[aria-pressed=true]{background:var(--terra-soft);border-color:var(--terra);color:#7C441A}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap}
+  .ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px}
+  .ctrl .lbl{font-size:12.5px;color:var(--muted);font-family:var(--mono);margin-right:2px;letter-spacing:.03em}
+  table{border-collapse:collapse;width:100%;font-size:15px;background:var(--paper)}
+  .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  caption{text-align:left;color:var(--muted);font-size:14px;padding-bottom:8px}
+  th,td{border:1px solid var(--line);padding:10px 12px;vertical-align:top;text-align:left}
+  th{background:var(--navy);color:#fff;font-weight:600}
+  tbody th{background:var(--ice);color:var(--navy)}
+  code{font-family:var(--mono);font-size:13.5px;background:var(--ice);padding:1px 5px;border-radius:3px;overflow-wrap:anywhere}
+  pre{font-family:var(--mono);font-size:13px;background:var(--navy-ink);color:#E6ECF8;padding:16px 18px;border-radius:8px;overflow:auto;line-height:1.55;margin:0;max-width:100%}
+  pre code{background:none;padding:0;font-size:inherit;overflow-wrap:normal}
+  pre .c{color:#8FA6CE} pre .k{color:#E7B36B} pre .g{color:#8ED9A9} pre .r{color:#F0A08E}
+  pre .ln{display:block;border-radius:3px;transition:background-color .3s ease}
+  pre .ln.hit{background:rgba(142,217,169,.17)}
+  pre .ln.miss{background:rgba(201,114,47,.34)}
+  pre.log{font-size:12px;height:220px;margin-top:12px}
+  pre.log .new{animation:fadein .3s ease}
+  .callout{border-left:4px solid var(--terra);background:var(--terra-soft);padding:16px 20px;border-radius:0 8px 8px 0;margin:22px 0}
+  .callout strong{color:#7C441A}
+  .callout.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .callout.warn strong{color:var(--warn)}
+  .callout p{margin:8px 0 0}
+  ul.tight{margin:8px 0;padding-left:20px}
+  ul.tight li{margin:5px 0}
+  .yesno{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  @media(max-width:820px){.yesno{grid-template-columns:1fr}}
+  .yesno > div{padding:20px 22px;background:var(--paper);min-width:0}
+  .yesno > div + div{border-left:1px solid var(--line)}
+  @media(max-width:820px){.yesno > div + div{border-left:0;border-top:1px solid var(--line)}}
+  footer{background:var(--navy);color:#B9C6E2;padding:34px 0;font-size:14px}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .pill{font-family:var(--mono);font-size:11.5px;padding:3px 8px;border-radius:4px;background:var(--ice);color:var(--navy);border:1px solid var(--line)}
+  .out{font-size:15.5px;margin-top:14px;min-height:3.2em}
+  .out p{margin:6px 0}
+  .small{font-size:13.5px;color:var(--muted)}
+  .verified{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:2px 7px;border-radius:4px;background:var(--ok-soft);color:var(--ok);border:1px solid #B9D8C5;vertical-align:middle}
+  .inferred{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:2px 7px;border-radius:4px;background:var(--terra-soft);color:#7C441A;border:1px solid #E5C3A6;vertical-align:middle}
+
+  /* Capas */
+  .lstack{display:flex;flex-direction:column-reverse;gap:6px;min-height:190px;justify-content:flex-start}
+  .layer{position:relative;overflow:hidden;display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-left:5px solid var(--line);border-radius:6px;background:#fff;font-family:var(--mono);font-size:12.5px;opacity:0;transform:translateY(-14px);transition:opacity .35s ease,transform .35s ease,border-color .3s}
+  .layer.in{opacity:1;transform:none}
+  .layer .txt{position:relative;z-index:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .layer .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--terra-soft);z-index:0}
+  .layer.cached{border-left-color:var(--ok)}
+  .layer.run{border-left-color:var(--terra)}
+  .layer.base{background:var(--ice)}
+  .badge{position:relative;z-index:1;font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0;background:var(--ice);color:var(--muted)}
+  .badge.ok{background:var(--ok-soft);color:var(--ok)}
+  .badge.run{background:var(--terra);color:#fff}
+  .badge.bad{background:var(--warn-soft);color:var(--warn)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-family:var(--mono);font-size:12px;padding:3px 8px;border-radius:4px;border:1px solid var(--line);background:#fff;color:var(--navy);transition:opacity .4s ease,transform .4s ease,background-color .3s}
+  .chip.bad{background:var(--warn-soft);border-color:#E2B4AA;color:var(--warn)}
+  .chip.ok{background:var(--ok-soft);border-color:#B9D8C5;color:var(--ok)}
+  .chip.off{opacity:.45;text-decoration:line-through}
+  .chip.pop{animation:pop .45s ease}
+  .metric{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+  .metric > div{flex:1 1 140px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:#fff}
+  .metric b{display:block;font-family:var(--serif);font-size:22px;color:var(--navy);line-height:1.2}
+  .metric span{font-size:12.5px;color:var(--muted)}
+
+  /* VM vs contenedor */
+  .vstack{display:flex;flex-direction:column;gap:6px;min-height:250px;justify-content:flex-end}
+  .vrow{padding:9px 12px;border-radius:6px;text-align:center;font-size:14px;color:#fff;opacity:0;transform:translateY(16px);transition:opacity .4s ease,transform .4s ease}
+  .vrow.in{opacity:1;transform:none}
+  .vrow.hw{background:#5A6480}
+  .vrow.os{background:var(--navy)}
+  .vrow.kern{background:#3B4C74;box-shadow:inset 0 0 0 2px var(--terra)}
+  .vrow.eng{background:var(--terra)}
+  .vrow.wsl{background:#7E93C4;color:var(--navy-ink)}
+  .vcols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:0;background:none}
+  .vcol{display:flex;flex-direction:column;gap:4px;border:1px dashed var(--line);border-radius:8px;padding:6px}
+  .vcol div{font-size:12.5px;border-radius:5px;padding:6px 4px;text-align:center;line-height:1.3}
+  .vcol .app{background:var(--terra-soft);color:#7C441A;border:1px solid #E5C3A6}
+  .vcol .lib{background:var(--ice);color:var(--navy)}
+  .vcol .gk{background:#3B4C74;color:#fff}
+  .vcap{font-size:12px;color:var(--muted);text-align:center;margin-top:2px;font-family:var(--mono)}
+
+  /* multi-stage */
+  .stages{display:grid;grid-template-columns:1fr 46px 1fr;gap:8px;align-items:stretch}
+  .stagebox{border:2px solid var(--navy);border-radius:10px;padding:12px;background:#fff;transition:opacity .5s ease,border-color .4s,filter .5s}
+  .stagebox h4{font-size:14px;margin:0 0 8px}
+  .stagebox .chips{gap:5px}
+  .stagebox.discard{opacity:.4;border-style:dashed;filter:grayscale(1)}
+  .stagebox.hidden{display:none}
+  .arrowcol{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--terra);text-align:center}
+  .arrowcol svg{width:46px}
+  @media(max-width:560px){.stages{grid-template-columns:1fr}.arrowcol{transform:rotate(90deg);height:46px}}
+  .sizebar{height:16px;background:var(--ice);border-radius:4px;overflow:hidden;margin:4px 0 2px}
+  .sizebar i{display:block;height:100%;width:0;background:var(--navy);transition:width .9s ease}
+  .sizebar.unk i{background:repeating-linear-gradient(45deg,#C7CEDD 0 8px,#E2E6EF 8px 16px)}
+
+  /* lifecycle */
+  .cmdgrid{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  .boxes{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  @media(max-width:560px){.boxes{grid-template-columns:1fr}}
+  .boxes > div{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:#fff;min-height:90px;transition:background-color .3s,opacity .3s}
+  .boxes h4{font-size:13.5px;margin:0 0 6px}
+  .boxes .gone{opacity:.45}
+  .flash{animation:flash .6s ease}
+
+  /* score */
+  .check{display:flex;flex-direction:column;gap:8px}
+  .check button{display:flex;gap:10px;align-items:flex-start;text-align:left;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--navy-ink);font-size:14.5px;line-height:1.45;width:100%;transition:border-color .2s,background-color .2s}
+  .check button .box{flex:0 0 20px;height:20px;border:2px solid var(--muted);border-radius:4px;margin-top:1px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;transition:background-color .2s,border-color .2s}
+  .check button[aria-pressed=true]{border-color:#B9D8C5;background:#F6FBF8}
+  .check button[aria-pressed=true] .box{background:var(--ok);border-color:var(--ok)}
+  .check button .ev{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+  .score{position:sticky;top:16px}
+  @media(min-width:821px){.grid-bp{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}}
+  .ring{max-width:190px;margin:0 auto}
+  .ring text{font-family:var(--serif)}
+  .ring circle.val{transition:stroke-dashoffset .7s ease,stroke .4s}
+
+  /* trivy */
+  .scan{height:10px;border-radius:5px;background:var(--ice);overflow:hidden;margin:8px 0}
+  .scan i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--navy),var(--terra))}
+  .bars{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+  .bar{display:grid;grid-template-columns:minmax(0,210px) minmax(0,1fr) 30px;gap:10px;align-items:center;font-size:13px}
+  .bar .nm{font-family:var(--mono);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar .track{height:14px;background:var(--ice);border-radius:3px;display:flex;overflow:hidden}
+  .bar .seg{height:100%;width:0;transition:width .8s ease}
+  .bar .seg.c{background:var(--warn)}
+  .bar .seg.h{background:var(--terra)}
+  .bar .n{font-family:var(--mono);font-size:12px;text-align:right}
+  @media(max-width:560px){.bar{grid-template-columns:minmax(0,1fr) 30px}.bar .nm{grid-column:1 / -1}}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:8px}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+  /* pipeline */
+  .pipe{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+  .job{flex:1 1 260px;border:1px dashed var(--line);border-radius:10px;padding:10px}
+  .job .jn{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:6px}
+  .steps{display:flex;flex-direction:column;gap:6px}
+  .stp{border:1px solid var(--line);border-left:5px solid var(--line);border-radius:6px;padding:7px 10px;background:#fff;font-size:13.5px;display:flex;justify-content:space-between;gap:8px;transition:border-color .3s,background-color .3s,opacity .3s}
+  .stp.doing{border-left-color:var(--terra);animation:pulse 1s ease infinite}
+  .stp.pass{border-left-color:var(--ok);background:#F6FBF8}
+  .stp.fail{border-left-color:var(--warn);background:var(--warn-soft)}
+  .stp.skip{opacity:.45}
+  .stp .st{font-family:var(--mono);font-size:11.5px;white-space:nowrap}
+
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  @keyframes pop{0%{transform:scale(.85)}60%{transform:scale(1.08)}100%{transform:scale(1)}}
+  @keyframes flash{0%{background-color:var(--terra-soft)}100%{background-color:#fff}}
+  @keyframes pulse{0%,100%{background-color:#fff}50%{background-color:#FBF1E8}}
+  @keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  @media (prefers-reduced-motion: no-preference){
+    .hexline .b1{animation:drift 7s ease-in-out infinite}
+    .hexline .b2{animation:drift 9s ease-in-out infinite .8s}
+    .hexline .b3{animation:drift 8s ease-in-out infinite 1.6s}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none !important;transition:none !important}
+    html{scroll-behavior:auto}
+  }
+  @media(max-width:560px){
+    .wrap{padding:0 16px}
+    .lab{padding:16px}
+    .card{padding:18px}
+    header.hero{padding:44px 0 38px}
+    .lede{font-size:17px}
+    pre{font-size:12px;padding:14px}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg class="hexline" viewBox="0 0 1200 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g fill="none" stroke="#7E93C4" stroke-width="1.2">
+      <g class="b1"><rect x="120" y="230" width="190" height="70" rx="6"/><rect x="120" y="150" width="190" height="70" rx="6"/><rect x="120" y="70" width="190" height="70" rx="6"/></g>
+      <g class="b2"><rect x="520" y="250" width="190" height="70" rx="6"/><rect x="520" y="170" width="190" height="70" rx="6"/></g>
+      <g class="b3"><rect x="920" y="210" width="190" height="70" rx="6"/><rect x="920" y="130" width="190" height="70" rx="6"/><rect x="920" y="50" width="190" height="70" rx="6"/></g>
+      <path d="M0 330 L1200 330"/>
+    </g>
+  </svg>
+  <div class="wrap">
+    <p class="kicker">Diseño y Arquitectura de Software · Módulo 6</p>
+    <h1>Contenerización con Docker</h1>
+    <p class="lede">Imágenes, contenedores, Docker Compose y balanceo de carga con Traefik, a partir del taller <code style="background:rgba(255,255,255,.12);color:#fff">friendlyhello</code> del curso. Se incluye el paso a una aplicación Spring Boot y la integración de la imagen en el pipeline de CI.</p>
+    <ul class="toc" aria-label="Contenido">
+      <li><a href="#entornos">1. Entornos</a></li>
+      <li><a href="#vm">2. VM y contenedor</a></li>
+      <li><a href="#capas">3. Capas y caché</a></li>
+      <li><a href="#multistage">4. Multi-stage</a></li>
+      <li><a href="#ciclo">5. Ciclo de vida</a></li>
+      <li><a href="#compose">6. Compose</a></li>
+      <li><a href="#traefik">7. Traefik</a></li>
+      <li><a href="#versiones">8. Compose v1 y v2</a></li>
+      <li><a href="#practicas">9. Buenas prácticas</a></li>
+      <li><a href="#trivy">10. Trivy</a></li>
+      <li><a href="#pipeline">11. Pipeline</a></li>
+    </ul>
+  </div>
+</header>
+
+<main>
+
+<!-- ============================ 1 ============================ -->
+<section id="entornos"><div class="wrap">
+  <h2>1. El problema de los entornos</h2>
+  <p class="sec-note">Una aplicación depende del intérprete, de las librerías y del sistema operativo donde se ejecuta, no solo de su código.</p>
+  <p>Cuando se despliega solo el código fuente, cada máquina lo ejecuta con lo que tenga instalado: otra versión de Python, otras versiones de las librerías, otras variables de entorno. El resultado es el conocido «en mi máquina funciona». Docker propone empaquetar la aplicación junto con su entorno en una <strong>imagen</strong> y mover esa imagen entre ambientes.</p>
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">El mismo commit en dos máquinas</span>
+      <div class="tabs">
+        <button class="tab" data-p1="sin" aria-selected="true">Sin contenedor</button>
+        <button class="tab" data-p1="con" aria-selected="false">Con imagen</button>
+        <button class="act" id="p1-play" type="button">Desplegar</button>
+      </div>
+    </div>
+    <figure class="svgscroll"><svg id="p1-svg" viewBox="0 0 640 262" role="img" aria-label="Despliegue de la aplicación desde el portátil del desarrollador hacia el servidor"></svg></figure>
+    <p class="small" style="margin:6px 0 0">Ejemplo ilustrativo: las versiones del servidor son hipotéticas.</p>
+    <div class="out" id="p1-out" aria-live="polite"></div>
+  </div>
+  <div class="callout">
+    <strong>Qué viaja exactamente.</strong> Entre ambientes se mueve la imagen ya construida, identificada por su <em>digest</em> (<code>sha256:…</code>). Si cada ambiente reconstruye desde el Dockerfile, puede obtener otra imagen: en el taller, <code>FROM python:3-slim</code> resolvió a Python 3.14 en octubre de 2026, y en otra fecha resolverá a otra versión. La imagen tampoco elimina todas las diferencias: comparte el kernel del anfitrión y está construida para una arquitectura de CPU (amd64, arm64).
+  </div>
+</div></section>
+
+<!-- ============================ 2 ============================ -->
+<section id="vm"><div class="wrap">
+  <h2>2. Máquinas virtuales y contenedores</h2>
+  <p class="sec-note">Ambos aíslan aplicaciones, pero lo hacen en niveles distintos de la pila.</p>
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">Pila de software</span>
+      <div class="tabs">
+        <button class="tab" data-vm="vm" aria-selected="true">Máquina virtual</button>
+        <button class="tab" data-vm="ct" aria-selected="false">Contenedores (Linux)</button>
+        <button class="tab" data-vm="dd" aria-selected="false">Docker Desktop (Windows/macOS)</button>
+      </div>
+    </div>
+    <div class="grid2" style="gap:22px;align-items:end">
+      <div><div class="vstack" id="vm-stack" role="img" aria-label="Diagrama de capas"></div></div>
+      <div id="vm-text" style="font-size:15.5px"></div>
+    </div>
+  </div>
+  <div class="tablewrap" style="margin-top:22px">
+  <table>
+    <caption>Comparación cualitativa (los valores dependen de la aplicación y del equipo)</caption>
+    <thead><tr><th scope="col">Aspecto</th><th scope="col">Máquina virtual</th><th scope="col">Contenedor</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Qué se virtualiza</th><td>El hardware: cada VM arranca su propio sistema operativo y su kernel.</td><td>El sistema operativo: los procesos comparten el kernel del anfitrión y se aíslan con <em>namespaces</em> y <em>cgroups</em>.</td></tr>
+      <tr><th scope="row">Arranque</th><td>El de un sistema operativo completo.</td><td>El de un proceso.</td></tr>
+      <tr><th scope="row">Tamaño típico</th><td>Gigabytes (imagen de disco con SO).</td><td>Megabytes a cientos de megabytes (sin kernel).</td></tr>
+      <tr><th scope="row">Aislamiento</th><td>Más fuerte: la frontera es el hipervisor.</td><td>Más débil: una falla del kernel afecta a todos los contenedores del anfitrión.</td></tr>
+      <tr><th scope="row">Unidad de distribución</th><td>Imagen de disco (VMDK, QCOW2, AMI…).</td><td>Imagen OCI publicada en un registro (Docker Hub, GHCR…).</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout warn">
+    <strong>Sobre el aislamiento.</strong> Todos los contenedores de un anfitrión usan el mismo kernel, por lo que el aislamiento es menor que el de una VM. Por esa razón importan las prácticas de la sección 9 (usuario no root, imágenes mínimas) y por esa razón algunos proveedores de nube ejecutan los contenedores de clientes distintos dentro de VM separadas.
+    <p>En Windows y macOS no existe un kernel Linux nativo. Docker Desktop ejecuta una VM Linux liviana (en Windows, sobre WSL2) y los contenedores corren dentro de ella. Por eso montar carpetas del anfitrión puede ser más lento y por eso se usan imágenes Linux también en esos sistemas.</p>
+  </div>
+</div></section>
+
+<!-- ============================ 3 ============================ -->
+<section id="capas"><div class="wrap">
+  <h2>3. Imágenes, capas y caché</h2>
+  <p class="sec-note">Cada instrucción que modifica el sistema de archivos produce una capa. Si una capa cambia, todas las siguientes se vuelven a construir.</p>
+  <p>Una imagen es una pila de capas de solo lectura más un archivo de configuración (variables de entorno, puerto expuesto, comando de inicio). Al construir, BuildKit compara cada instrucción y los archivos que usa con la construcción anterior. Para <code>COPY</code> compara el contenido de los archivos copiados: si alguno cambió, esa capa y todas las posteriores se invalidan. Por eso el orden de las instrucciones determina cuánto se reconstruye.</p>
+
+  <div class="lab" id="lab-cache">
+    <div class="lab-head">
+      <span class="lab-title">Construcción con caché de capas</span>
+      <div class="tabs" role="group" aria-label="Orden del Dockerfile">
+        <button class="tab" data-ord="A" aria-selected="true">A · Dockerfile original</button>
+        <button class="tab" data-ord="B" aria-selected="false">B · Dependencias primero</button>
+      </div>
+    </div>
+    <div class="ctrl" role="group" aria-label="Escenario">
+      <span class="lbl">CAMBIO DESDE LA ÚLTIMA CONSTRUCCIÓN:</span>
+      <button class="tab" data-scen="first" aria-selected="true">Primera construcción</button>
+      <button class="tab" data-scen="app" aria-selected="false">Cambia app.py</button>
+      <button class="tab" data-scen="req" aria-selected="false">Cambia requirements.txt</button>
+      <button class="tab" data-scen="compose" aria-selected="false">Aparecen docker-compose.yaml y data/</button>
+    </div>
+    <div class="ctrl">
+      <button class="ghost" id="ign" aria-pressed="false" type="button">.dockerignore: no existe</button>
+      <button class="act" id="build-btn" type="button">docker build</button>
+    </div>
+    <div class="grid2" style="gap:20px">
+      <div>
+        <pre id="df-code" aria-label="Dockerfile"></pre>
+        <h4 style="margin:16px 0 6px">Contexto de construcción enviado</h4>
+        <div class="chips" id="ctx-chips"></div>
+        <h4 style="margin:16px 0 6px">Contenido de <code>/app</code> en la imagen</h4>
+        <div class="chips" id="app-chips"></div>
+      </div>
+      <div>
+        <h4 style="margin:0 0 8px">Capas (de abajo hacia arriba)</h4>
+        <div class="lstack" id="layers" aria-live="polite"></div>
+        <pre class="log" id="build-log" aria-label="Salida de docker build (simplificada)"></pre>
+      </div>
+    </div>
+    <div class="out" id="cache-out" aria-live="polite"></div>
+  </div>
+
+  <div class="callout warn">
+    <strong>Resultado observado al ejecutar el taller <span class="verified">VERIFICADO</span></strong>
+    <ul class="tight">
+      <li>Con el Dockerfile A, crear o editar <code>docker-compose.yaml</code> en la carpeta del proyecto invalidó <code>COPY . /app</code> y <code>pip install</code> se ejecutó de nuevo, aunque el código de la aplicación no había cambiado.</li>
+      <li>Sin <code>.dockerignore</code>, una reconstrucción posterior a <code>docker compose up</code> copió dentro de la imagen los datos de Redis (<code>/app/data/dump.rdb</code>, <code>/app/data/appendonlydir/*</code>) y el propio <code>docker-compose.yaml</code>. La carpeta <code>data/</code> la crea el volumen <code>./data:/data</code> del servicio Redis.</li>
+    </ul>
+  </div>
+  <div class="grid2">
+    <div>
+<pre><span class="c"># .dockerignore (junto al Dockerfile)</span>
+.git
+data/
+docker-compose*.yaml
+Dockerfile
+.dockerignore
+__pycache__/
+*.pyc
+.env</pre>
+    </div>
+    <div>
+      <h4>Qué hace este archivo</h4>
+      <ul class="tight" style="font-size:15px;margin-top:0">
+        <li>Excluye archivos del contexto que se envía al <em>builder</em>. Lo excluido no puede copiarse a la imagen ni invalidar la caché.</li>
+        <li><code>Dockerfile</code> y <code>.dockerignore</code> se siguen usando para construir, pero <code>COPY</code> ya no los copia.</li>
+        <li>Excluir <code>.env</code> evita meter secretos en una capa. Una capa publicada no se puede «borrar» con una instrucción posterior: el archivo sigue en la capa anterior.</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============================ 4 ============================ -->
+<section id="multistage"><div class="wrap">
+  <h2>4. Dockerfile multi-stage para Java</h2>
+  <p class="sec-note">El taller usa Python, pero los proyectos del curso son Spring Boot. Compilar Java exige JDK y Maven; ejecutar el <code>.jar</code> solo exige un JRE.</p>
+  <p>Un Dockerfile multi-stage define varias etapas con <code>FROM … AS nombre</code>. La imagen final contiene únicamente la última etapa; de las anteriores solo llega lo que se copia de forma explícita con <code>COPY --from=</code>. El siguiente Dockerfile se usó con el proyecto <code>registraduria</code> del curso (Spring Boot 2.7.18, Maven).</p>
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">Qué termina en la imagen final</span>
+      <div class="tabs">
+        <button class="tab" data-ms="single" aria-selected="false">Una sola etapa</button>
+        <button class="tab" data-ms="multi" aria-selected="true">Multi-stage</button>
+      </div>
+    </div>
+    <div class="grid2" style="gap:20px">
+      <div><pre id="ms-code"></pre></div>
+      <div>
+        <div class="stages">
+          <div class="stagebox" id="ms-build"><h4 id="ms-build-h">Etapa <code>build</code></h4><div class="chips" id="ms-build-chips"></div></div>
+          <div class="arrowcol" id="ms-arrow"><svg viewBox="0 0 46 60" aria-hidden="true"><path d="M4 30 L36 30" stroke="#C9722F" stroke-width="2.4" fill="none"/><path d="M36 30 L28 24 L28 36 Z" fill="#C9722F"/><text x="23" y="52" text-anchor="middle" font-size="9" fill="#C9722F" font-family="monospace">app.jar</text></svg></div>
+          <div class="stagebox" id="ms-final"><h4>Imagen final</h4><div class="chips" id="ms-final-chips"></div></div>
+        </div>
+        <div style="margin-top:14px">
+          <div class="small" id="ms-size-label"></div>
+          <div class="sizebar" id="ms-sizebar"><i></i></div>
+        </div>
+        <div class="out" id="ms-out" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+  <div class="grid2" style="margin-top:22px">
+    <div class="card">
+      <h4>Resultado de la prueba <span class="verified">VERIFICADO</span></h4>
+      <ul class="tight" style="font-size:15px;margin:0">
+        <li><code>docker build</code> terminó sin errores.</li>
+        <li>El contenedor se ejecutó como <code>uid=999(app)</code>, no como root.</li>
+        <li><code>POST /register</code> respondió <code>VALID</code> y, al repetir el mismo id, <code>DUPLICATED</code>.</li>
+        <li><code>docker images</code> (almacén de imágenes containerd) informó <strong>508 MB</strong>. Trivy informó 362 MB para la misma imagen: compare tamaños siempre con la misma herramienta.</li>
+      </ul>
+    </div>
+    <div>
+<pre><span class="c"># .dockerignore del proyecto Java</span>
+target/
+.git/
+.github/
+*.md
+
+<span class="c"># Prueba local (bash)</span>
+docker build -t registraduria:dev .
+docker run --rm -p 8080:8080 registraduria:dev
+
+curl -X POST http://localhost:8080/register \
+  -H <span class="g">"Content-Type: application/json"</span> \
+  -d <span class="g">'{"name":"Ana","id":1001,"age":30,"gender":"FEMALE","alive":true}'</span>
+<span class="c"># VALID   (la segunda vez: DUPLICATED)</span></pre>
+    </div>
+  </div>
+  <div class="callout">
+    <strong>Detalles del Dockerfile.</strong> <code>RUN --mount=type=cache,target=/root/.m2</code> conserva el repositorio local de Maven entre construcciones en la misma máquina sin guardarlo en la imagen; requiere BuildKit (el constructor por defecto en versiones actuales). Copiar primero <code>pom.xml</code> y descargar dependencias aplica la misma idea de la sección 3: un cambio en <code>src/</code> no vuelve a descargar dependencias. Se omiten las pruebas (<code>-DskipTests</code>) porque ya corrieron en el job de CI con <code>mvn verify</code>.
+  </div>
+</div></section>
+
+<!-- ============================ 5 ============================ -->
+<section id="ciclo"><div class="wrap">
+  <h2>5. Ciclo de vida de un contenedor</h2>
+  <p class="sec-note">Una imagen es una plantilla de solo lectura. Un contenedor es una instancia de esa imagen con una capa escribible propia.</p>
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">Estados y comandos</span>
+      <button class="ghost" id="lc-rm" aria-pressed="false" type="button">--rm: desactivado</button>
+    </div>
+    <figure class="svgscroll"><svg id="lc-svg" viewBox="0 0 520 250" role="img" aria-label="Máquina de estados de un contenedor: creado, en ejecución, detenido, eliminado"></svg></figure>
+    <div class="cmdgrid" role="group" aria-label="Comandos">
+      <button class="ghost" data-lc="create" type="button">docker create</button>
+      <button class="ghost" data-lc="run" type="button">docker run -d</button>
+      <button class="ghost" data-lc="start" type="button">docker start</button>
+      <button class="ghost" data-lc="stop" type="button">docker stop</button>
+      <button class="ghost" data-lc="rm" type="button">docker rm</button>
+      <button class="ghost" data-lc="incr" type="button">exec: INCR visitas</button>
+      <button class="ghost" data-lc="note" type="button">exec: escribir /tmp/nota.txt</button>
+      <button class="ghost" data-lc="reset" type="button">reiniciar</button>
+    </div>
+    <pre id="lc-term" style="height:150px" aria-live="polite" aria-label="Terminal"></pre>
+    <div class="boxes">
+      <div id="lc-layer"><h4>Capa escribible del contenedor</h4><div class="chips" id="lc-layer-c"></div></div>
+      <div id="lc-vol"><h4>Volumen <code>datos</code> montado en <code>/data</code></h4><div class="chips" id="lc-vol-c"></div></div>
+    </div>
+    <p class="small" style="margin:10px 0 0">Comando base: <code>docker run -d --name cache -v datos:/data redis:8.2 redis-server --appendonly yes</code>. Los mensajes de error están abreviados.</p>
+  </div>
+  <div class="grid2" style="margin-top:22px">
+    <div class="card"><h4>Capa escribible</h4><p style="font-size:15px;margin:0">Todo lo que el proceso escribe fuera de un volumen queda en la capa escribible. Sobrevive a <code>stop</code> y <code>start</code>, pero desaparece con <code>docker rm</code>. Con <code>--rm</code> el contenedor se elimina al detenerse, lo que es útil para tareas de una sola ejecución.</p></div>
+    <div class="card"><h4>Volumen</h4><p style="font-size:15px;margin:0">Un volumen tiene un ciclo de vida independiente del contenedor. Los datos de Redis en <code>/data</code> siguen disponibles al crear un contenedor nuevo con el mismo volumen. El taller usa un <em>bind mount</em> (<code>./data:/data</code>), que es una carpeta del anfitrión; un volumen con nombre lo administra Docker.</p></div>
+  </div>
+
+  <h3>Publicación de puertos</h3>
+  <p>El contenedor tiene su propia interfaz de red. <code>-p 4000:80</code> significa «puerto 4000 del anfitrión hacia el puerto 80 del contenedor»: el primer número es el del anfitrión.</p>
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">curl http://localhost:4000</span>
+      <div class="tabs">
+        <button class="tab" data-pm="ok" aria-selected="true">-p 4000:80</button>
+        <button class="tab" data-pm="none" aria-selected="false">sin -p</button>
+        <button class="tab" data-pm="bad" aria-selected="false">-p 4000:5000</button>
+        <button class="act" id="pm-go" type="button">Enviar petición</button>
+      </div>
+    </div>
+    <figure class="svgscroll"><svg id="pm-svg" viewBox="0 0 560 190" role="img" aria-label="Petición desde el anfitrión al contenedor a través del puerto publicado"></svg></figure>
+    <pre id="pm-out" style="margin-top:12px;min-height:64px" aria-live="polite"></pre>
+  </div>
+</div></section>
+
+<!-- ============================ 6 ============================ -->
+<section id="compose"><div class="wrap">
+  <h2>6. Docker Compose</h2>
+  <p class="sec-note">Compose describe en un archivo YAML varios servicios, sus redes y sus volúmenes, y los levanta con un solo comando.</p>
+  <div class="grid2" style="gap:20px">
+    <div>
+<pre><span class="c"># docker-compose.yaml (versión original)</span>
+<span class="k">services:</span>
+  <span class="k">web:</span>
+    <span class="k">build:</span> .
+    <span class="k">ports:</span>
+      - <span class="g">"4000:80"</span>
+  <span class="k">redis:</span>
+    <span class="k">image:</span> redis
+    <span class="k">ports:</span>
+      - <span class="g">"6379:6379"</span>
+    <span class="k">volumes:</span>
+      - <span class="g">"./data:/data"</span>
+    <span class="k">command:</span> redis-server --appendonly yes</pre>
+    </div>
+    <div>
+      <h4>Qué crea <code>docker compose up</code></h4>
+      <ul class="tight" style="font-size:15px;margin-top:0">
+        <li>Una red propia del proyecto (<code>friendlyhello_default</code>) a la que se conectan todos los servicios.</li>
+        <li>Un DNS interno en esa red: cada servicio se resuelve por su nombre. Por eso <code>app.py</code> usa <code>Redis(host="redis")</code> y no una IP.</li>
+        <li>Los contenedores <code>friendlyhello-web-1</code> y <code>friendlyhello-redis-1</code>.</li>
+        <li>Publicar <code>6379</code> no es necesario para que <code>web</code> llegue a Redis; solo sirve para conectarse desde el anfitrión y expone la base de datos fuera de la red.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="lab" style="margin-top:22px">
+    <div class="lab-head">
+      <span class="lab-title">GET / en http://localhost:4000</span>
+      <div class="tabs">
+        <button class="tab" data-cp="ok" aria-selected="true">Con Redis (compose)</button>
+        <button class="tab" data-cp="solo" aria-selected="false">web solo, redis-py por defecto</button>
+        <button class="tab" data-cp="fix" aria-selected="false">web solo, sin reintentos</button>
+        <button class="act" id="cp-go" type="button">Enviar petición</button>
+      </div>
+    </div>
+    <figure class="svgscroll"><svg id="cp-svg" viewBox="0 0 560 280" role="img" aria-label="Servicios web y redis en la red de Compose con resolución DNS por nombre de servicio"></svg></figure>
+    <div class="out" id="cp-out" aria-live="polite"></div>
+  </div>
+
+  <div class="callout warn">
+    <strong>Contenedor web sin Redis <span class="verified">VERIFICADO</span></strong>
+    <p>Al ejecutar solo el contenedor de la aplicación, sin Redis, cada petición HTTP tardó entre 92 y 96 segundos. <code>requirements.txt</code> declara <code>Redis</code> sin versión y pip instaló redis-py 8.1.0, que por defecto reintenta las operaciones fallidas 10 veces con espera exponencial. Cada intento incluye una resolución DNS fallida del nombre <code>redis</code>, que en esa máquina llegó a tardar unos 14 s. <code>socket_connect_timeout=2</code> no acota ese tiempo porque limita la conexión TCP, no la resolución del nombre.</p>
+    <p>Con <code>Redis(..., retry=Retry(NoBackoff(), 0))</code> la petición bajó a unos 7 s. En una repetición posterior en la misma máquina, la resolución fallida tardó entre 4 y 15 s según el intento, de modo que una petición sin reintentos tarda lo que tarde el DNS.</p>
+    <p>Conclusión práctica: fijar las versiones de las dependencias y configurar de forma deliberada los tiempos de espera y los reintentos de cada cliente de red.</p>
+  </div>
+  <div class="grid2">
+    <div>
+<pre><span class="c"># app.py: sin reintentos implícitos</span>
+<span class="k">from</span> redis <span class="k">import</span> Redis, RedisError
+<span class="k">from</span> redis.backoff <span class="k">import</span> NoBackoff
+<span class="k">from</span> redis.retry <span class="k">import</span> Retry
+
+redis = Redis(host=<span class="g">"redis"</span>, db=0,
+              socket_connect_timeout=2, socket_timeout=2,
+              retry=Retry(NoBackoff(), 0))
+
+<span class="c"># requirements.txt: versiones fijas</span>
+Flask==3.1.3
+redis==8.1.0</pre>
+    </div>
+    <div>
+<pre><span class="c"># depends_on solo ordena el arranque.</span>
+<span class="c"># Para esperar a que Redis responda: healthcheck.</span>
+<span class="k">services:</span>
+  <span class="k">web:</span>
+    <span class="k">build:</span> .
+    <span class="k">ports:</span>
+      - <span class="g">"4000:80"</span>
+    <span class="k">depends_on:</span>
+      <span class="k">redis:</span>
+        <span class="k">condition:</span> service_healthy
+  <span class="k">redis:</span>
+    <span class="k">image:</span> redis:8.2
+    <span class="k">command:</span> redis-server --appendonly yes
+    <span class="k">volumes:</span>
+      - <span class="g">"./data:/data"</span>
+    <span class="k">healthcheck:</span>
+      <span class="k">test:</span> [<span class="g">"CMD"</span>, <span class="g">"redis-cli"</span>, <span class="g">"ping"</span>]
+      <span class="k">interval:</span> 5s
+      <span class="k">timeout:</span> 3s
+      <span class="k">retries:</span> 5</pre>
+    </div>
+  </div>
+  <p class="small" style="margin-top:10px">Los dos fragmentos se probaron con Docker Engine 28.5.1 y Compose v2.40.3: <code>docker compose config</code> sin errores, Redis pasó a <code>healthy</code> antes de iniciar <code>web</code> y el contador respondió. <code>depends_on</code> sin condición solo garantiza que el contenedor de Redis se haya iniciado, no que acepte conexiones.</p>
+</div></section>
+
+<!-- ============================ 7 ============================ -->
+<section id="traefik"><div class="wrap">
+  <h2>7. Escalamiento y balanceo de carga con Traefik</h2>
+  <p class="sec-note">Varias réplicas del servicio web detrás de un proxy inverso que reparte las peticiones.</p>
+  <p>Con <code>docker compose up -d --scale web=5</code> Compose crea cinco contenedores del servicio <code>web</code>. Ya no se puede publicar <code>4000:80</code> en cada uno (el puerto del anfitrión es único), así que Traefik recibe las peticiones en el puerto 4000, descubre las réplicas leyendo las etiquetas de los contenedores a través del socket de Docker y las reparte en <em>round-robin</em>. Como el contador vive en Redis, el número de visitas es global aunque responda una réplica distinta cada vez.</p>
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">Petición al balanceador</span>
+      <div class="tabs" role="group" aria-label="Número de réplicas">
+        <button class="tab" data-sc="1" aria-selected="false">--scale web=1</button>
+        <button class="tab" data-sc="3" aria-selected="false">--scale web=3</button>
+        <button class="tab" data-sc="5" aria-selected="true">--scale web=5</button>
+      </div>
+    </div>
+    <div class="ctrl" role="group" aria-label="URL">
+      <span class="lbl">URL:</span>
+      <button class="tab" data-url="localhost" aria-selected="true">http://localhost:4000</button>
+      <button class="tab" data-url="ip" aria-selected="false">http://127.0.0.1:4000</button>
+      <button class="act" id="tf-one" type="button">Enviar 1</button>
+      <button class="act" id="tf-ten" type="button">Enviar 10</button>
+    </div>
+    <figure class="svgscroll"><svg id="tf-svg" viewBox="0 0 560 300" role="img" aria-label="Traefik distribuye peticiones entre réplicas del servicio web"></svg></figure>
+    <div class="grid2" style="margin-top:12px;gap:14px">
+      <pre id="tf-resp" style="min-height:96px" aria-live="polite"></pre>
+      <div class="small" id="tf-tally"></div>
+    </div>
+    <p class="small" style="margin:8px 0 0">Los hostnames son de ejemplo: cada réplica responde con el identificador corto de su contenedor.</p>
+  </div>
+  <div class="grid2" style="margin-top:22px">
+    <div>
+<pre><span class="c"># fragmento del docker-compose.yaml original</span>
+<span class="k">services:</span>
+  <span class="k">web:</span>
+    <span class="k">build:</span> .
+    <span class="k">labels:</span>
+    - <span class="g">"traefik.enable=true"</span>
+    - <span class="g">"traefik.http.routers.web.rule=Host(`localhost`)"</span>
+    - <span class="g">"traefik.http.routers.web.entrypoints=web"</span>
+    - <span class="g">"traefik.http.services.web.loadbalancer.server.port=80"</span>
+  <span class="k">traefik:</span>
+    <span class="k">image:</span> traefik:v3.7      <span class="c"># antes: v2.3</span>
+    <span class="k">command:</span>
+    - <span class="g">"--api.insecure=true"</span>
+    - <span class="g">"--providers.docker=true"</span>
+    - <span class="g">"--providers.docker.exposedByDefault=false"</span>
+    - <span class="g">"--entrypoints.web.address=:4000"</span>
+    <span class="k">ports:</span>
+    - <span class="g">"4000:4000"</span>
+    - <span class="g">"8080:8080"</span>   <span class="c"># dashboard</span>
+    <span class="k">volumes:</span>
+    - <span class="g">"/var/run/docker.sock:/var/run/docker.sock"</span></pre>
+    </div>
+    <div>
+      <div class="card" style="padding:18px 20px">
+        <h4>Prueba del taller <span class="verified">VERIFICADO</span></h4>
+        <ul class="tight" style="font-size:14.5px;margin:0">
+          <li>Docker Engine 28.5.1 y Compose v2.40.3.</li>
+          <li><code>traefik:v2.3</code> funcionó; su log registró <code>Provider connection established with docker 28.5.1 (API 1.51)</code>.</li>
+          <li>Los hostnames rotaron en <em>round-robin</em> entre las cinco réplicas.</li>
+          <li><code>traefik:v3</code> (3.7.13) funcionó con las mismas etiquetas y los mismos parámetros; solo cambió la etiqueta de la imagen.</li>
+          <li><code>curl http://127.0.0.1:4000</code> devolvió <code>404 page not found</code>, porque la regla es <code>Host(`localhost`)</code>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="callout warn">
+    <strong>Riesgo con versiones nuevas de Docker <span class="inferred">INFERIDO</span></strong>
+    <p>Docker Engine 29 elevó la versión mínima de API aceptada a 1.44. Imágenes muy antiguas de Traefik, que negocian una API anterior, podrían no conectarse al proveedor Docker en ese motor. No se probó con Engine 29; la recomendación es usar <code>traefik:v3.x</code> con una versión menor fija.</p>
+  </div>
+  <div class="callout">
+    <strong>Alcance de la demostración.</strong> Cinco réplicas en un solo anfitrión reparten carga, pero no dan alta disponibilidad: si cae la máquina, caen todas, y Redis sigue siendo una única instancia. La alta disponibilidad real requiere varios nodos y un orquestador (Docker Swarm o Kubernetes). Además, montar <code>/var/run/docker.sock</code> le da a Traefik control total sobre Docker, y <code>--api.insecure=true</code> publica el dashboard sin autenticación: ambas cosas son aceptables en un taller local, no en producción.
+  </div>
+</div></section>
+
+<!-- ============================ 8 ============================ -->
+<section id="versiones"><div class="wrap">
+  <h2>8. Diferencias entre Compose v1 y v2</h2>
+  <p class="sec-note">Muchas guías, incluida la versión anterior del taller, muestran salidas de versiones anteriores. Esta tabla relaciona lo que dice la guía con lo que se ve hoy.</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th scope="col">Aspecto</th><th scope="col">Versiones anteriores</th><th scope="col">Versiones actuales</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Comando</th><td><code>docker-compose</code> (Compose v1, programa aparte, sin actualizaciones desde 2023)</td><td><code>docker compose</code> (plugin de la CLI de Docker, v2 y posteriores)</td></tr>
+      <tr><th scope="row">Nombre de contenedores</th><td><code>friendlyhello_web_1</code></td><td><code>friendlyhello-web-1</code></td></tr>
+      <tr><th scope="row">Nombre de la red</th><td><code>friendlyhello_default</code></td><td><code>friendlyhello_default</code> (no cambió)</td></tr>
+      <tr><th scope="row">Clave <code>version:</code> en el YAML</td><td>Obligatoria (<code>version: "3"</code>)</td><td>Obsoleta; Compose avisa que la ignora</td></tr>
+      <tr><th scope="row">Salida de <code>docker build</code></th><td>Constructor clásico: <code>Step 1/7 : FROM python:3-slim</code> … <code>Successfully built …</code>, <code>Successfully tagged friendlyhello:latest</code></td><td>BuildKit: <code>#5 [1/4] FROM docker.io/library/python:3-slim</code>, <code>#9 [4/4] RUN pip install …</code>. La salida de <code>RUN</code> se colapsa; para verla completa: <code>--progress=plain</code></td></tr>
+      <tr><th scope="row"><code>ENV NAME World</code></th><td>Aceptado sin aviso</td><td>Aviso <code>LegacyKeyValueFormat</code>: usar <code>ENV NAME=World</code></td></tr>
+      <tr><th scope="row">Escalar</th><td><code>docker-compose scale web=5</code></td><td><code>docker compose up -d --scale web=5</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small" style="margin-top:10px">Los nombres de contenedores, la red, la salida de BuildKit y el aviso <code>LegacyKeyValueFormat</code> se comprobaron al ejecutar el taller con Compose v2.40.3. Al momento de escribir este material la versión más reciente de Compose es la 5.x, que mantiene el mismo formato de nombres.</p>
+</div></section>
+
+<!-- ============================ 9 ============================ -->
+<section id="practicas"><div class="wrap">
+  <h2>9. Buenas prácticas en imágenes</h2>
+  <p class="sec-note">Lista de verificación para revisar un Dockerfile. Cada punto incluye la evidencia observada en el taller o la razón técnica.</p>
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">Revisión del Dockerfile</span>
+      <div class="tabs">
+        <button class="tab" id="bp-orig" aria-selected="false" type="button">Dockerfile original</button>
+        <button class="tab" id="bp-best" aria-selected="false" type="button">Versión revisada</button>
+      </div>
+    </div>
+    <div class="grid2 grid-bp" style="gap:20px">
+      <div class="check" id="bp-list"></div>
+      <div>
+        <div class="score">
+          <svg class="ring" viewBox="0 0 120 120" role="img" aria-label="Puntaje de la revisión" id="bp-ring">
+            <circle cx="60" cy="60" r="48" fill="none" stroke="#EDF0F6" stroke-width="12"/>
+            <circle class="val" cx="60" cy="60" r="48" fill="none" stroke="#9A3B2C" stroke-width="12" stroke-linecap="round" transform="rotate(-90 60 60)" stroke-dasharray="301.6" stroke-dashoffset="301.6"/>
+            <text x="60" y="58" text-anchor="middle" font-size="26" fill="#1F2D4E" id="bp-num">0</text>
+            <text x="60" y="78" text-anchor="middle" font-size="11" fill="#5A6480" id="bp-den">de 11</text>
+          </svg>
+          <p id="bp-verdict" style="font-size:15px;text-align:center;margin:8px auto 0"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <h3>Versión revisada del Dockerfile de <code>friendlyhello</code></h3>
+  <div class="grid2">
+    <div>
+<pre><span class="c"># syntax=docker/dockerfile:1</span>
+<span class="k">FROM</span> python:3.14-slim
+<span class="k">WORKDIR</span> /app
+<span class="k">COPY</span> requirements.txt .
+<span class="k">RUN</span> pip install --no-cache-dir -r requirements.txt
+<span class="k">COPY</span> . .
+<span class="k">RUN</span> useradd --system --no-create-home app
+<span class="k">USER</span> app
+<span class="k">EXPOSE</span> 8000
+<span class="k">ENV</span> NAME=World
+<span class="k">HEALTHCHECK</span> --interval=30s --timeout=3s --start-period=10s --start-interval=2s --retries=3 \
+  CMD python -c <span class="g">"import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"</span>
+<span class="k">CMD</span> [<span class="g">"gunicorn"</span>, <span class="g">"--bind"</span>, <span class="g">"0.0.0.0:8000"</span>, <span class="g">"--workers"</span>, <span class="g">"2"</span>, <span class="g">"app:app"</span>]
+
+<span class="c"># requirements.txt</span>
+Flask==3.1.3
+redis==8.1.0
+gunicorn==26.2.0</pre>
+    </div>
+    <div>
+      <ul class="tight" style="font-size:15px;margin-top:0">
+        <li>Probado con Docker Engine 28.5.1: <code>docker build --check</code> sin advertencias, el contenedor corre como <code>uid=999(app)</code>, el estado pasa a <code>healthy</code>, el contador responde y <code>docker stop</code> tardó alrededor de 1 s. <span class="verified">VERIFICADO</span></li>
+        <li>El <code>HEALTHCHECK</code> consulta <code>/health</code>, un endpoint que no usa Redis. Si consultara <code>/</code>, sin Redis cada petición tarda varios segundos (la búsqueda DNS de <code>redis</code> falla) y el contenedor quedaría <code>unhealthy</code>. Con <code>--start-interval=2s</code> el contenedor pasa a <code>healthy</code> en pocos segundos, lo que importa porque Traefik solo envía tráfico a réplicas <code>healthy</code>. <span class="verified">VERIFICADO</span></li>
+        <li>El puerto pasa de 80 a 8000 porque el proceso ya no es root. Docker permite a procesos sin privilegios abrir puertos bajos dentro del contenedor, pero otros entornos (Kubernetes con políticas restrictivas, Podman sin root) no siempre. Hay que ajustar <code>-p 4000:8000</code> y la etiqueta <code>loadbalancer.server.port=8000</code>.</li>
+        <li>Fijar <code>python:3.14-slim</code> fija la versión menor; para reproducibilidad total se fija el digest: <code>python:3.14-slim@sha256:…</code>, y se actualiza de forma deliberada (por ejemplo, con Dependabot o Renovate).</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============================ 10 ============================ -->
+<section id="trivy"><div class="wrap">
+  <h2>10. Escaneo de vulnerabilidades con Trivy</h2>
+  <p class="sec-note">Relación con DevSecOps. Trivy analiza los paquetes del sistema operativo de la imagen y las dependencias de la aplicación, y los compara con bases de datos de vulnerabilidades conocidas (CVE).</p>
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">trivy image --severity CRITICAL,HIGH registraduria</span>
+      <button class="act" id="tv-go" type="button">Escanear</button>
+    </div>
+    <div class="small" id="tv-stage">Imagen del proyecto <code>registraduria</code> (Spring Boot 2.7.18) construida con el Dockerfile de la sección 4.</div>
+    <div class="scan" aria-hidden="true"><i id="tv-bar"></i></div>
+    <div id="tv-res" aria-live="polite"></div>
+  </div>
+  <div class="grid2" style="margin-top:22px">
+    <div class="card">
+      <h4>Resultado del escaneo <span class="verified">VERIFICADO</span></h4>
+      <ul class="tight" style="font-size:15px;margin:0">
+        <li>Trivy 0.74.0, filtro <code>CRITICAL,HIGH</code>.</li>
+        <li>Paquetes del sistema operativo (Ubuntu 26.04 de <code>eclipse-temurin:21-jre</code>): 0 hallazgos.</li>
+        <li>Dependencias Java del <code>.jar</code>: 48 hallazgos, 8 CRITICAL y 40 HIGH, que corresponden a 47 CVE distintos (CVE-2023-6378 aparece en <code>logback-core</code> y en <code>logback-classic</code>).</li>
+        <li>46 de los 47 CVE tienen versión corregida. El restante, CVE-2026-41849 en <code>spring-expression</code> 5.3.31, no tiene corrección publicada para la rama 5.3.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Interpretación</h4>
+      <p style="font-size:15px;margin:0 0 8px">La imagen base estaba limpia; el riesgo provino de las dependencias del framework. Spring Boot 2.7 ya no tiene soporte de código abierto. La corrección consiste en migrar a una versión soportada de Spring Boot (3.x o posterior); cambiar la imagen base no resuelve estos hallazgos.</p>
+      <p style="font-size:15px;margin:0">Un escaneo refleja la base de datos del día en que se ejecuta. La misma imagen, escaneada un mes después, puede tener más hallazgos sin que nadie la haya modificado; por eso el escaneo se repite en cada pipeline y también de forma periódica.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============================ 11 ============================ -->
+<section id="pipeline"><div class="wrap">
+  <h2>11. Docker en el pipeline de CI</h2>
+  <p class="sec-note">Conexión con la integración continua y con la Entrega 3 del proyecto, que exige Docker y el escaneo de la imagen (por ejemplo, con Trivy); Kubernetes es una bonificación.</p>
+  <p>El workflow del repositorio <code>DAYS-Integracion_continua</code> compila y prueba en un job <code>build</code>. Se agrega un job <code>imagen</code> que depende de él (<code>needs: build</code>): construye la imagen, la escanea con Trivy y, solo si el escaneo pasa, la publica en GitHub Container Registry (GHCR). La etiqueta es el SHA del commit, de modo que cada imagen se puede rastrear hasta el código que la produjo.</p>
+  <div class="lab">
+    <div class="lab-head">
+      <span class="lab-title">Ejecución del workflow en un push a main</span>
+      <div class="tabs">
+        <button class="tab" data-pl="old" aria-selected="true">Spring Boot 2.7.18 (actual)</button>
+        <button class="tab" data-pl="new" aria-selected="false">Dependencias actualizadas (hipotético)</button>
+        <button class="act" id="pl-go" type="button">Ejecutar</button>
+      </div>
+    </div>
+    <div class="pipe" id="pl-pipe"></div>
+    <div class="out" id="pl-out" aria-live="polite"></div>
+  </div>
+<pre style="margin-top:22px"><span class="k">name:</span> CI
+
+<span class="k">on:</span>
+  <span class="k">push:</span>
+    <span class="k">branches:</span> [main]
+  <span class="k">pull_request:</span>
+
+<span class="k">permissions:</span>
+  <span class="k">contents:</span> read
+
+<span class="k">jobs:</span>
+  <span class="k">build:</span>
+    <span class="k">runs-on:</span> ubuntu-24.04
+    <span class="k">steps:</span>
+      - <span class="k">uses:</span> actions/checkout@v7
+      - <span class="k">uses:</span> actions/setup-java@v6
+        <span class="k">with:</span>
+          <span class="k">distribution:</span> temurin
+          <span class="k">java-version:</span> <span class="g">'21'</span>
+          <span class="k">cache:</span> maven
+      - <span class="k">name:</span> Compilar y probar
+        <span class="k">run:</span> mvn -B -ntp verify
+      - <span class="k">name:</span> Publicar reportes
+        <span class="k">if:</span> always()
+        <span class="k">uses:</span> actions/upload-artifact@v7
+        <span class="k">with:</span>
+          <span class="k">name:</span> reportes-pruebas
+          <span class="k">path:</span> target/surefire-reports/
+
+  <span class="k">imagen:</span>
+    <span class="k">needs:</span> build
+    <span class="k">if:</span> github.event_name == <span class="g">'push'</span>
+    <span class="k">runs-on:</span> ubuntu-24.04
+    <span class="k">permissions:</span>
+      <span class="k">contents:</span> read
+      <span class="k">packages:</span> write
+    <span class="k">env:</span>
+      <span class="k">TRIVY_VERSION:</span> 0.75.0
+    <span class="k">steps:</span>
+      - <span class="k">uses:</span> actions/checkout@v7
+
+      - <span class="k">name:</span> Nombre de la imagen (GHCR exige minúsculas)
+        <span class="k">run:</span> echo <span class="g">"IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}"</span> >> <span class="g">"$GITHUB_ENV"</span>
+
+      - <span class="k">name:</span> Construir imagen
+        <span class="k">run:</span> docker build -t <span class="g">"$IMAGE:$GITHUB_SHA"</span> .
+
+      - <span class="k">name:</span> Escanear con Trivy
+        <span class="k">run:</span> |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            <span class="g">"aquasec/trivy:$TRIVY_VERSION"</span> image \
+            --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 \
+            <span class="g">"$IMAGE:$GITHUB_SHA"</span>
+
+      - <span class="k">name:</span> Publicar en GHCR
+        <span class="k">run:</span> |
+          echo <span class="g">"${{ secrets.GITHUB_TOKEN }}"</span> | docker login ghcr.io -u <span class="g">"${{ github.actor }}"</span> --password-stdin
+          docker push <span class="g">"$IMAGE:$GITHUB_SHA"</span></pre>
+  <div class="grid2" style="margin-top:18px">
+    <div class="card">
+      <h4>Decisiones del job <code>imagen</code></h4>
+      <ul class="tight" style="font-size:15px;margin:0">
+        <li>Usa comandos <code>docker</code> directamente y la imagen oficial de Trivy con versión fija (por ejemplo, 0.75.0), en lugar de acciones de terceros.</li>
+        <li><code>${GITHUB_REPOSITORY,,}</code> convierte el nombre a minúsculas: <code>DAYS-Integracion_continua</code> tiene mayúsculas y GHCR las rechaza.</li>
+        <li><code>packages: write</code> solo en este job; el resto del workflow queda con <code>contents: read</code>.</li>
+        <li><code>--exit-code 1</code> hace fallar el job si hay hallazgos CRITICAL o HIGH con corrección disponible; con las dependencias actuales de <code>registraduria</code> el job falla y la imagen no se publica.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Requisitos de versión de las acciones</h4>
+      <ul class="tight" style="font-size:15px;margin:0">
+        <li>GitHub retiró Node 20 de los <em>runners</em> el 23 de septiembre de 2026. Las acciones deben estar en versiones mayores basadas en Node 24: <code>checkout@v7</code>, <code>setup-java@v6</code> y <code>upload-artifact@v7</code> (últimas versiones publicadas: 7.0.1, 6.0.1 y 7.0.1).</li>
+        <li>El workflow completo se revisó con <code>actionlint</code> sin errores.</li>
+        <li>El paso siguiente de la Entrega 3 es desplegar en Kubernetes la imagen publicada, referenciándola por su etiqueta de SHA o por su digest.</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+</main>
+
+<footer><div class="wrap">
+  <span>Diseño y Arquitectura de Software · Universidad de La Sabana</span>
+  <span>Material de apoyo — Módulo 6</span>
+</div></footer>
+
+<script>
+(function(){
+  'use strict';
+  var NS='http://www.w3.org/2000/svg';
+  var RM=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var F='-apple-system,Segoe UI,Roboto,sans-serif', MONO='ui-monospace,Consolas,monospace';
+  function el(t,a,x){var n=document.createElementNS(NS,t);for(var k in a)n.setAttribute(k,a[k]);if(x!=null)n.textContent=x;return n;}
+  function $(id){return document.getElementById(id);}
+  function clear(n){while(n.firstChild)n.removeChild(n.firstChild);}
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function wait(ms){return new Promise(function(r){setTimeout(r,RM?0:ms);});}
+  function ease(k){return k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;}
+  function tween(dur,fn){
+    return new Promise(function(res){
+      if(RM||document.hidden){fn(1);res();return;}
+      var t0=null;
+      function st(t){if(t0===null)t0=t;var k=Math.min(1,(t-t0)/dur);fn(ease(k));if(k<1)requestAnimationFrame(st);else res();}
+      requestAnimationFrame(st);
+    });
+  }
+  /* mueve un punto por un trazo SVG */
+  function fly(svg,d,color,dur,r){
+    if(RM)return Promise.resolve();
+    var p=el('path',{d:d,fill:'none',stroke:'none'});svg.appendChild(p);
+    var len=p.getTotalLength();
+    var c=el('circle',{r:r||6,fill:color||'#C9722F'});svg.appendChild(c);
+    return tween(dur||650,function(k){var pt=p.getPointAtLength(k*len);c.setAttribute('cx',pt.x);c.setAttribute('cy',pt.y);})
+      .then(function(){if(c.parentNode)c.parentNode.removeChild(c);if(p.parentNode)p.parentNode.removeChild(p);});
+  }
+  function tabGroup(sel,attr,cb){
+    var tabs=document.querySelectorAll(sel);
+    tabs.forEach(function(t){t.setAttribute('type','button');t.addEventListener('click',function(){
+      tabs.forEach(function(o){o.setAttribute('aria-selected','false');});
+      t.setAttribute('aria-selected','true');cb(t.getAttribute(attr));
+    });});
+  }
+  function box(svg,x,y,w,h,fill,stroke,rx){var r=el('rect',{x:x,y:y,width:w,height:h,rx:rx==null?8:rx,fill:fill,stroke:stroke||'none','stroke-width':1.5});svg.appendChild(r);return r;}
+  function txt(svg,x,y,s,o){o=o||{};var t=el('text',{x:x,y:y,'text-anchor':o.a||'middle',fill:o.c||'#1F2D4E','font-size':o.s||13,'font-family':o.f||F,'font-weight':o.w||'normal'},s);svg.appendChild(t);return t;}
+
+  /* ===================== 1. Entornos ===================== */
+  (function(){
+    var svg=$('p1-svg'),out=$('p1-out'),mode='sin',run=0;
+    var D={
+      sin:{L:['Windows 11','Python 3.14','Flask 3.1.3 · redis 8.1.0'],R:['Ubuntu 20.04','Python 3.8 (del sistema)','librerías instaladas a mano'],
+           pk:['app.py','requirements.txt'],rl:'funciona',rr:'falla o se comporta distinto',okR:false,
+           txt:'<p><strong>Sin contenedor</strong> viajan el código y una lista de dependencias sin versiones. El servidor instala lo que encuentre para su versión de Python, o ya tiene versiones viejas instaladas. El código es el mismo en ambas máquinas, pero el entorno es distinto.</p>'},
+      con:{L:['Docker Desktop (WSL2)','',''],R:['Docker Engine (Linux)','',''],
+           pk:['imagen friendlyhello','Python, libs y app.py'],rl:'contenedor en ejecución',rr:'mismo contenedor, mismo resultado',okR:true,
+           txt:'<p><strong>Con imagen</strong> viaja el entorno completo: intérprete, librerías y código, con sus versiones ya resueltas. Cada máquina solo necesita un motor de contenedores compatible. La imagen se publica en un registro y se descarga por su nombre y etiqueta.</p>'}
+    };
+    var pkg;
+    function draw(m,arrived){
+      clear(svg);var d=D[m];
+      [[10,'Portátil del desarrollador',d.L],[410,'Servidor de producción',d.R]].forEach(function(s){
+        box(svg,s[0],22,220,222,'#F1F3F7','#D5DAE4',10);
+        txt(svg,s[0]+110,46,s[1],{f:'Georgia,serif',s:14.5});
+        if(m==='sin')s[2].forEach(function(l,i){txt(svg,s[0]+110,74+i*20,l,{s:12.5,c:'#5A6480',f:MONO});});
+      });
+      if(m==='con'){
+        box(svg,30,64,180,24,'#C9722F',null,4);txt(svg,120,80,d.L[0],{s:11.5,c:'#fff',f:MONO});
+        box(svg,430,64,180,24,'#C9722F',null,4);txt(svg,520,80,d.R[0],{s:11.5,c:'#fff',f:MONO});
+        txt(svg,120,112,'solo requiere el motor',{s:11.5,c:'#5A6480'});txt(svg,520,112,'solo requiere el motor',{s:11.5,c:'#5A6480'});
+      }
+      svg.appendChild(el('path',{d:'M236 168 L404 168',stroke:'#D5DAE4','stroke-width':2,'stroke-dasharray':'5 5',fill:'none'}));
+      pkg=el('g',{});
+      var w=150;box(pkg,0,0,w,46,m==='con'?'#1F2D4E':'#fff',m==='con'?'none':'#1F2D4E',6);
+      txt(pkg,w/2,19,d.pk[0],{s:12,c:m==='con'?'#fff':'#1F2D4E',f:MONO,w:'bold'});
+      txt(pkg,w/2,36,d.pk[1],{s:m==='con'?10.5:12,c:m==='con'?'#B9C6E2':'#1F2D4E',f:MONO});
+      svg.appendChild(pkg);
+      place(arrived?445:45);
+      /* resultado izquierda */
+      txt(svg,120,228,'✓ '+d.rl,{s:12.5,c:'#2F6F4F',w:'bold'});
+      if(arrived)res(d);
+    }
+    function place(x){pkg.setAttribute('transform','translate('+x+',145)');}
+    function res(d){txt(svg,520,228,(d.okR?'✓ ':'✗ ')+d.rr,{s:12.5,c:d.okR?'#2F6F4F':'#9A3B2C',w:'bold'});}
+    async function play(){
+      var id=++run;draw(mode,false);out.innerHTML='';
+      await wait(250);if(id!==run)return;
+      await tween(1300,function(k){place(45+400*k);});
+      if(id!==run)return;
+      res(D[mode]);out.innerHTML=D[mode].txt;
+    }
+    tabGroup('[data-p1]','data-p1',function(k){mode=k;run++;draw(k,false);out.innerHTML='';play();});
+    $('p1-play').addEventListener('click',play);
+    draw('sin',true);out.innerHTML=D.sin.txt;
+  })();
+
+  /* ===================== 2. VM vs contenedor ===================== */
+  (function(){
+    var st=$('vm-stack'),tx=$('vm-text'),run=0;
+    var D={
+      vm:{rows:[{cols:[['App A','bins / libs','SO invitado + kernel'],['App B','bins / libs','SO invitado + kernel'],['App C','bins / libs','SO invitado + kernel']],cap:'tres máquinas virtuales'},
+                {t:'Hipervisor (tipo 1, o tipo 2 sobre un SO anfitrión)',c:'eng'},{t:'Hardware: CPU, RAM, disco, red',c:'hw'}],
+          txt:'<p><strong>Máquina virtual.</strong> El hipervisor emula hardware y cada VM arranca un sistema operativo completo con su propio kernel. Tres aplicaciones implican tres sistemas operativos que mantener y actualizar.</p><p class="small">Aislamiento fuerte; mayor consumo de memoria y disco.</p>',label:'Pila de máquinas virtuales: hardware, hipervisor y tres VM cada una con su sistema operativo invitado'},
+      ct:{rows:[{cols:[['App A','bins / libs'],['App B','bins / libs'],['App C','bins / libs']],cap:'tres contenedores (procesos aislados)'},
+                {t:'Motor de contenedores: Docker Engine → containerd → runc',c:'eng'},{t:'SO anfitrión Linux: un único kernel compartido',c:'kern'},{t:'Hardware: CPU, RAM, disco, red',c:'hw'}],
+          txt:'<p><strong>Contenedores.</strong> No hay SO invitado: cada contenedor es un proceso del anfitrión con su propia vista del sistema de archivos, la red y los procesos (<em>namespaces</em>) y con límites de CPU y memoria (<em>cgroups</em>). La imagen trae librerías y binarios, no un kernel.</p><p class="small">Arranque y tamaño menores; aislamiento menor, porque el kernel es compartido.</p>',label:'Pila de contenedores: hardware, kernel Linux compartido, motor de contenedores y tres contenedores'},
+      dd:{rows:[{cols:[['App A','bins / libs'],['App B','bins / libs'],['App C','bins / libs']],cap:'contenedores Linux'},
+                {t:'Docker Engine',c:'eng'},{t:'Kernel Linux de esa VM',c:'kern'},{t:'VM Linux liviana (WSL2 en Windows; VM propia en macOS)',c:'wsl'},
+                {t:'Windows 11 o macOS',c:'os'},{t:'Hardware',c:'hw'}],
+          txt:'<p><strong>Docker Desktop.</strong> Windows y macOS no tienen kernel Linux, así que Docker Desktop agrega una VM Linux liviana y el motor corre dentro de ella. Para el estudiante el comando es el mismo; por debajo hay una VM más.</p><p class="small">Consecuencias: el acceso a carpetas del anfitrión (<em>bind mounts</em>) es más lento y la memoria asignada a la VM limita a todos los contenedores.</p>',label:'Docker Desktop: hardware, Windows o macOS, VM Linux, kernel Linux, Docker Engine y contenedores'}
+    };
+    async function show(k){
+      var id=++run;clear(st);var d=D[k];tx.innerHTML=d.txt;st.setAttribute('aria-label',d.label);
+      var nodes=[];
+      d.rows.forEach(function(r){
+        var n;
+        if(r.cols){
+          n=document.createElement('div');n.className='vrow';n.style.padding='0';n.style.background='none';
+          var g=document.createElement('div');g.className='vcols';
+          r.cols.forEach(function(c){var col=document.createElement('div');col.className='vcol';
+            c.forEach(function(x,i){var b=document.createElement('div');b.className=i===0?'app':(x.indexOf('kernel')>=0?'gk':'lib');b.textContent=x;col.appendChild(b);});
+            g.appendChild(col);});
+          n.appendChild(g);var cap=document.createElement('div');cap.className='vcap';cap.textContent=r.cap;n.appendChild(cap);
+        } else {n=document.createElement('div');n.className='vrow '+r.c;n.textContent=r.t;}
+        st.appendChild(n);nodes.push(n);
+      });
+      for(var i=nodes.length-1;i>=0;i--){
+        await wait(140);if(id!==run)return;
+        nodes[i].classList.add('in');
+      }
+    }
+    tabGroup('[data-vm]','data-vm',show);
+    show('vm');
+  })();
+
+  /* ===================== 3. Capas y caché ===================== */
+  (function(){
+    var DF={
+      A:[{i:'FROM python:3-slim',k:'from'},{i:'WORKDIR /app',k:'wd'},{i:'COPY . /app',k:'copyall'},
+         {i:'RUN pip install --trusted-host pypi.python.org -r requirements.txt',k:'pip'},
+         {i:'EXPOSE 80',k:'meta'},{i:'ENV NAME World',k:'meta'},{i:'CMD ["python", "app.py"]',k:'meta'}],
+      B:[{i:'FROM python:3-slim',k:'from'},{i:'WORKDIR /app',k:'wd'},{i:'COPY requirements.txt .',k:'copyreq'},
+         {i:'RUN pip install --no-cache-dir -r requirements.txt',k:'pip'},{i:'COPY . .',k:'copyall'},
+         {i:'EXPOSE 80',k:'meta'},{i:'ENV NAME=World',k:'meta'},{i:'CMD ["python", "app.py"]',k:'meta'}]
+    };
+    var EXTRA=['docker-compose.yaml','data/dump.rdb','data/appendonlydir/*'];
+    var CH={first:null,app:['app.py'],req:['requirements.txt'],compose:EXTRA};
+    var S={ord:'A',scen:'first',ign:false},run=0;
+    var code=$('df-code'),layers=$('layers'),log=$('build-log'),out=$('cache-out'),ctx=$('ctx-chips'),appc=$('app-chips'),ign=$('ign');
+    function ignored(f){return S.ign&&(f==='Dockerfile'||f==='.dockerignore'||f==='docker-compose.yaml'||f.indexOf('data/')===0);}
+    function context(){var f=['Dockerfile','app.py','requirements.txt'];if(S.scen==='compose')f=f.concat(EXTRA);if(S.ign)f.push('.dockerignore');return f;}
+    function plan(){
+      var steps=DF[S.ord],first=S.scen==='first',ch=first?[]:CH[S.scen].filter(function(f){return !ignored(f);}),inv=false;
+      return steps.map(function(s){
+        var r;
+        if(s.k==='meta')r='meta';
+        else if(first||inv)r='run';
+        else if(s.k==='copyreq')r=ch.indexOf('requirements.txt')>=0?'run':'cached';
+        else if(s.k==='copyall')r=ch.length?'run':'cached';
+        else r='cached';
+        if(r==='run')inv=true;
+        return {s:s,r:r};
+      });
+    }
+    function hl(s){
+      var t=esc(s);
+      t=t.replace(/"([^"]*)"/g,'<span class="g">"$1"</span>');
+      t=t.replace(/^(FROM|WORKDIR|COPY|RUN|EXPOSE|ENV|CMD)/,'<span class="k">$1</span>');
+      return t;
+    }
+    function drawCode(p){
+      code.innerHTML=DF[S.ord].map(function(s,i){
+        var cls='ln'+(p&&p[i].r==='run'?' miss':(p&&p[i].r==='cached'?' hit':''));
+        return '<span class="'+cls+'" id="dfl-'+i+'">'+hl(s.i)+'</span>';
+      }).join('');
+    }
+    function drawCtx(){
+      clear(ctx);var ch=S.scen==='first'?[]:CH[S.scen];
+      context().forEach(function(f){var c=document.createElement('span');
+        c.className='chip'+(ignored(f)?' off':(ch.indexOf(f)>=0?' bad':''));
+        c.textContent=f+(ch.indexOf(f)>=0&&!ignored(f)?' (cambió)':'');ctx.appendChild(c);});
+    }
+    function drawApp(){
+      clear(appc);
+      context().filter(function(f){return !ignored(f);}).forEach(function(f){
+        var c=document.createElement('span');
+        c.className='chip'+(EXTRA.indexOf(f)>=0?' bad':'');c.textContent='/app/'+f;appc.appendChild(c);});
+    }
+    function logl(s,cls){var sp=document.createElement('span');sp.className='new'+(cls?' '+cls:'');sp.textContent=s+'\n';log.appendChild(sp);log.scrollTop=log.scrollHeight;}
+    async function build(){
+      var id=++run,p=plan();
+      drawCode(null);drawCtx();clear(layers);log.textContent='';out.innerHTML='';clear(appc);
+      var fs=p.filter(function(x){return x.r!=='meta';}),n=fs.length,num=5;
+      logl('$ docker build -t friendlyhello .');
+      logl('#1 [internal] load build definition from Dockerfile');
+      logl('#4 [internal] load .dockerignore'+(S.ign?'':' (no existe)'));
+      logl('#6 [internal] load build context');
+      var j=0;
+      for(var i=0;i<p.length;i++){
+        var x=p[i];
+        if(x.r==='meta')continue;
+        j++;
+        await wait(260);if(id!==run)return;
+        var ln=$('dfl-'+i);if(ln)ln.classList.add(x.r==='run'?'miss':'hit');
+        var L=document.createElement('div');L.className='layer'+(x.s.k==='from'?' base':'');
+        var t=document.createElement('span');t.className='txt';t.textContent=x.s.i;
+        var f=document.createElement('span');f.className='fill';
+        var b=document.createElement('span');b.className='badge';b.textContent='…';
+        L.appendChild(f);L.appendChild(t);L.appendChild(b);layers.appendChild(L);
+        requestAnimationFrame(function(LL){return function(){LL.classList.add('in');};}(L));
+        var tag='#'+(num+j-1)+' ['+j+'/'+n+'] '+(x.s.k==='from'?'FROM docker.io/library/python:3-slim@sha256:c3e521df…':x.s.i);
+        logl(tag);
+        if(x.r==='cached'){
+          await wait(220);if(id!==run)return;
+          L.classList.add('cached');b.className='badge ok';b.textContent='CACHED';logl('#'+(num+j-1)+' CACHED');
+        } else {
+          var dur=x.s.k==='pip'?1500:(x.s.k==='from'&&S.scen==='first'?1000:450);
+          await tween(dur,function(k){f.style.width=(k*100)+'%';});
+          if(id!==run)return;
+          if(x.s.k==='pip')logl('#'+(num+j-1)+' Successfully installed Flask-3.1.3 Redis-8.1.0 blinker-1.9.0 click-8.5.0 …');
+          L.classList.add('run');b.className='badge run';b.textContent=x.s.k==='from'?'DESCARGADA':'EJECUTADA';logl('#'+(num+j-1)+' DONE');
+        }
+      }
+      await wait(200);if(id!==run)return;
+      p.forEach(function(x,i){if(x.r==='meta'){var ln=$('dfl-'+i);if(ln)ln.classList.add(p.some(function(y){return y.r==='run';})?'miss':'hit');}});
+      logl('#'+(num+n)+' exporting to image');
+      if(S.ord==='A')logl(' 1 warning found: LegacyKeyValueFormat: "ENV key=value" should be used instead of legacy "ENV key value" format (line 6)');
+      drawApp();
+      summarize(p);
+    }
+    function summarize(p){
+      var pip=p.filter(function(x){return x.s.k==='pip';})[0].r==='run';
+      var fs=p.filter(function(x){return x.r!=='meta';});
+      var rb=fs.filter(function(x){return x.r==='run';}).length;
+      var junk=S.scen==='compose'&&!S.ign;
+      var msg='<div class="metric"><div><b>'+rb+' de '+fs.length+'</b><span>capas reconstruidas</span></div>'+
+        '<div><b style="color:'+(pip?'#9A3B2C':'#2F6F4F')+'">'+(pip?'Sí':'No')+'</b><span>¿se ejecutó pip install?</span></div>'+
+        '<div><b style="color:'+(junk?'#9A3B2C':'#2F6F4F')+'">'+(junk?'Sí':'No')+'</b><span>¿entraron datos o archivos ajenos a la imagen?</span></div></div>';
+      var e='';
+      if(S.scen==='first')e='Primera construcción: no hay caché y se ejecutan todas las instrucciones. En las siguientes construcciones se reutiliza lo que no cambie.';
+      else if(S.scen==='app')e=S.ord==='A'?'Cambiar una línea de <code>app.py</code> invalida <code>COPY . /app</code> y, con ella, <code>pip install</code>: se reinstalan todas las dependencias sin que hayan cambiado.':'Solo se rehace <code>COPY . .</code>. Las dependencias ya instaladas se reutilizan porque <code>requirements.txt</code> no cambió.';
+      else if(S.scen==='req')e='Cambiar las dependencias obliga a reinstalarlas en ambos órdenes. Es el único caso en que <code>pip install</code> debería ejecutarse.';
+      else e=S.ign?'Con <code>.dockerignore</code> los archivos nuevos no entran al contexto: la caché se conserva y la imagen no cambia (comparado con una construcción anterior que ya usaba el mismo <code>.dockerignore</code>).':(S.ord==='A'?'Los archivos nuevos entran al contexto, invalidan <code>COPY . /app</code> y se reinstalan las dependencias. Además, los datos de Redis quedan dentro de la imagen.':'El orden B evita reinstalar dependencias, pero <code>COPY . .</code> sigue copiando los datos de Redis y <code>docker-compose.yaml</code> a la imagen. El orden no reemplaza al <code>.dockerignore</code>.');
+      out.innerHTML=msg+'<p style="margin-top:12px">'+e+'</p>';
+    }
+    function reset(){run++;drawCode(null);drawCtx();clear(layers);clear(appc);log.textContent='';out.innerHTML='<p class="small">Elija un escenario o pulse <code>docker build</code>.</p>';}
+    tabGroup('[data-ord]','data-ord',function(k){S.ord=k;build();});
+    tabGroup('[data-scen]','data-scen',function(k){S.scen=k;build();});
+    ign.addEventListener('click',function(){S.ign=!S.ign;ign.setAttribute('aria-pressed',String(S.ign));ign.textContent='.dockerignore: '+(S.ign?'presente':'no existe');build();});
+    $('build-btn').addEventListener('click',build);
+    reset();
+    /* estado inicial visible sin interacción */
+    S.scen='first';build();
+  })();
+
+  /* ===================== 4. Multi-stage ===================== */
+  (function(){
+    var codeEl=$('ms-code'),bb=$('ms-build'),fb=$('ms-final'),bc=$('ms-build-chips'),fc=$('ms-final-chips'),arrow=$('ms-arrow'),out=$('ms-out'),lab=$('ms-size-label'),bar=$('ms-sizebar'),run=0;
+    var CODE={
+      multi:'<span class="c"># syntax=docker/dockerfile:1</span>\n\n<span class="c"># Etapa 1: compilar el jar (las pruebas ya corrieron en CI con mvn verify)</span>\n<span class="k">FROM</span> maven:3.9.9-eclipse-temurin-21 <span class="k">AS</span> build\n<span class="k">WORKDIR</span> /src\n<span class="k">COPY</span> pom.xml .\n<span class="k">RUN</span> --mount=type=cache,target=/root/.m2 mvn -B -ntp -q dependency:go-offline\n<span class="k">COPY</span> src ./src\n<span class="k">RUN</span> --mount=type=cache,target=/root/.m2 mvn -B -ntp -q package -DskipTests \\\n && cp target/registraduria-*.jar /app.jar\n\n<span class="c"># Etapa 2: solo JRE + jar, usuario sin privilegios</span>\n<span class="k">FROM</span> eclipse-temurin:21-jre\n<span class="k">RUN</span> groupadd --system app &amp;&amp; useradd --system --gid app --no-create-home app\n<span class="k">WORKDIR</span> /app\n<span class="k">COPY</span> <span class="r">--from=build</span> --chown=app:app /app.jar app.jar\n<span class="k">USER</span> app\n<span class="k">EXPOSE</span> 8080\n<span class="k">ENTRYPOINT</span> [<span class="g">"java"</span>, <span class="g">"-jar"</span>, <span class="g">"/app/app.jar"</span>]',
+      single:'<span class="c"># Una sola etapa: compila y ejecuta en la misma imagen</span>\n<span class="k">FROM</span> maven:3.9.9-eclipse-temurin-21\n<span class="k">WORKDIR</span> /src\n<span class="k">COPY</span> . .\n<span class="k">RUN</span> mvn -B -ntp -q package -DskipTests \\\n && cp target/registraduria-*.jar /app.jar\n<span class="k">EXPOSE</span> 8080\n<span class="k">ENTRYPOINT</span> [<span class="g">"java"</span>, <span class="g">"-jar"</span>, <span class="g">"/app.jar"</span>]\n\n<span class="c"># Resultado: JDK, Maven, ~/.m2, src/ y target/</span>\n<span class="c"># viajan en la imagen. El proceso corre como root.</span>'
+    };
+    var BUILD=['Ubuntu (base)','JDK 21 completo','Maven 3.9.9','~/.m2 (caché de dependencias)','src/','target/ (clases)','app.jar'];
+    function chips(host,list,cls){clear(host);list.forEach(function(x,i){var c=document.createElement('span');c.className='chip'+(cls&&cls[i]?' '+cls[i]:'');c.textContent=x;host.appendChild(c);});}
+    async function show(k){
+      var id=++run;codeEl.innerHTML=CODE[k];out.innerHTML='';bar.querySelector('i').style.width='0';$('ms-build-h').innerHTML='Etapa <code>build</code>';
+      if(k==='single'){
+        bb.classList.add('hidden');arrow.style.display='none';
+        chips(fc,[]);
+        var list=['Ubuntu (base)','JDK 21 completo','Maven 3.9.9','~/.m2 en una capa','src/ y pom.xml','target/','app.jar','usuario root'];
+        var cls=['','bad','bad','bad','bad','bad','ok','bad'];
+        for(var i=0;i<list.length;i++){await wait(150);if(id!==run)return;var c=document.createElement('span');c.className='chip pop '+cls[i];c.textContent=list[i];fc.appendChild(c);}
+        lab.innerHTML='Tamaño: mayor que la versión multi-stage <span class="small">(no medido en este material; la barra es ilustrativa)</span>';
+        bar.className='sizebar unk';await wait(100);bar.querySelector('i').style.width='100%';
+        out.innerHTML='<p>La imagen de ejecución arrastra herramientas de compilación que no se necesitan en producción. Cada herramienta adicional es superficie de ataque y megabytes que se descargan en cada despliegue.</p>';
+      } else {
+        bb.classList.remove('hidden','discard');arrow.style.display='';arrow.style.opacity='0';
+        chips(bc,BUILD,['','','','','','','ok']);chips(fc,[]);
+        await wait(500);if(id!==run)return;
+        arrow.style.transition='opacity .4s';arrow.style.opacity='1';
+        await wait(450);if(id!==run)return;
+        var fl=['Ubuntu (base)','JRE 21','app.jar','USER app (uid 999)'],fcl=['','','ok','ok'];
+        for(var j=0;j<fl.length;j++){await wait(170);if(id!==run)return;var d=document.createElement('span');d.className='chip pop '+fcl[j];d.textContent=fl[j];fc.appendChild(d);}
+        await wait(350);if(id!==run)return;
+        bb.classList.add('discard');$('ms-build-h').innerHTML='Etapa <code>build</code> (descartada)';
+        lab.innerHTML='Tamaño medido: <strong>508 MB</strong> <span class="small">(docker images, almacén containerd)</span>';
+        bar.className='sizebar';await wait(60);bar.querySelector('i').style.width='62%';
+        out.innerHTML='<p>La etapa <code>build</code> solo existe durante la construcción y no se publica. A la imagen final llegan la base con el JRE, el <code>.jar</code> copiado con <code>COPY --from=build</code> y el usuario sin privilegios.</p>';
+      }
+    }
+    tabGroup('[data-ms]','data-ms',show);
+    show('multi');
+  })();
+
+  /* ===================== 5. Ciclo de vida ===================== */
+  (function(){
+    var svg=$('lc-svg'),term=$('lc-term'),lay=$('lc-layer-c'),vol=$('lc-vol-c'),rmBtn=$('lc-rm');
+    var S={state:'none',rmFlag:false,rmOpt:false,files:[],visits:null,busy:false};
+    var N={created:{x:20,y:28,l:'Creado'},running:{x:200,y:28,l:'En ejecución'},stopped:{x:380,y:28,l:'Detenido'},removed:{x:200,y:182,l:'Eliminado'}};
+    var E={
+      'created-running':'M140 51 L200 51','running-stopped':'M320 42 L380 42','stopped-running':'M380 62 L320 62',
+      'created-removed':'M80 74 L80 205 L200 205','stopped-removed':'M440 74 L440 205 L320 205','running-removed':'M260 74 L260 182',
+      'none-created':'M80 4 L80 28','none-running':'M260 4 L260 28'
+    };
+    var rects={};
+    function draw(){
+      clear(svg);
+      svg.appendChild(el('defs',{})).appendChild((function(){var m=el('marker',{id:'lcA',markerWidth:9,markerHeight:9,refX:7,refY:3,orient:'auto'});m.appendChild(el('path',{d:'M0,0 L7,3 L0,6 Z',fill:'#5A6480'}));return m;})());
+      [['M140 51 L196 51','start',170,45],['M320 42 L376 42','stop',348,36],['M380 62 L324 62','start',352,77],
+       ['M80 74 L80 205 L196 205','rm',92,150],['M440 74 L440 205 L324 205','rm',452,150],['M260 74 L260 178','',0,0]].forEach(function(e,i){
+        var dash=i===5?{'stroke-dasharray':'5 4'}:{};
+        var a={d:e[0],stroke:'#5A6480','stroke-width':1.6,fill:'none','marker-end':'url(#lcA)'};for(var k in dash)a[k]=dash[k];
+        svg.appendChild(el('path',a));
+        if(e[1])txt(svg,e[2],e[3],e[1],{s:11.5,c:'#5A6480',f:MONO,a:i>=3?'start':'middle'});
+      });
+      txt(svg,268,132,'rm -f',{s:11.5,c:'#5A6480',f:MONO,a:'start'});
+      txt(svg,268,146,'o stop con --rm',{s:10.5,c:'#5A6480',f:MONO,a:'start'});
+      txt(svg,80,16,'create',{s:11,c:'#5A6480',f:MONO});
+      txt(svg,260,16,'run = create + start',{s:11,c:'#5A6480',f:MONO});
+      svg.appendChild(el('path',{d:'M80 18 L80 26',stroke:'#5A6480','stroke-width':1.6,'marker-end':'url(#lcA)'}));
+      svg.appendChild(el('path',{d:'M260 20 L260 26',stroke:'#5A6480','stroke-width':1.6,'marker-end':'url(#lcA)'}));
+      Object.keys(N).forEach(function(k){
+        var n=N[k],on=S.state===k;
+        rects[k]=box(svg,n.x,n.y,120,46,on?(k==='removed'?'#9A3B2C':'#1F2D4E'):'#F1F3F7',on?'none':'#D5DAE4',8);
+        txt(svg,n.x+60,n.y+28,n.l,{s:13.5,c:on?'#fff':'#1F2D4E',w:on?'bold':'normal'});
+      });
+      txt(svg,500,240,S.state==='none'?'No existe el contenedor «cache»':'Contenedor «cache»'+(S.rmFlag&&S.state!=='removed'?' (creado con --rm)':''),{s:11.5,c:'#5A6480',a:'end'});
+    }
+    function boxes(){
+      clear(lay);clear(vol);
+      var alive=S.state!=='none'&&S.state!=='removed';
+      $('lc-layer').classList.toggle('gone',!alive);
+      if(!alive){var c=document.createElement('span');c.className='small';c.textContent=S.state==='removed'?'Eliminada junto con el contenedor.':'Sin contenedor.';lay.appendChild(c);}
+      else if(!S.files.length){var c2=document.createElement('span');c2.className='small';c2.textContent='Vacía (sin cambios respecto a la imagen).';lay.appendChild(c2);}
+      else S.files.forEach(function(f){var c=document.createElement('span');c.className='chip';c.textContent=f;lay.appendChild(c);});
+      if(S.visits===null){var v=document.createElement('span');v.className='small';v.textContent='Aún no existe.';vol.appendChild(v);}
+      else{var v2=document.createElement('span');v2.className='chip ok';v2.textContent='appendonly.aof · visitas = '+S.visits;vol.appendChild(v2);}
+    }
+    function out(cmd,res,err){
+      var s='<span class="g">$</span> '+esc(cmd)+'\n'+(res?(err?'<span class="r">'+esc(res)+'</span>':esc(res))+'\n':'');
+      term.innerHTML+=s;term.scrollTop=term.scrollHeight;
+    }
+    function cid(){var h='';for(var i=0;i<12;i++)h+='0123456789abcdef'[Math.floor(Math.random()*16)];return h+'…';}
+    async function go(from,to){
+      if(from===to)return;
+      var key=from+'-'+to;
+      S.state=to;
+      if(E[key])await fly(svg,E[key],'#C9722F',550,6);
+      draw();boxes();
+    }
+    var RUNARGS='-d --name cache -v datos:/data redis:8.2 redis-server --appendonly yes';
+    async function cmd(c){
+      if(S.busy)return;S.busy=true;
+      var st=S.state,exists=st!=='none'&&st!=='removed',rmTxt=S.rmOpt?' --rm':'';
+      try{
+        if(c==='reset'){S.state='none';S.files=[];S.visits=null;S.rmFlag=false;term.innerHTML='';draw();boxes();}
+        else if(c==='create'){
+          if(exists){out('docker create'+rmTxt+' --name cache …','Error response from daemon: Conflict. The container name "/cache" is already in use…',true);}
+          else{out('docker create'+rmTxt+' '+RUNARGS.replace('-d ',''),cid());S.rmFlag=S.rmOpt;S.files=[];if(S.visits===null)S.visits=0;await go(st==='removed'?'none':st,'created');}
+        }
+        else if(c==='run'){
+          if(exists){out('docker run'+rmTxt+' '+RUNARGS,'docker: Error response from daemon: Conflict. The container name "/cache" is already in use…',true);}
+          else{out('docker run'+rmTxt+' '+RUNARGS,cid());S.rmFlag=S.rmOpt;S.files=[];if(S.visits===null)S.visits=0;await go('none','running');}
+        }
+        else if(c==='start'){
+          if(!exists)out('docker start cache','Error response from daemon: No such container: cache',true);
+          else if(st==='running')out('docker start cache','cache');
+          else{out('docker start cache','cache');await go(st,'running');}
+        }
+        else if(c==='stop'){
+          if(!exists)out('docker stop cache','Error response from daemon: No such container: cache',true);
+          else if(st!=='running')out('docker stop cache','cache');
+          else{out('docker stop cache','cache');await go('running','stopped');
+            if(S.rmFlag){await wait(350);out('# --rm: Docker elimina el contenedor al detenerse','');S.files=[];await go('stopped','removed');}}
+        }
+        else if(c==='rm'){
+          if(!exists)out('docker rm cache','Error response from daemon: No such container: cache',true);
+          else if(st==='running')out('docker rm cache','Error response from daemon: cannot remove container "cache": container is running: stop the container before removing or force remove',true);
+          else{out('docker rm cache','cache');S.files=[];await go(st,'removed');}
+        }
+        else if(c==='incr'){
+          if(st!=='running')out('docker exec cache redis-cli INCR visitas',exists?'Error response from daemon: container … is not running':'Error response from daemon: No such container: cache',true);
+          else{S.visits++;out('docker exec cache redis-cli INCR visitas',String(S.visits));boxes();$('lc-vol').classList.remove('flash');void $('lc-vol').offsetWidth;$('lc-vol').classList.add('flash');}
+        }
+        else if(c==='note'){
+          if(st!=='running')out('docker exec cache sh -c "echo hola > /tmp/nota.txt"',exists?'Error response from daemon: container … is not running':'Error response from daemon: No such container: cache',true);
+          else{out('docker exec cache sh -c "echo hola > /tmp/nota.txt"','');if(S.files.indexOf('/tmp/nota.txt')<0)S.files.push('/tmp/nota.txt');boxes();$('lc-layer').classList.remove('flash');void $('lc-layer').offsetWidth;$('lc-layer').classList.add('flash');}
+        }
+      } finally {S.busy=false;}
+    }
+    document.querySelectorAll('[data-lc]').forEach(function(b){b.addEventListener('click',function(){cmd(b.getAttribute('data-lc'));});});
+    rmBtn.addEventListener('click',function(){S.rmOpt=!S.rmOpt;rmBtn.setAttribute('aria-pressed',String(S.rmOpt));rmBtn.textContent='--rm: '+(S.rmOpt?'activado':'desactivado');});
+    draw();boxes();
+    term.innerHTML='<span class="c"># Pruebe: run, exec INCR, exec nota, stop, start, rm y run otra vez.</span>\n';
+  })();
+
+  /* ---- Publicación de puertos ---- */
+  (function(){
+    var svg=$('pm-svg'),out=$('pm-out'),mode='ok',run=0;
+    function draw(){
+      clear(svg);
+      box(svg,8,70,96,50,'#F1F3F7','#D5DAE4',8);txt(svg,56,92,'curl',{f:MONO,s:13});txt(svg,56,108,'navegador',{s:11,c:'#5A6480'});
+      box(svg,150,14,400,166,'#fff','#1F2D4E',10);txt(svg,166,34,'Anfitrión (localhost)',{a:'start',s:13,f:'Georgia,serif'});
+      var hp=mode==='none';
+      box(svg,138,80,52,30,hp?'#F1F3F7':'#C9722F',hp?'#D5DAE4':'none',5);txt(svg,164,100,':4000',{s:12,c:hp?'#5A6480':'#fff',f:MONO});
+      if(hp){svg.appendChild(el('path',{d:'M146 86 L182 104 M182 86 L146 104',stroke:'#9A3B2C','stroke-width':2}));}
+      box(svg,310,48,220,112,'#F1F3F7','#5A6480',8);txt(svg,420,70,'Contenedor web',{s:13});
+      txt(svg,420,140,'Flask escucha en :80',{s:11.5,c:'#5A6480',f:MONO});
+      box(svg,296,80,40,30,'#1F2D4E',null,5);txt(svg,316,100,':80',{s:12,c:'#fff',f:MONO});
+      if(mode==='bad'){box(svg,296,116,40,24,'#F7E4E0','#9A3B2C',5);txt(svg,316,133,':5000',{s:10.5,c:'#9A3B2C',f:MONO});}
+      if(mode==='ok')svg.appendChild(el('path',{d:'M190 95 L294 95',stroke:'#C9722F','stroke-width':2,'stroke-dasharray':'5 4',fill:'none'}));
+      if(mode==='bad')svg.appendChild(el('path',{d:'M190 95 L240 95 L240 128 L294 128',stroke:'#9A3B2C','stroke-width':2,'stroke-dasharray':'5 4',fill:'none'}));
+      var lbl={ok:'-p 4000:80 → reenvía al :80 del contenedor',none:'sin -p: el puerto 4000 del anfitrión está cerrado',bad:'-p 4000:5000 → nadie escucha en :5000'}[mode];
+      txt(svg,166,172,lbl,{a:'start',s:11.5,c:mode==='ok'?'#2F6F4F':'#9A3B2C',f:MONO});
+    }
+    async function go(){
+      var id=++run;draw();out.textContent='$ curl http://localhost:4000\n';
+      if(mode==='none'){await fly(svg,'M104 95 L136 95','#C9722F',450);if(id!==run)return;
+        out.textContent+='curl: (7) Failed to connect to localhost port 4000: Connection refused\n';return;}
+      if(mode==='bad'){await fly(svg,'M104 95 L240 95 L240 128 L296 128','#C9722F',800);if(id!==run)return;
+        out.textContent+='curl: (52) Empty reply from server\n# el mensaje exacto varía según la plataforma; la conexión se cierra sin respuesta\n';return;}
+      await fly(svg,'M104 95 L296 95','#C9722F',700);if(id!==run)return;
+      await fly(svg,'M296 95 L104 95','#2F6F4F',700);if(id!==run)return;
+      out.textContent+='<h3>Hello World!</h3><b>Hostname:</b> 3f2a9c81d0b4<br/><b>Visits:</b> 1\n';
+    }
+    tabGroup('[data-pm]','data-pm',function(k){mode=k;run++;draw();out.textContent='';go();});
+    $('pm-go').addEventListener('click',go);
+    draw();out.textContent='$ curl http://localhost:4000';
+  })();
+
+  /* ===================== 6. Compose ===================== */
+  (function(){
+    var svg=$('cp-svg'),out=$('cp-out'),mode='ok',run=0,visits=0,clock;
+    function draw(){
+      clear(svg);
+      var alone=mode!=='ok';
+      box(svg,6,112,96,52,'#F1F3F7','#D5DAE4',8);txt(svg,54,134,'Navegador',{s:12.5});txt(svg,54,151,'localhost:4000',{s:10.5,c:'#5A6480',f:MONO});
+      var net=el('rect',{x:128,y:12,width:424,height:256,rx:12,fill:'none',stroke:alone?'#C7CEDD':'#1F2D4E','stroke-width':1.5,'stroke-dasharray':'7 5'});svg.appendChild(net);
+      txt(svg,142,32,alone?'red bridge por defecto (sin DNS de Compose)':'red friendlyhello_default',{a:'start',s:12,c:alone?'#5A6480':'#1F2D4E',f:MONO});
+      box(svg,160,112,130,52,'#1F2D4E',null,8);txt(svg,225,134,'web',{s:14,c:'#fff',w:'bold'});txt(svg,225,151,':80 (publicado 4000)',{s:10,c:'#B9C6E2',f:MONO});
+      box(svg,338,46,196,44,alone?'#F7E4E0':'#F3E2D4',alone?'#9A3B2C':'#C9722F',8);
+      txt(svg,436,64,alone?'DNS del anfitrión':'DNS interno 127.0.0.11',{s:12,c:alone?'#9A3B2C':'#7C441A',f:MONO});
+      txt(svg,436,81,alone?'«redis» no existe':'redis → IP del servicio',{s:10.5,c:'#5A6480',f:MONO});
+      if(alone){box(svg,372,176,150,52,'#fff','#C7CEDD',8).setAttribute('stroke-dasharray','5 4');txt(svg,447,206,'redis (no existe)',{s:12.5,c:'#5A6480'});}
+      else{box(svg,372,176,150,52,'#C9722F',null,8);txt(svg,447,198,'redis',{s:14,c:'#fff',w:'bold'});txt(svg,447,215,':6379 · ./data:/data',{s:10,c:'#fff',f:MONO});}
+      clock=txt(svg,540,258,'',{a:'end',s:12,c:'#9A3B2C',f:MONO,w:'bold'});
+    }
+    function page(v,host){return '<pre style="margin-top:4px">&lt;h3&gt;Hello World!&lt;/h3&gt;&lt;b&gt;Hostname:&lt;/b&gt; '+host+'&lt;br/&gt;&lt;b&gt;Visits:&lt;/b&gt; '+v+'</pre>';}
+    async function go(){
+      var id=++run;draw();out.innerHTML='';
+      await fly(svg,'M102 138 L160 138','#C9722F',450);if(id!==run)return;
+      if(mode==='ok'){
+        await fly(svg,'M260 112 L340 70','#C9722F',450);if(id!==run)return;
+        await fly(svg,'M340 76 L268 114','#2F6F4F',400);if(id!==run)return;
+        await fly(svg,'M290 150 L372 196','#C9722F',450);if(id!==run)return;
+        await fly(svg,'M372 204 L290 158','#2F6F4F',450);if(id!==run)return;
+        await fly(svg,'M160 138 L102 138','#2F6F4F',450);if(id!==run)return;
+        visits++;out.innerHTML='<p>Respuesta inmediata. <code>web</code> resolvió <code>redis</code> con el DNS de la red de Compose y ejecutó <code>INCR counter</code>.</p>'+page(visits,'5d0c1e7a92b3');
+        return;
+      }
+      var total=mode==='solo'?94:7,att=mode==='solo'?6:1,per=mode==='solo'?520:900,t=0;
+      for(var i=0;i<att;i++){
+        var p1=fly(svg,'M260 112 L340 70','#9A3B2C',per);
+        var t0=t,t1=Math.round(total*(i+1)/att);
+        await Promise.all([p1,tween(per,function(k){t=Math.round(t0+(t1-t0)*k);clock.textContent='t = '+t+' s'+(mode==='solo'?' (acelerado)':'');})]);
+        if(id!==run)return;
+        txt(svg,350+i*14,104,'✗',{s:13,c:'#9A3B2C',w:'bold'});
+      }
+      clock.textContent='t ≈ '+total+' s';
+      await fly(svg,'M160 138 L102 138','#2F6F4F',450);if(id!==run)return;
+      out.innerHTML=mode==='solo'
+        ?'<p><strong>92–96 s por petición (medido).</strong> redis-py 8.1.0 reintenta 10 veces con espera exponencial y cada intento vuelve a resolver el nombre <code>redis</code>, que falla lentamente. La animación muestra menos intentos de los reales.</p>'+page('&lt;i&gt;cannot connect to Redis, counter disabled&lt;/i&gt;','167f6d4daf62')
+        :'<p><strong>Unos 7 s en la medición del taller; entre 4 y 15 s en repeticiones posteriores.</strong> Sin reintentos queda un solo intento, cuyo costo es la resolución DNS fallida.</p>'+page('&lt;i&gt;cannot connect to Redis, counter disabled&lt;/i&gt;','167f6d4daf62');
+    }
+    tabGroup('[data-cp]','data-cp',function(k){mode=k;run++;draw();out.innerHTML='';go();});
+    $('cp-go').addEventListener('click',go);
+    draw();out.innerHTML='<p class="small">Pulse «Enviar petición».</p>';
+  })();
+
+  /* ===================== 7. Traefik ===================== */
+  (function(){
+    var svg=$('tf-svg'),resp=$('tf-resp'),tally=$('tf-tally'),scale=5,url='localhost',rr=0,visits=0,run=0,busy=false;
+    var HOSTS=['a41f0c9e27d5','e8b3d61f04a2','b97f55dab68a','d3c1dc68504e','6d97b19f21f4'];
+    var count=[0,0,0,0,0],Y=[];
+    function draw(hi){
+      clear(svg);
+      box(svg,6,124,92,52,'#F1F3F7','#D5DAE4',8);txt(svg,52,146,'Navegador',{s:12.5});txt(svg,52,163,url==='ip'?'127.0.0.1:4000':'localhost:4000',{s:10,c:'#5A6480',f:MONO});
+      box(svg,150,112,120,76,'#C9722F',null,10);txt(svg,210,142,'Traefik',{s:15,c:'#fff',w:'bold'});txt(svg,210,160,':4000',{s:11,c:'#fff',f:MONO});txt(svg,210,176,'Host(`localhost`)',{s:9.5,c:'#fff',f:MONO});
+      Y=[];var n=scale,gap=n===1?0:Math.min(56,236/(n-1));var y0=150-((n-1)*gap)/2;
+      for(var i=0;i<n;i++){
+        var y=y0+i*gap;Y.push(y);
+        box(svg,330,y-22,150,44,hi===i?'#1F2D4E':'#F1F3F7',hi===i?'none':'#D5DAE4',8);
+        txt(svg,405,y-3,'friendlyhello-web-'+(i+1),{s:11.5,c:hi===i?'#fff':'#1F2D4E',f:MONO});
+        txt(svg,405,y+13,HOSTS[i],{s:10.5,c:hi===i?'#B9C6E2':'#5A6480',f:MONO});
+        svg.appendChild(el('path',{d:'M270 150 L330 '+y,stroke:'#D5DAE4','stroke-width':1.3,fill:'none'}));
+        txt(svg,496,y+5,count[i]?('×'+count[i]):'',{s:12,c:'#C9722F',f:MONO,a:'start'});
+      }
+      box(svg,150,236,120,30,'#fff','#C9722F',6);txt(svg,210,256,'redis (compartido)',{s:11,c:'#7C441A',f:MONO});
+    }
+    function tallyTxt(){
+      var s='<strong>Peticiones atendidas:</strong> '+count.slice(0,scale).reduce(function(a,b){return a+b;},0)+'<br>';
+      s+='Con <code>--scale web='+scale+'</code> Traefik reparte en orden: 1, 2, …, '+scale+', 1, … El contador de visitas es único porque lo guarda Redis, no la réplica.';
+      tally.innerHTML=s;
+    }
+    async function one(id){
+      draw();
+      await fly(svg,'M98 150 L150 150','#C9722F',300);if(id!==run)return false;
+      if(url==='ip'){
+        await fly(svg,'M150 150 L98 150','#9A3B2C',300);if(id!==run)return false;
+        resp.textContent='$ curl -i http://127.0.0.1:4000\nHTTP/1.1 404 Not Found\n\n404 page not found\n# ninguna regla coincide: Host es 127.0.0.1, no localhost';
+        return true;
+      }
+      var i=rr%scale;rr++;
+      await fly(svg,'M270 150 L330 '+Y[i],'#C9722F',300);if(id!==run)return false;
+      count[i]++;visits++;draw(i);
+      await fly(svg,'M330 '+Y[i]+' L270 150 L98 150','#2F6F4F',380);if(id!==run)return false;
+      resp.textContent='$ curl http://localhost:4000\n<h3>Hello World!</h3>\n<b>Hostname:</b> '+HOSTS[i]+'<br/>\n<b>Visits:</b> '+visits;
+      tallyTxt();return true;
+    }
+    async function send(n){
+      if(busy)return;busy=true;var id=++run;
+      try{for(var k=0;k<n;k++){var ok=await one(id);if(!ok)break;if(RM)continue;await wait(60);}}
+      finally{busy=false;}
+    }
+    tabGroup('[data-sc]','data-sc',function(k){scale=+k;rr=0;count=[0,0,0,0,0];run++;busy=false;draw();tallyTxt();resp.textContent='';});
+    tabGroup('[data-url]','data-url',function(k){url=k;run++;busy=false;draw();resp.textContent='';});
+    $('tf-one').addEventListener('click',function(){send(1);});
+    $('tf-ten').addEventListener('click',function(){send(10);});
+    draw();tallyTxt();resp.textContent='$ docker compose up -d --scale web=5';
+  })();
+
+  /* ===================== 9. Buenas prácticas ===================== */
+  (function(){
+    var list=$('bp-list');
+    var ITEMS=[
+      {t:'Imagen base con etiqueta fija',e:'En el taller, python:3-slim resolvió a Python 3.14 y redis sin etiqueta a la última versión. Usar python:3.14-slim, redis:8.2 o un digest.',o:false},
+      {t:'Dependencias con versión fija',e:'Redis sin versión instaló redis-py 8.1.0, que cambió el comportamiento de reintentos (sección 6).',o:false},
+      {t:'.dockerignore',e:'Sin él, los datos de Redis y docker-compose.yaml terminaron dentro de la imagen (sección 3).',o:false},
+      {t:'Dependencias antes que el código',e:'COPY requirements.txt, RUN pip install y luego COPY . . para no reinstalar con cada cambio.',o:false},
+      {t:'Usuario no root (USER)',e:'El contenedor original corre como root; ante una vulnerabilidad, el atacante obtiene root dentro del contenedor.',o:false},
+      {t:'Multi-stage cuando se compila',e:'Para Java: compilar con JDK y Maven, ejecutar con JRE (sección 4).',o:false},
+      {t:'HEALTHCHECK',e:'Permite que Docker, Compose u otro orquestador sepan si la aplicación responde, no solo si el proceso existe.',o:false},
+      {t:'Un proceso por contenedor y manejo de señales en PID 1',e:'Inferido: docker compose down tardó unos 10 s por contenedor web, probablemente porque python como PID 1 ignoró SIGTERM y Docker envió SIGKILL al vencer el plazo. Con gunicorn, docker stop tardó ~1 s.',o:false,inf:true},
+      {t:'Servidor de producción',e:'Flask advierte "This is a development server" al iniciar. Usar gunicorn u otro servidor WSGI.',o:false},
+      {t:'Secretos fuera de la imagen',e:'Nada de ENV con contraseñas ni COPY de .env: cualquiera con la imagen puede leer sus capas. Usar variables o secretos en tiempo de ejecución, o RUN --mount=type=secret al construir.',o:false},
+      {t:'Credenciales del registro protegidas',e:'docker login guarda las credenciales en ~/.docker/config.json sin cifrar (solo codificadas en base64) si no hay un credential helper configurado.',o:false}
+    ];
+    var circ=301.6;
+    ITEMS.forEach(function(it,i){
+      var b=document.createElement('button');b.type='button';b.setAttribute('aria-pressed','false');b.dataset.i=i;
+      b.innerHTML='<span class="box" aria-hidden="true"></span><span><strong>'+esc(it.t)+'</strong>'+(it.inf?' <span class="inferred">INFERIDO</span>':'')+'<span class="ev">'+esc(it.e)+'</span></span>';
+      b.addEventListener('click',function(){var on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(on));b.querySelector('.box').textContent=on?'✓':'';score();
+        $('bp-orig').setAttribute('aria-selected','false');$('bp-best').setAttribute('aria-selected','false');});
+      list.appendChild(b);
+    });
+    var shown=0;
+    function score(){
+      var n=list.querySelectorAll('[aria-pressed=true]').length,tot=ITEMS.length;
+      var c=document.querySelector('#bp-ring circle.val');
+      c.setAttribute('stroke-dashoffset',String(circ*(1-n/tot)));
+      c.setAttribute('stroke',n/tot<.45?'#9A3B2C':(n/tot<.85?'#C9722F':'#2F6F4F'));
+      var from=shown;shown=n;
+      tween(500,function(k){$('bp-num').textContent=String(Math.round(from+(n-from)*k));});
+      $('bp-verdict').innerHTML=n===tot?'Cumple la lista completa.':(n>=8?'Faltan pocos puntos.':(n>=4?'Revisión parcial: quedan riesgos abiertos.':'Riesgos importantes sin atender.'));
+      $('bp-ring').setAttribute('aria-label','Puntaje: '+n+' de '+tot);
+    }
+    function preset(arr){list.querySelectorAll('button').forEach(function(b,i){var on=arr.indexOf(i)>=0;b.setAttribute('aria-pressed',String(on));b.querySelector('.box').textContent=on?'✓':'';});score();}
+    $('bp-orig').addEventListener('click',function(){preset([]);this.setAttribute('aria-selected','true');$('bp-best').setAttribute('aria-selected','false');});
+    $('bp-best').addEventListener('click',function(){preset([0,1,2,3,4,6,7,8,9,10]);this.setAttribute('aria-selected','true');$('bp-orig').setAttribute('aria-selected','false');
+      $('bp-verdict').innerHTML+='<br><span class="small">Multi-stage no aplica a esta imagen: la aplicación Python no tiene paso de compilación.</span>';});
+    score();
+  })();
+
+  /* ===================== 10. Trivy ===================== */
+  (function(){
+    var bar=$('tv-bar'),stage=$('tv-stage'),res=$('tv-res'),run=0;
+    var P=[['tomcat-embed-core 9.0.83',7,16],['jackson-databind 2.13.5',0,4],['jackson-core 2.13.5',0,3],['spring-web 5.3.31',1,3],['spring-webmvc 5.3.31',0,4],
+           ['spring-expression 5.3.31',0,2],['spring-core 5.3.31',0,1],['spring-boot 2.7.18',0,2],['logback-core 1.2.12',0,2],['logback-classic 1.2.12',0,1],['snakeyaml 1.30',0,2]];
+    async function go(){
+      var id=++run;res.innerHTML='';bar.style.width='0';
+      var st=['Actualizando la base de datos de vulnerabilidades…','Analizando paquetes del sistema operativo (ubuntu 26.04)…','Analizando dependencias Java (app.jar)…'];
+      for(var i=0;i<st.length;i++){
+        stage.textContent=st[i];
+        await tween(700,function(k){bar.style.width=((i+k)/st.length*100)+'%';});
+        if(id!==run)return;
+      }
+      stage.innerHTML='Escaneo terminado. Imagen: <code>registraduria</code> · Trivy 0.74.0';
+      var h='<div class="metric" style="margin-top:12px"><div><b style="color:#2F6F4F">0</b><span>hallazgos en paquetes del SO</span></div>'+
+            '<div><b style="color:#9A3B2C">8</b><span>CRITICAL en dependencias Java</span></div>'+
+            '<div><b style="color:#C9722F">40</b><span>HIGH en dependencias Java</span></div>'+
+            '<div><b>47</b><span>CVE distintos</span></div></div>';
+      h+='<div class="bars">'+P.map(function(p){return '<div class="bar"><span class="nm" title="'+p[0]+'">'+p[0]+'</span><span class="track"><span class="seg c" data-w="'+(p[1]/23*100)+'"></span><span class="seg h" data-w="'+(p[2]/23*100)+'"></span></span><span class="n">'+(p[1]+p[2])+'</span></div>';}).join('')+'</div>';
+      h+='<div class="legend"><span><i style="background:var(--warn)"></i>CRITICAL</span><span><i style="background:var(--terra)"></i>HIGH</span><span>Hallazgos por paquete (48 en total)</span></div>';
+      res.innerHTML=h;
+      await wait(50);if(id!==run)return;
+      res.querySelectorAll('.seg').forEach(function(s){s.style.width=s.getAttribute('data-w')+'%';});
+    }
+    $('tv-go').addEventListener('click',go);
+  })();
+
+  /* ===================== 11. Pipeline ===================== */
+  (function(){
+    var pipe=$('pl-pipe'),out=$('pl-out'),mode='old',run=0;
+    var JOBS=[{n:'job build',s:['checkout@v7','setup-java@v6 (temurin 21)','mvn -B -ntp verify','upload-artifact@v7']},
+              {n:'job imagen (needs: build)',s:['checkout@v7','docker build','trivy image --exit-code 1','docker push ghcr.io/…']}];
+    var nodes=[];
+    function draw(){
+      clear(pipe);nodes=[];
+      JOBS.forEach(function(j){
+        var d=document.createElement('div');d.className='job';
+        var h=document.createElement('div');h.className='jn';h.textContent=j.n;d.appendChild(h);
+        var s=document.createElement('div');s.className='steps';
+        j.s.forEach(function(x){var r=document.createElement('div');r.className='stp';r.innerHTML='<span>'+esc(x)+'</span><span class="st">en espera</span>';s.appendChild(r);nodes.push(r);});
+        d.appendChild(s);pipe.appendChild(d);
+      });
+    }
+    function set(i,c,t){nodes[i].className='stp '+c;nodes[i].querySelector('.st').textContent=t;}
+    async function go(){
+      var id=++run;draw();out.innerHTML='';
+      for(var i=0;i<nodes.length;i++){
+        set(i,'doing','ejecutando');
+        await wait(i===2||i===5||i===6?900:450);if(id!==run)return;
+        if(i===6&&mode==='old'){
+          set(i,'fail','exit code 1');set(7,'skip','omitido');
+          out.innerHTML='<p><strong>El job <code>imagen</code> falla en el escaneo.</strong> Trivy encuentra 8 CRITICAL y 40 HIGH en las dependencias de Spring Boot 2.7.18. La imagen no se publica y el despliegue no recibe una versión vulnerable.</p>';
+          return;
+        }
+        set(i,'pass','ok');
+      }
+      out.innerHTML='<p><strong>Escenario hipotético.</strong> Con dependencias en versiones soportadas y sin hallazgos CRITICAL o HIGH corregibles, el escaneo pasa y la imagen <code>ghcr.io/&lt;owner&gt;/&lt;repo&gt;:&lt;sha&gt;</code> queda disponible para Kubernetes.</p>';
+    }
+    tabGroup('[data-pl]','data-pl',function(k){mode=k;run++;draw();out.innerHTML='';});
+    $('pl-go').addEventListener('click',go);
+    draw();
+  })();
+})();
+</script>
+</body>
+</html>

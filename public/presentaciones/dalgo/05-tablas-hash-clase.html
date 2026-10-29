@@ -1,0 +1,1288 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Clase: tablas hash. La función hash, las colisiones, el factor de carga y el costo amortizado de crecer.">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Tablas hash</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --ground:#F1F0F5; --surface:#FDFCFF; --sunk:#E9E7F0;
+  --ink:#191826; --ink-2:#3D3A50; --muted:#6B687E; --line:#DFDCE8; --line-2:#CBC7DA;
+  --td:#BE5A0E; --bu:#00897B; --hit:#6D46E0;
+  --td-soft:#F8E9DB; --bu-soft:#DBEFEC; --hit-soft:#E8E2FB;
+  --fd:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --fb:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --fm:'JetBrains Mono','Cascadia Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E0D18; --surface:#1C1B25; --sunk:#232232;
+    --ink:#E9E7F2; --ink-2:#C3BFD3; --muted:#948FA8; --line:#2F2D3E; --line-2:#413E54;
+    --td:#CE7526; --bu:#0BA187; --hit:#8E76EC;
+    --td-soft:#372516; --bu-soft:#0D2C29; --hit-soft:#231D40;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E0D18; --surface:#1C1B25; --sunk:#232232;
+  --ink:#E9E7F2; --ink-2:#C3BFD3; --muted:#948FA8; --line:#2F2D3E; --line-2:#413E54;
+  --td:#CE7526; --bu:#0BA187; --hit:#8E76EC;
+  --td-soft:#372516; --bu-soft:#0D2C29; --hit-soft:#231D40;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--ground);color:var(--ink);font-family:var(--fb);overflow:hidden;
+  -webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--fd);margin:0;line-height:1.08;letter-spacing:-.02em;text-wrap:balance}
+p{margin:0}
+code{font-family:var(--fm)}
+
+/* ====== escenario fijo 1280x720, escalado al viewport ====== */
+#viewport{position:fixed;inset:0;display:grid;place-items:center;overflow:hidden}
+#stage{width:1280px;height:720px;position:absolute;left:50%;top:50%;transform-origin:center center;flex:none}
+/* centrado con left/top 50% + translate: el centrado del grid desplaza el escenario a la derecha
+   cuando la ventana mide menos de 1280 px (p. ej. un proyector de 1024 x 768) */
+.slide{position:absolute;inset:0;padding:62px 72px 78px;display:none;flex-direction:column;
+  background:var(--ground)}
+.slide.on{display:flex}
+.slide.pad-tight{padding:44px 56px 74px}
+
+/* ====== tipografia de proyeccion ====== */
+.kicker{font-family:var(--fm);font-size:17px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+  font-weight:500}
+.slide h2{font-size:46px;font-weight:600;margin-top:10px}
+.slide h2 em{font-style:normal;color:var(--td)}
+.slide .sub{font-size:25px;color:var(--ink-2);margin-top:16px;max-width:56ch;line-height:1.42}
+.body{font-size:24px;line-height:1.5;color:var(--ink-2)}
+.small{font-size:19px;line-height:1.45;color:var(--muted)}
+b,strong{font-weight:600;color:var(--ink)}
+ul.big{margin:0;padding-left:30px;font-size:25px;line-height:1.48;color:var(--ink-2)}
+ul.big li{margin-bottom:18px}
+ul.big li::marker{color:var(--td)}
+.fill{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
+.center{display:flex;flex-direction:column;justify-content:center;height:100%}
+
+/* portada */
+.cover{justify-content:center}
+.cover h1{font-size:82px;font-weight:800;max-width:17ch}
+.cover h1 em{font-style:normal;color:var(--td)}
+.cover .meta{margin-top:34px;font-family:var(--fm);font-size:19px;color:var(--muted);line-height:1.9}
+.cover .hint{position:absolute;right:72px;bottom:78px;text-align:right;font-family:var(--fm);font-size:15px;
+  color:var(--muted);line-height:1.8}
+kbd{font-family:var(--fm);font-size:13px;border:1px solid var(--line-2);border-radius:3px;padding:1px 6px;
+  background:var(--surface);color:var(--ink-2)}
+
+/* divisor de acto */
+.act{justify-content:center;background:var(--surface)}
+.act .n{font-family:var(--fd);font-size:150px;font-weight:800;line-height:.85;letter-spacing:-.05em}
+.act h2{font-size:56px;margin-top:18px}
+.act .rule{width:180px;height:5px;margin-top:30px;border-radius:3px}
+.act .sub{font-size:23px;margin-top:26px;max-width:50ch}
+
+/* frase-tesis */
+.thesis-slide{justify-content:center;background:var(--surface)}
+.thesis-slide p{font-size:44px;line-height:1.28;font-style:italic;max-width:22ch;font-family:var(--fb)}
+.thesis-slide .attrib{font-family:var(--fm);font-size:17px;color:var(--muted);margin-top:34px;font-style:normal}
+
+/* dos columnas */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:start;flex:1;min-height:0}
+.cols.tight{gap:30px}
+.cols.a3{grid-template-columns:1fr 1fr 1fr;gap:22px}
+.colhead{font-family:var(--fm);font-size:16px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  font-weight:500;margin-bottom:14px}
+
+/* codigo */
+pre{font-family:var(--fm);font-size:20px;line-height:1.55;background:var(--sunk);border:1px solid var(--line);
+  border-radius:4px;padding:20px 22px;margin:0;overflow:hidden;color:var(--ink-2)}
+pre.sm{font-size:17px;line-height:1.5;padding:16px 18px}
+pre .same{background:var(--bu-soft);color:var(--ink);display:inline-block;width:100%;box-shadow:inset 3px 0 0 var(--bu)}
+pre .add{background:var(--hit-soft);color:var(--ink);display:inline-block;width:100%;box-shadow:inset 3px 0 0 var(--hit)}
+pre .hl{background:var(--td-soft);color:var(--ink);display:inline-block;width:100%;box-shadow:inset 3px 0 0 var(--td)}
+
+/* tarjetas / cajas */
+.box{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:24px 26px}
+.box.td-b{border-top:4px solid var(--td)}
+.box.bu-b{border-top:4px solid var(--bu)}
+.box.hit-b{border-top:4px solid var(--hit)}
+.box h3{font-size:27px;font-weight:600;margin-bottom:6px}
+.box .tag{font-family:var(--fm);font-size:15px;color:var(--muted);margin-bottom:16px}
+.box ul{margin:0;padding-left:22px;font-size:20px;line-height:1.45;color:var(--ink-2)}
+.box li{margin-bottom:11px}
+.callout{border-left:5px solid var(--hit);background:var(--hit-soft);padding:20px 26px;border-radius:0 4px 4px 0;
+  font-size:24px;line-height:1.45}
+.callout.warn{border-color:var(--td);background:var(--td-soft)}
+.pill{display:inline-flex;align-items:center;gap:8px;font-family:var(--fm);font-size:16px;font-weight:500;
+  padding:5px 12px;border-radius:3px;border:1px solid var(--line-2);color:var(--muted);background:var(--surface)}
+.pill.td{color:var(--td);border-color:var(--td);background:var(--td-soft)}
+.pill.bu{color:var(--bu);border-color:var(--bu);background:var(--bu-soft)}
+.pill.hit{color:var(--hit);border-color:var(--hit);background:var(--hit-soft)}
+.dotrow{display:flex;gap:26px;flex-wrap:wrap;margin-top:8px}
+.stat b{display:block;font-family:var(--fd);font-size:42px;font-weight:700;line-height:1;
+  font-variant-numeric:tabular-nums}
+.stat span{font-family:var(--fm);font-size:14px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.scroller{overflow-x:auto}
+table.t{border-collapse:collapse;width:100%;font-size:20px}
+table.t th{text-align:left;font-family:var(--fm);font-size:14px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);font-weight:500;padding:10px 14px;border-bottom:2px solid var(--line-2)}
+table.t td{padding:13px 14px;border-bottom:1px solid var(--line);color:var(--ink-2);vertical-align:top}
+table.t td:first-child{color:var(--ink);font-weight:600;font-family:var(--fd)}
+table.t td.num{font-family:var(--fm);font-variant-numeric:tabular-nums;text-align:right}
+table.t th.num{text-align:right}
+table.t tr.hot td{background:var(--td-soft);color:var(--ink)}
+table.t.cmp td{padding:9px 14px}
+
+/* ====== controles de demo dentro de la diapositiva ====== */
+.demobar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.demobar button{font-family:var(--fd);font-size:16px;font-weight:600;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:3px;padding:7px 14px;cursor:pointer;line-height:1.2}
+.demobar button:hover:not(:disabled){border-color:var(--ink-2)}
+.demobar button:disabled{opacity:.32;cursor:default}
+.demobar button.primary{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.demobar button.on{background:var(--hit);border-color:var(--hit);color:#fff}
+.demobar .seg{display:inline-flex;border:1px solid var(--line-2);border-radius:3px;overflow:hidden}
+.demobar .seg button{border:0;border-radius:0;border-right:1px solid var(--line-2)}
+.demobar .seg button:last-child{border-right:0}
+.demobar .count{font-family:var(--fm);font-size:15px;color:var(--muted);margin-left:auto;
+  font-variant-numeric:tabular-nums}
+.narr{font-size:21px;line-height:1.4;color:var(--ink-2);min-height:2.9em}
+.narr b{color:var(--ink);font-weight:600}
+:focus-visible{outline:3px solid var(--hit);outline-offset:2px}
+
+/* ====== k mod m: dos filas de cajones ====== */
+.modrow{display:flex;gap:16px;align-items:flex-start}
+.modrow .lab{width:118px;flex:none;font-family:var(--fm);font-size:19px;color:var(--ink);padding-top:10px}
+.modcells{display:flex;gap:6px}
+.modcell{width:74px;flex:none;display:flex;flex-direction:column;gap:4px;align-items:stretch}
+.modcell .slot{border:1px solid var(--line-2);border-radius:3px;background:var(--surface);
+  font-family:var(--fm);font-size:13px;color:var(--muted);text-align:center;padding:3px 0}
+.modcell.used .slot{border-color:var(--td);color:var(--td);font-weight:700}
+.kchip{font-family:var(--fm);font-size:19px;font-weight:700;text-align:center;padding:4px 0;border-radius:3px;
+  border:1px solid var(--td);background:var(--td-soft);color:var(--ink)}
+.modrow.good .modcell.used .slot{border-color:var(--bu);color:var(--bu)}
+.modrow.good .kchip{border-color:var(--bu);background:var(--bu-soft)}
+
+/* ====== encadenamiento ====== */
+.bk{display:flex;flex-direction:column;gap:7px}
+.bk-row{display:flex;align-items:center;gap:12px;height:48px}
+.bk-idx{width:30px;flex:none;font-family:var(--fm);font-size:18px;color:var(--muted);text-align:right}
+.bk-slot{width:40px;height:44px;flex:none;border:1px solid var(--line-2);border-radius:3px;background:var(--sunk)}
+.bk-row.cur .bk-slot{border-color:var(--td);background:var(--td-soft);box-shadow:0 0 0 2px var(--td)}
+.bk-row.cur .bk-idx{color:var(--td);font-weight:700}
+.bk-arrow{font-family:var(--fm);font-size:16px;color:var(--muted)}
+.chip{font-family:var(--fm);font-size:22px;font-weight:700;padding:5px 13px;border:1px solid var(--line-2);
+  border-radius:3px;background:var(--surface);color:var(--ink);line-height:1.3}
+.chip.new{border-color:var(--td);background:var(--td-soft)}
+.chip.no{color:var(--muted);text-decoration:line-through;text-decoration-thickness:2px}
+.chip.cmp{box-shadow:0 0 0 3px var(--ink)}
+.chip.hit{background:var(--bu);border-color:var(--bu);color:#fff}
+.opline{font-family:var(--fm);font-size:24px;color:var(--ink);line-height:1.4;min-height:1.4em}
+.opline .h{color:var(--td);font-weight:700}
+
+/* ====== sondeo lineal ====== */
+.lp-cells{display:flex;gap:6px}
+.lp{width:90px;flex:none;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);
+  text-align:center;position:relative;padding:6px 0 8px}
+.lp .idx{display:block;font-family:var(--fm);font-size:14px;color:var(--muted);line-height:1.3}
+.lp .val{display:block;font-family:var(--fm);font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
+.lp .st{display:block;font-family:var(--fm);font-size:10.5px;letter-spacing:.06em;color:var(--muted);line-height:1.2}
+.lp.empty{background:var(--sunk);border-style:dashed}
+.lp.empty .val{color:var(--line-2)}
+.lp.tomb{background:var(--hit-soft);border-color:var(--hit)}
+.lp.tomb .val,.lp.tomb .st{color:var(--hit)}
+.lp.seen{border-color:var(--td);background:var(--td-soft)}
+.lp.seen.empty{border-style:solid}
+.lp.cur{box-shadow:0 0 0 3px var(--ink);z-index:2}
+.lp.found,.lp.placed{background:var(--bu);border-color:var(--bu)}
+.lp.found .val,.lp.found .idx,.lp.found .st,.lp.placed .val,.lp.placed .idx,.lp.placed .st{color:#fff}
+.lp.wrong{background:var(--td);border-color:var(--td);border-style:solid}
+.lp.wrong .val,.lp.wrong .idx,.lp.wrong .st{color:#fff}
+.lp .ord{position:absolute;top:-11px;right:-8px;width:24px;height:24px;border-radius:12px;display:grid;
+  place-items:center;font-family:var(--fm);font-size:13px;font-weight:700;color:#fff;background:var(--td)}
+.lp.found .ord,.lp.placed .ord{background:var(--surface);color:var(--bu);box-shadow:0 0 0 1px var(--bu)}
+.lp.wrong .ord{background:var(--surface);color:var(--td);box-shadow:0 0 0 1px var(--td)}
+table.log{border-collapse:collapse;width:100%;font-size:17px}
+table.log th{text-align:left;font-family:var(--fm);font-size:13px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);font-weight:500;padding:6px 12px;border-bottom:2px solid var(--line-2)}
+table.log td{padding:5px 12px;border-bottom:1px solid var(--line);color:var(--ink-2);font-family:var(--fm)}
+table.log tr.hot td{background:var(--td-soft);color:var(--ink);font-weight:700}
+table.log tr.bad td{background:var(--td);color:#fff;font-weight:700}
+
+/* ====== barras de costo al crecer ====== */
+.bars{display:flex;gap:7px;align-items:flex-end}
+.barcol{width:34px;flex:none;display:flex;flex-direction:column;align-items:center;gap:4px}
+.barcol .c{font-family:var(--fm);font-size:14px;color:var(--muted)}
+.barcol .b{width:100%;background:var(--line-2);border-radius:2px 2px 0 0}
+.barcol.peak .b{background:var(--td)}
+.barcol.peak .c{color:var(--td);font-weight:700;font-size:16px}
+.barcol .n{font-family:var(--fm);font-size:13px;color:var(--ink-2);border-top:2px solid var(--ink-2);
+  width:100%;text-align:center;padding-top:4px}
+.barcol .m{font-family:var(--fm);font-size:12px;color:var(--muted)}
+.barcol.peak .m{color:var(--td);font-weight:700}
+
+/* ====== cromo del deck ====== */
+#chrome{position:fixed;left:0;right:0;bottom:0;height:5px;background:var(--line);z-index:20}
+#bar{height:100%;background:var(--td);width:0;transition:width .22s}
+#hud{position:fixed;right:16px;bottom:16px;display:flex;gap:8px;align-items:center;z-index:21;
+  font-family:var(--fm);font-size:14px;color:var(--muted)}
+#hud button{font-family:var(--fm);font-size:15px;background:var(--surface);color:var(--ink-2);
+  border:1px solid var(--line-2);border-radius:3px;width:32px;height:30px;cursor:pointer;line-height:1}
+#hud button:hover{border-color:var(--ink-2)}
+#hud .num{font-variant-numeric:tabular-nums;min-width:64px;text-align:right}
+#actlabel{position:fixed;left:18px;bottom:16px;font-family:var(--fm);font-size:14px;color:var(--muted);z-index:21}
+#notes{position:fixed;left:0;right:0;bottom:5px;max-height:38vh;overflow-y:auto;background:var(--surface);
+  border-top:2px solid var(--hit);padding:20px 26px;font-size:16px;line-height:1.5;color:var(--ink-2);z-index:22}
+#notes h4{font-family:var(--fm);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--hit);
+  margin-bottom:8px;font-weight:600}
+#notes b{color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div id="viewport"><div id="stage">
+
+<!-- ==================== PORTADA ==================== -->
+<section class="slide cover" data-act="" data-notes="Sesión de ~50 minutos. Plan: Acto I el problema (7 min), Acto II la función hash (9 min), Acto III colisiones, con las dos demos (17 min), Acto IV factor de carga y crecer (10 min), cierre y taller (7 min). Si vas tarde, recorta el acto II: la tabla de cajones y la de anagramas se pueden leer rápido. No recortes las demos del acto III. Las diapositivas con fondo blanco son pausas: úsalas para preguntar antes de avanzar.">
+  <p class="kicker">Estructuras de datos y algoritmos</p>
+  <h1 style="max-width:20ch">Tablas hash: <em>Θ(1)</em> con letra pequeña</h1>
+  <p class="sub" style="font-size:27px;max-width:48ch">Qué hay dentro de un <code>dict</code>, por qué
+  <code>x in vistos</code> cuesta lo mismo con diez elementos que con diez millones, y cuándo deja de ser así.</p>
+  <p class="meta">Taller: Tablas hash<br>Casilleros del gimnasio · Pagos que suman K</p>
+  <p class="hint"><kbd>←</kbd> <kbd>→</kbd> diapositiva · <kbd>↑</kbd> <kbd>↓</kbd> paso del demo<br>
+  <kbd>P</kbd> reproducir · <kbd>F</kbd> pantalla completa · <kbd>N</kbd> notas</p>
+</section>
+
+<!-- ==================== ACTO I ==================== -->
+<section class="slide act" data-act="I · El problema" data-notes="Arranca preguntando: «¿cuántos han escrito if x in vistos este semestre?» Todos. Segunda pregunta: «¿cuánto cuesta esa línea?» Alguien dirá O(1). Tercera: «¿siempre?» Ese silencio es la clase.">
+  <p class="n" style="color:var(--td)">I</p>
+  <h2>El problema</h2>
+  <div class="rule" style="background:var(--td)"></div>
+  <p class="sub">Qué promete un diccionario, cuánto cuesta cumplirlo con lo que ya conocen, y la idea del
+  archivador que lo cambia todo.</p>
+</section>
+
+<section class="slide" data-act="I · El problema" data-notes="Recuérdales dónde lo vieron: la presentación 4 y la Tarea 2. El punto: set y dict no son dos cosas distintas, son implementaciones del mismo TAD. Un conjunto es un diccionario sin valores. Lo que se discute hoy no es qué hacen esas operaciones sino cuánto cuesta cada una, y por qué.">
+  <p class="kicker">Lo que ya usaban</p>
+  <h2>Un mismo TAD detrás de <code>set</code> y <code>dict</code></h2>
+  <div class="cols" style="margin-top:36px;align-items:stretch">
+    <div class="box hit-b">
+      <h3>El diccionario</h3>
+      <p class="tag">un conjunto de claves, cada una con un valor</p>
+      <pre style="font-size:19px">insertar(k, v)  guarda v asociado a k
+                (si k estaba, reemplaza)
+buscar(k)       el valor de k, o «no está»
+borrar(k)       quita k y su valor</pre>
+      <p class="body" style="font-size:20px;margin-top:16px">Un conjunto es un diccionario <b>sin valores</b>.</p>
+    </div>
+    <div style="align-self:center">
+      <pre style="font-size:21px">vistos = set()
+conteo = {}
+if x in vistos:
+    ...</pre>
+      <p class="body" style="margin-top:24px">Todo el semestre lo ha usado. Lo que cambia de una implementación a
+      otra es <b>cuánto cuesta</b> cada operación.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-act="I · El problema" data-notes="Recorre la tabla por filas y para en la última. Pregunta: ¿qué perdió la tabla hash respecto al árbol? El orden: no sabe cuál es la menor ni cuál sigue a otra. Después señala la letra pequeña: Θ(1) en promedio, Θ(n) en el peor caso. Hasta ahora todo algoritmo del curso venía con garantía de peor caso; esta es la primera promesa de caso promedio. Exige desde ya que cada Θ(1) venga con su suposición.">
+  <p class="kicker">Cuánto cuesta cada implementación</p>
+  <h2>La tabla hash cambia <em>orden</em> por velocidad</h2>
+  <div class="scroller" style="margin-top:30px">
+  <table class="t" style="font-size:20px">
+    <thead><tr><th style="width:300px">Implementación</th><th>buscar</th><th>insertar</th><th>borrar</th><th>¿En orden?</th></tr></thead>
+    <tr><td>Arreglo sin orden</td><td><code>Θ(n)</code></td><td><code>Θ(n)</code></td><td><code>Θ(n)</code></td><td>No</td></tr>
+    <tr><td>Arreglo ordenado</td><td><code>Θ(log n)</code></td><td><code>Θ(n)</code></td><td><code>Θ(n)</code></td><td>Sí</td></tr>
+    <tr><td>Árbol binario de búsqueda</td><td><code>Θ(h)</code></td><td><code>Θ(h)</code></td><td><code>Θ(h)</code></td><td>Sí</td></tr>
+    <tr class="hot"><td>Tabla hash</td><td><code>Θ(1)</code> promedio<br><code>Θ(n)</code> peor caso</td><td><code>Θ(1)</code> promedio</td><td><code>Θ(1)</code> promedio</td><td>No</td></tr>
+  </table></div>
+  <p class="small" style="margin-top:12px;font-size:17px"><code>h</code> = altura del árbol: <code>Θ(log n)</code> si está balanceado, <code>Θ(n)</code> si degenera.</p>
+  <p class="callout warn" style="margin-top:20px;font-size:22px">Primera estructura del curso cuya promesa es de
+  <b>caso promedio</b>. Cada vez que diga «<code>Θ(1)</code>», diga <b>bajo qué suposición</b>.</p>
+</section>
+
+<section class="slide" data-act="I · El problema" data-notes="El gerente de las guías anteriores, ahora con carpetas: cada una tiene un código (la clave) y unos papeles (el valor). Ve de izquierda a derecha. En la opción 2 haz que calculen: con cédulas de 10 dígitos son 10¹⁰ cajones para unas 300 carpetas. En la opción 3 pregunta: ¿pueden dos carpetas caer en el mismo cajón? Tiene que salir de ellos que sí, porque hay muchos más códigos posibles que cajones. Insiste en que la colisión no es un error de la función: es inevitable. Lo que distingue a una buena tabla hash es qué hace cuando ocurre.">
+  <p class="kicker">La analogía</p>
+  <h2>El gerente, ahora con un <em>archivador</em></h2>
+  <div class="cols a3" style="margin-top:30px;align-items:stretch">
+    <div class="box">
+      <h3 style="font-size:24px">1 · Una pila</h3>
+      <p class="tag">sobre el escritorio</p>
+      <p class="body" style="font-size:20px">Guardar es inmediato. Encontrar una carpeta obliga a revisarlas todas.</p>
+      <p class="body" style="font-size:20px;margin-top:12px"><code>Θ(n)</code> por búsqueda.</p>
+    </div>
+    <div class="box td-b">
+      <h3 style="font-size:24px">2 · Un cajón por código</h3>
+      <p class="tag">direccionamiento directo</p>
+      <p class="body" style="font-size:20px">La carpeta <code>k</code> va en el cajón <code>k</code>. Buscar es abrir un cajón: <code>Θ(1)</code>.</p>
+      <p class="body" style="font-size:20px;margin-top:12px">Con cédulas de 10 dígitos: <b>10¹⁰ cajones</b> para unas 300 carpetas.</p>
+    </div>
+    <div class="box bu-b">
+      <h3 style="font-size:24px">3 · <code>m</code> cajones y una regla</h3>
+      <p class="tag">la función hash h</p>
+      <p class="body" style="font-size:20px">Mirando solo el código, <code>h(k)</code> dice el cajón. Guardar y buscar: calcular <code>h(k)</code> y abrir ese cajón.</p>
+    </div>
+  </div>
+  <p class="callout" style="margin-top:26px;font-size:22px">Con la opción 3, dos carpetas distintas pueden ir al
+  mismo cajón: una <b>colisión</b>. No es un error: es <b>inevitable</b>.</p>
+</section>
+
+<section class="slide" data-act="I · El problema" data-notes="Pregunta por qué cada condición es necesaria antes de mostrar la explicación. Determinista: si h cambia, la carpeta se pierde; esto vuelve en el acto II con las listas como clave. Rápida: si calcular el cajón es caro, se pierde la ganancia. La tercera es la única difícil, y es la que ocupa todo el acto II.">
+  <p class="kicker">La regla del gerente</p>
+  <h2>Tres condiciones sobre <em>h</em></h2>
+  <div style="margin-top:34px;display:flex;flex-direction:column;gap:22px">
+    <div class="box" style="display:flex;gap:26px;align-items:baseline">
+      <span style="font-family:var(--fd);font-size:44px;font-weight:800;color:var(--muted);line-height:1">1</span>
+      <div><h3>Determinista</h3>
+      <p class="body" style="font-size:21px;margin-top:6px">La misma carpeta va siempre al mismo cajón. Si no, la carpeta se pierde.</p></div>
+    </div>
+    <div class="box" style="display:flex;gap:26px;align-items:baseline">
+      <span style="font-family:var(--fd);font-size:44px;font-weight:800;color:var(--muted);line-height:1">2</span>
+      <div><h3>Rápida</h3>
+      <p class="body" style="font-size:21px;margin-top:6px">Calcular <code>h(k)</code> cuesta <code>Θ(1)</code>, o lo que mida la clave si es una cadena.</p></div>
+    </div>
+    <div class="box td-b" style="display:flex;gap:26px;align-items:baseline">
+      <span style="font-family:var(--fd);font-size:44px;font-weight:800;color:var(--td);line-height:1">3</span>
+      <div><h3>Pareja</h3>
+      <p class="body" style="font-size:21px;margin-top:6px">Reparte las carpetas de forma uniforme. Si casi todas caen en el mismo
+      cajón, el archivador vuelve a ser una pila. <b>Esta es todo el arte.</b></p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== ACTO II ==================== -->
+<section class="slide act" data-act="II · La función hash" data-notes="Transición: la condición 3, pareja, es la que falla en la práctica. Vas a mostrar una h que parece correcta y reparte fatal, y después lo que Python hace por ustedes.">
+  <p class="n" style="color:var(--hit)">II</p>
+  <h2>La función hash</h2>
+  <div class="rule" style="background:var(--hit)"></div>
+  <p class="sub">Del número al cajón, de la cadena al número, y lo que hace Python cuando usted escribe
+  <code>hash(k)</code>.</p>
+</section>
+
+<section class="slide pad-tight" data-demo="mod" data-act="II · La función hash" data-notes="DEMO de dos pasos. Antes del paso 1 pregunta: con m = 10, ¿dónde caen 10, 20, 30, 40, 50 y 60? Deja que respondan y avanza: las seis en el cajón 0, la tabla es una lista. Antes del paso 2 pregunta qué cambia con m = 11. Avanza: seis cajones distintos, del 10 al 5. Lo que tiene que quedar: la función es la misma, k mod m, y la diferencia la hace solo m.">
+  <p class="kicker">El método de la división</p>
+  <h2 style="font-size:40px"><code>h(k) = k mod m</code>: el valor de <em>m</em> importa</h2>
+  <div class="demobar" style="margin-top:18px">
+    <button data-act="reset">⟲ Reiniciar</button>
+    <button data-act="prev">◀ Atrás</button>
+    <button data-act="next" class="primary">Adelante ▶</button>
+    <span class="pill">claves: 10 · 20 · 30 · 40 · 50 · 60</span>
+    <span class="count" data-role="count"></span>
+  </div>
+  <div class="fill" style="justify-content:flex-start;gap:26px;padding-top:6px">
+    <div class="modrow" id="modA"></div>
+    <div class="modrow good" id="modB"></div>
+  </div>
+  <p class="narr" id="modNarr"></p>
+</section>
+
+<section class="slide" data-act="II · La función hash" data-notes="La razón aritmética. Si todas las claves son múltiplos de d, k mod m solo toma múltiplos de mcd(d, m), y se usan m / mcd(d, m) cajones. Haz que verifiquen una fila en voz alta: múltiplos de 100 con m = 128, el mcd es 4, se usan 32. Luego la conclusión práctica: los datos reales tienen patrones, y un m primo no comparte factores con ninguno, salvo que el patrón sea el propio m. El ejercicio propuesto 2 de la guía, códigos que terminan en 00, es esta misma tabla.">
+  <p class="kicker">Por qué m debe ser primo</p>
+  <h2>Los cajones que <em>de verdad</em> se usan</h2>
+  <div class="cols" style="margin-top:30px;grid-template-columns:1fr 1.1fr">
+    <table class="t cmp">
+      <thead><tr><th>Claves múltiplos de</th><th class="num"><code>m</code></th><th class="num">Se usan</th></tr></thead>
+      <tr><td>10</td><td class="num">10</td><td class="num">1 de 10</td></tr>
+      <tr><td>10</td><td class="num">100</td><td class="num">10 de 100</td></tr>
+      <tr><td>100</td><td class="num">128</td><td class="num">32 de 128</td></tr>
+      <tr class="hot"><td>100</td><td class="num">101</td><td class="num">101 de 101</td></tr>
+      <tr><td>6</td><td class="num">12</td><td class="num">2 de 12</td></tr>
+      <tr class="hot"><td>6</td><td class="num">13</td><td class="num">13 de 13</td></tr>
+    </table>
+    <div>
+      <p class="body">Si todas las claves son múltiplos de <code>d</code>, la tabla usa apenas</p>
+      <pre style="margin-top:14px;font-size:24px;text-align:center">m / mcd(d, m)</pre>
+      <p class="body" style="margin-top:18px;font-size:21px">Los datos reales tienen patrones: códigos que terminan en
+      <code>00</code>, precios múltiplos de 50, direcciones alineadas a 8 bytes.</p>
+      <p class="callout" style="margin-top:20px;font-size:21px">Escoja <code>m</code> <b>primo</b>, y lejos de una
+      potencia de 2 o de 10.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-act="II · La función hash" data-notes="Pregunta primero: ¿cómo convierten una palabra en un número? Casi siempre proponen sumar los códigos de las letras. Muestra la columna del medio: los cinco anagramas dan 431. La suma no ve el orden. El hash polinomial trata la cadena como un número escrito en base B, y Horner lo calcula sin potencias, en Θ(L). Si alguien ya vio Rabin-Karp, es la misma idea.">
+  <p class="kicker">Claves que son cadenas</p>
+  <h2>La suma no ve el <em>orden</em></h2>
+  <div class="cols" style="margin-top:30px;gap:40px">
+    <table class="t cmp">
+      <thead><tr><th>Palabra</th><th class="num">Suma de ord(c)</th><th class="num">Polinomial</th></tr></thead>
+      <tr><td>amor</td><td class="num" style="color:var(--td);font-weight:700">431</td><td class="num">292</td></tr>
+      <tr><td>roma</td><td class="num" style="color:var(--td);font-weight:700">431</td><td class="num">46</td></tr>
+      <tr><td>mora</td><td class="num" style="color:var(--td);font-weight:700">431</td><td class="num">578</td></tr>
+      <tr><td>ramo</td><td class="num" style="color:var(--td);font-weight:700">431</td><td class="num">732</td></tr>
+      <tr><td>omar</td><td class="num" style="color:var(--td);font-weight:700">431</td><td class="num">215</td></tr>
+    </table>
+    <div>
+      <p class="colhead">Polinomial, con Horner · B = 31, m = 1009</p>
+      <pre class="sm" style="font-size:18px">def hpol(s, B=31, m=1009):
+    h = 0
+    for c in s:
+<span class="hl">        h = (h * B + ord(c)) % m</span>
+    return h</pre>
+      <p class="body" style="font-size:21px;margin-top:18px">La cadena es un número en base <code>B</code>.
+      Horner lo calcula sin potencias, en <code>Θ(L)</code>.</p>
+      <p class="callout warn" style="margin-top:18px;font-size:20px">Con la suma, <b>todos los anagramas chocan</b>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-act="II · La función hash" data-notes="Tres datos que sorprenden. Uno: hash(5) == 5, los enteros pequeños son su propio hash. Dos: el hash de una cadena cambia entre ejecuciones desde Python 3.3; di que la razón llega al final de la clase y no la adelantes. Tres: una lista no puede ser clave. Pregunta por qué y conéctalo con la condición 1: si la clave cambia después de guardarla, su cajón cambia y la carpeta queda donde nadie la va a buscar. Por eso las tuplas sí sirven y las listas no.">
+  <p class="kicker">Lo que hace Python</p>
+  <h2>Tres cosas que pasan al escribir <code>hash(k)</code></h2>
+  <div class="cols a3" style="margin-top:30px;align-items:stretch">
+    <div class="box bu-b">
+      <pre class="sm" style="font-size:19px">&gt;&gt;&gt; hash(5)
+5</pre>
+      <p class="body" style="font-size:20px;margin-top:16px">Un entero pequeño es <b>su propio hash</b>.</p>
+      <p class="small" style="margin-top:12px;font-size:17px">Los grandes se reducen módulo el primo
+      <code>2⁶¹ − 1</code>. Y por convención, <code>hash(-1) == -2</code>.</p>
+    </div>
+    <div class="box hit-b">
+      <pre class="sm" style="font-size:19px">&gt;&gt;&gt; hash('amor')
+<span style="color:var(--hit)">cambia en cada
+ejecución</span></pre>
+      <p class="body" style="font-size:20px;margin-top:16px">Desde Python <b>3.3</b>, el hash de
+      <code>str</code> se mezcla con un valor aleatorio al arrancar.</p>
+      <p class="small" style="margin-top:12px;font-size:17px">Constante dentro de una ejecución. Se fija con
+      <code>PYTHONHASHSEED</code>. El porqué, al final.</p>
+    </div>
+    <div class="box td-b">
+      <pre class="sm" style="font-size:19px">&gt;&gt;&gt; {[1, 2]: 'x'}
+<span style="color:var(--td)">TypeError:
+unhashable type:
+'list'</span></pre>
+      <p class="body" style="font-size:20px;margin-top:16px">Solo los <b>inmutables</b> son clave.
+      Las tuplas sí, las listas no.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== ACTO III ==================== -->
+<section class="slide act" data-act="III · Colisiones" data-notes="Transición: la colisión es inevitable, así que la pregunta es qué hacer con ella. Dos políticas, una demo para cada una. Antes de las demos, el método.">
+  <p class="n" style="color:var(--bu)">III</p>
+  <h2>Colisiones</h2>
+  <div class="rule" style="background:var(--bu)"></div>
+  <p class="sub">Dos políticas: el cajón admite varias carpetas (<b>encadenamiento</b>), o admite una sola y se
+  prueba el siguiente (<b>direccionamiento abierto</b>). Y el invariante que hace correcta a cada una.</p>
+</section>
+
+<section class="slide" data-act="III · Colisiones" data-notes="Las seis preguntas de las recurrencias eran para una función; estas son para una estructura, que es una representación más unas operaciones que la mantienen en buen estado. Insiste en la 2: el invariante es lo que deja que buscar se detenga temprano y aun así sea correcta, como la postcondición en recurrencias. Anticipa: casi todos los errores con tablas hash son operaciones que rompen el invariante sin darse cuenta. Cierra con α = n/m: no es n lo que hace lenta una tabla hash, es α.">
+  <p class="kicker">El método</p>
+  <h2>Seis preguntas para una <em>estructura</em></h2>
+  <div class="cols" style="margin-top:30px;gap:34px">
+    <ol style="margin:0;padding-left:30px;font-size:22px;line-height:1.4;color:var(--ink-2)">
+      <li style="margin-bottom:14px"><b>Contrato.</b> ¿Qué operaciones promete y qué devuelve cada una?</li>
+      <li style="margin-bottom:14px"><b style="color:var(--td)">Invariante.</b> ¿Qué es siempre cierto entre una operación y la siguiente?</li>
+      <li style="margin-bottom:14px"><b>Ubicación.</b> Dada una clave, ¿dónde la busco?</li>
+    </ol>
+    <ol start="4" style="margin:0;padding-left:30px;font-size:22px;line-height:1.4;color:var(--ink-2)">
+      <li style="margin-bottom:14px"><b>Conflicto.</b> ¿Y si el lugar ya está ocupado por otra clave?</li>
+      <li style="margin-bottom:14px"><b>Parada.</b> ¿Cuándo sé que la clave <b>no</b> está?</li>
+      <li style="margin-bottom:14px"><b>Crecimiento.</b> ¿Cuándo está demasiado llena?</li>
+    </ol>
+  </div>
+  <div class="cols" style="flex:none;grid-template-columns:1.25fr 1fr;gap:26px">
+    <p class="callout warn" style="font-size:21px">La 2 es la central: el invariante permite que
+    <code>buscar</code> se detenga temprano y aun así sea correcta.</p>
+    <p class="callout" style="font-size:21px"><b>Costo:</b> en función de <code>α = n/m</code>, el
+    <b>factor de carga</b>.</p>
+  </div>
+</section>
+
+<section class="slide" data-act="III · Colisiones" data-notes="Encadenamiento. Lee el invariante en voz alta y señala la parada: si llego al final de la lista, k no está en ninguna parte de la tabla, porque el invariante dice que solo podría estar en ese cajón. En el código, señala la línea marcada: se compara la clave con ==, no el hash. Eso vuelve dos diapositivas más adelante como error común. Anticipa también el error de los cajones: [[]] * m crea m referencias a una sola lista.">
+  <p class="kicker">Ejercicio 1 · encadenamiento</p>
+  <h2>Cada cajón es una <em>lista</em></h2>
+  <div class="cols" style="margin-top:28px;gap:38px">
+    <table class="t" style="font-size:19px">
+      <tr><td style="width:150px">Invariante</td><td>Toda clave está en la lista del cajón <code>h(k)</code>, y aparece <b>una sola vez</b> en la tabla.</td></tr>
+      <tr><td>Conflicto</td><td>La nueva clave se agrega a la misma lista. No hay que buscar otro lugar.</td></tr>
+      <tr><td>Parada</td><td>Al encontrar <code>k</code>, o al llegar al final de la lista: entonces <code>k</code> no está <b>en ninguna parte</b>.</td></tr>
+    </table>
+    <div>
+      <pre class="sm" style="font-size:17px">def buscar(self, k):
+    for clave, valor in self._cajon(k):
+<span class="hl">        if clave == k:   # clave, no hash</span>
+            return valor
+    return None</pre>
+      <pre class="sm" style="font-size:17px;margin-top:14px">self.cajones = [[] for _ in range(m)]
+# NO [[]] * m: m referencias a UNA lista</pre>
+    </div>
+  </div>
+  <p class="callout" style="font-size:21px">Si las <code>n</code> claves se reparten parejo, cada lista tiene
+  <code>α</code> elementos: buscar cuesta <code>Θ(1 + α)</code>.</p>
+</section>
+
+<section class="slide pad-tight" data-demo="chain" data-act="III · Colisiones" data-notes="DEMO. Avanza con la flecha abajo. Pasos 1 a 3: 15, 8 y 22 caen en el cajón 1; antes del paso 2 pregunta a dónde va el 8. Paso 6: 29 también va al cajón 1. Paso 7: pide que lean la tabla final, n = 7, m = 7, α = 1, y que cuenten los cajones vacíos: cuatro. Pasos 8 a 11: buscar 29 compara con 15, 8, 22 y 29, cuatro comparaciones. Pasos 12 a 15: buscar 36, que no está, va al mismo cajón porque 36 mod 7 = 1 y también compara con las cuatro. Pregunta: ¿sirvió que α fuera 1? No: el promedio no protege contra un mal reparto.">
+  <p class="kicker">Demo en vivo · encadenamiento con m = 7</p>
+  <h2 style="font-size:38px">Siete claves, siete cajones, y <em>cuatro</em> vacíos</h2>
+  <div class="demobar" style="margin-top:16px">
+    <button data-act="reset">⟲</button>
+    <button data-act="prev">◀</button>
+    <button data-act="next" class="primary">Adelante ▶</button>
+    <button data-act="play" id="chPlay">▶ Reproducir</button>
+    <span class="pill">inserta 15, 8, 22, 3, 10, 29, 12 · busca 29 y 36</span>
+    <span class="count" data-role="count"></span>
+  </div>
+  <div class="fill" style="flex-direction:row;gap:40px;align-items:flex-start;justify-content:flex-start;padding-top:6px">
+    <div class="bk" id="chBk" style="width:560px;flex:none"></div>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:24px;padding-top:6px">
+      <div>
+        <p class="colhead" style="margin-bottom:8px">Operación</p>
+        <p class="opline" id="chOp"></p>
+        <p class="opline" id="chH" style="font-size:20px;color:var(--ink-2)"></p>
+      </div>
+      <div style="display:flex;gap:30px;flex-wrap:wrap">
+        <div class="stat"><b id="chN">0</b><span>n claves</span></div>
+        <div class="stat"><b id="chA">0</b><span>α = n/7</span></div>
+        <div class="stat"><b id="chC" style="color:var(--td)">—</b><span>comparaciones</span></div>
+      </div>
+      <p class="narr" id="chNarr" style="font-size:20px"></p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-act="III · Colisiones" data-notes="La suposición se llama hashing uniforme simple: cada clave cae en cualquier cajón con la misma probabilidad, sin importar dónde cayeron las demás. Bajo ella, cada lista mide α en promedio. Señala que todo es Θ(1 + α): si m crece al ritmo de n, α queda acotado y todo es Θ(1). Ese si es el acto IV. A la derecha, el error común: comparar hashes dentro del cajón siempre da verdadero, porque colisionar significa justamente tener el mismo h. Devuelve el valor de la primera clave del cajón, sea cual sea la que se buscaba.">
+  <p class="kicker">Lo que dice la traza</p>
+  <h2><code>α = 1</code> no garantiza un buen reparto</h2>
+  <div class="cols" style="margin-top:28px;gap:40px">
+    <div>
+      <p class="body" style="font-size:21px">Suposición: <b>hashing uniforme simple</b>. Cada clave cae en
+      cualquier cajón con la misma probabilidad, sin importar las demás.</p>
+      <table class="t cmp" style="font-size:19px;margin-top:18px">
+        <tr><td>Búsqueda sin éxito</td><td><code>Θ(1 + α)</code></td></tr>
+        <tr><td>Búsqueda con éxito</td><td>unas <code>1 + α/2</code> comparaciones</td></tr>
+        <tr><td>Insertar, borrar</td><td>primero buscan: <code>Θ(1 + α)</code></td></tr>
+        <tr class="hot"><td>Peor caso</td><td><code>Θ(n)</code>: todas en un cajón</td></tr>
+        <tr><td>Memoria</td><td><code>Θ(m + n)</code></td></tr>
+      </table>
+    </div>
+    <div>
+      <p class="colhead">Error común</p>
+      <pre class="sm" style="font-size:16px">for clave, valor in self._cajon(k):
+<span class="hl">    if hash(clave) % self.m == \</span>
+<span class="hl">       hash(k) % self.m:   # INCORRECTO</span>
+        return valor</pre>
+      <p class="body" style="font-size:20px;margin-top:16px">Dentro de un cajón <b>todas</b> tienen el mismo
+      <code>h</code>: eso es colisionar. Esta versión devuelve la primera clave del cajón.</p>
+      <p class="callout warn" style="margin-top:16px;font-size:19px">Dentro del cajón se compara con <code>==</code>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-act="III · Colisiones" data-notes="Direccionamiento abierto. Antes de señalar el recuadro de la derecha, pregunta: ¿por qué buscar puede detenerse en una celda VACÍA? La respuesta es el invariante: si k estuviera más adelante, al insertarla se habría quedado en esa VACÍA, que estaba libre. Haz que alguien lo repita con sus palabras. Adelanta que borrar puede romperlo y que la demo siguiente lo muestra.">
+  <p class="kicker">Ejercicio 2 · sondeo lineal</p>
+  <h2>Una clave por celda, y se prueba <em>la siguiente</em></h2>
+  <div class="cols" style="margin-top:28px;gap:40px">
+    <div>
+      <p class="body" style="font-size:22px">Cada celda está <b>VACÍA</b>, <b>OCUPADA</b> o <b>BORRADA</b>.
+      Para la clave <code>k</code> se revisan, en orden:</p>
+      <pre style="margin-top:14px;font-size:21px">h(k), h(k)+1, h(k)+2, …   (mod m)</pre>
+      <p class="body" style="font-size:20px;margin-top:16px">Es la <b>secuencia de sondeo</b>. Cada celda revisada
+      es un <b>sondeo</b>, incluida aquella donde se detiene.</p>
+      <p class="body" style="font-size:20px;margin-top:14px"><code>buscar</code> para al encontrar <code>k</code>,
+      al encontrar una VACÍA, o tras revisar las <code>m</code> celdas.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div class="box td-b">
+        <h3 style="font-size:23px">Invariante</h3>
+        <p class="body" style="font-size:21px;margin-top:8px">Si <code>k</code> está en la celda <code>p</code>,
+        <b>ninguna celda</b> de su secuencia anterior a <code>p</code> está <b>VACÍA</b>.</p>
+      </div>
+      <p class="callout" style="font-size:20px">¿Por qué parar en una VACÍA? Si <code>k</code> estuviera más
+      adelante, al insertarla se habría quedado en esa celda, que estaba libre.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide pad-tight" data-demo="lp" data-act="III · Colisiones" data-notes="DEMO CENTRAL DEL ACTO III. Arranca en «borrar con VACÍA». Pasos 1 a 9: las inserciones; para en el paso 4 (11 revisa 0, 1, 2, 3: cuatro sondeos) y en el 6 (33 revisa seis celdas). En el paso 9 señala el bloque de las celdas 0 a 5: agrupamiento primario, los bloques grandes crecen más rápido. Paso 10: se borra 13 y la celda 2 queda VACÍA. Pregunta: ¿algo malo? Casi todos dirán que no. Pasos 11 a 13: buscar 33 se detiene en la celda 2 y responde que no está. Es falso: 33 está en la 5. Ahí cambia a «borrar con lápida» sin reiniciar: en el paso 13 la celda 2 es una lápida y la búsqueda sigue; en el paso 16 encuentra 33 en la celda 5 con 6 sondeos. Pasos 17 a 24: insertar 44 revisa siete celdas, hasta la VACÍA de la celda 6, y solo entonces se guarda en la lápida de la celda 2. Insiste: el error de borrar con VACÍA aparece en la búsqueda de otra clave, lejos de la causa.">
+  <p class="kicker">Demo en vivo · sondeo lineal con m = 11</p>
+  <h2 style="font-size:36px">Borrar con <em>VACÍA</em> rompe la búsqueda de otra clave</h2>
+  <div class="demobar" style="margin-top:14px">
+    <button data-act="reset">⟲</button>
+    <button data-act="prev">◀</button>
+    <button data-act="next" class="primary">Adelante ▶</button>
+    <button data-act="play" id="lpPlay">▶ Reproducir</button>
+    <span class="seg"><button id="lpVac" class="on">borrar con VACÍA</button><button id="lpTomb">borrar con lápida</button></span>
+    <span class="count" data-role="count"></span>
+  </div>
+  <div style="padding-top:14px"><div class="lp-cells" id="lpCells"></div></div>
+  <div style="display:flex;gap:30px;align-items:flex-start;margin-top:22px;flex:1;min-height:0">
+    <div style="width:700px;flex:none">
+      <table class="log" id="lpLog"></table>
+    </div>
+    <p class="narr" id="lpNarr" style="flex:1;font-size:20px"></p>
+  </div>
+</section>
+
+<section class="slide" data-act="III · Colisiones" data-notes="La lápida dice: aquí hubo algo, siga buscando. Para buscar cuenta como ocupada; para insertar, como libre. El código de la derecha es el otro error frecuente: insertar en la primera lápida sin terminar de buscar. Pregunta: ¿qué pasa si k ya estaba más adelante, detrás de la lápida? Queda dos veces; al borrarla se quita una copia y la otra sigue apareciendo en las búsquedas. En la demo, 44 revisó siete celdas antes de guardarse en la celda 2 justamente para evitar esto. En el taller de los casilleros la salida pide la celda y los sondeos de cada operación, así que este error se nota.">
+  <p class="kicker">La lápida, y su error</p>
+  <h2>Para buscar está <em>ocupada</em>; para insertar, libre</h2>
+  <div class="cols" style="margin-top:28px;gap:40px">
+    <div>
+      <p class="body" style="font-size:22px">Una celda BORRADA, o <b>lápida</b> †, dice: <b>aquí hubo algo; siga
+      buscando</b>.</p>
+      <p class="body" style="font-size:22px;margin-top:18px">Pero insertar en la primera lápida exige
+      <b>terminar de buscar</b> antes: hasta una VACÍA o hasta revisar las <code>m</code> celdas.</p>
+      <p class="callout" style="margin-top:22px;font-size:21px">Primero confirmar que <code>k</code> no está.
+      Después escoger dónde ponerla.</p>
+    </div>
+    <div>
+      <p class="colhead">Error común · inserta sin terminar de buscar</p>
+      <pre class="sm" style="font-size:16px">def insertar(self, k):      # INCORRECTO
+    i = hash(k) % self.m
+<span class="hl">    while (self.celdas[i] is not VACIA and</span>
+<span class="hl">           self.celdas[i] is not BORRADA and</span>
+<span class="hl">           self.celdas[i] != k):</span>
+        i = (i + 1) % self.m
+    self.celdas[i] = k</pre>
+      <p class="callout warn" style="margin-top:16px;font-size:19px">Si <code>k</code> estaba detrás de la lápida,
+      queda <b>dos veces</b>. Al borrarla, la otra copia sigue apareciendo.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== ACTO IV ==================== -->
+<section class="slide act" data-act="IV · Factor de carga y crecer" data-notes="Transición: todo el Θ(1) depende de mantener α acotado. Este acto responde hasta dónde y a qué precio.">
+  <p class="n" style="color:var(--td)">IV</p>
+  <h2>Factor de carga y crecer</h2>
+  <div class="rule" style="background:var(--td)"></div>
+  <p class="sub">Cuánto se degrada una tabla cuando se llena, por qué crecer cuesta <code>Θ(n)</code>, y por qué
+  aun así insertar es constante.</p>
+</section>
+
+<section class="slide" data-act="IV · Factor de carga y crecer" data-notes="Lee la tabla por filas, con la última columna como protagonista. Con la tabla a la mitad, 2.5 sondeos; al 90 %, 50.5; al 99 %, más de cinco mil. Pregunta: ¿dónde pondrían el umbral? Luego muestra por qué Python crece a 2/3 y Java a 0.75. Añade el detalle de las lápidas: cuentan para el costo aunque no guarden nada, así que una tabla con muchas lápidas es lenta aunque n sea pequeño, y la solución es reconstruirla.">
+  <p class="kicker">Sondeos esperados · Knuth, 1963</p>
+  <h2>Una tabla abierta <em>nunca</em> se deja llenar</h2>
+  <div class="cols" style="margin-top:26px;grid-template-columns:1.35fr 1fr;gap:36px">
+    <table class="t cmp" style="font-size:19px">
+      <thead><tr><th><code>α</code></th><th class="num">Encadenamiento<br>1 + α</th><th class="num">Lineal<br>con éxito</th><th class="num">Lineal<br>sin éxito</th></tr></thead>
+      <tr><td>0.25</td><td class="num">1.25</td><td class="num">1.17</td><td class="num">1.39</td></tr>
+      <tr><td>0.50</td><td class="num">1.50</td><td class="num">1.50</td><td class="num">2.50</td></tr>
+      <tr><td>0.67</td><td class="num">1.67</td><td class="num">2.00</td><td class="num">5.00</td></tr>
+      <tr><td>0.75</td><td class="num">1.75</td><td class="num">2.50</td><td class="num">8.50</td></tr>
+      <tr class="hot"><td>0.90</td><td class="num">1.90</td><td class="num">5.50</td><td class="num">50.50</td></tr>
+      <tr class="hot"><td>0.99</td><td class="num">1.99</td><td class="num">50.50</td><td class="num">5000.50</td></tr>
+    </table>
+    <div>
+      <pre class="sm" style="font-size:16px">con éxito  ≈ ½ · (1 + 1/(1 − α))
+sin éxito  ≈ ½ · (1 + 1/(1 − α)²)</pre>
+      <p class="body" style="font-size:20px;margin-top:18px">A la mitad, el sondeo lineal es tan bueno como el
+      encadenamiento. Al 90 %, una búsqueda sin éxito revisa <b>50 celdas</b>.</p>
+      <div class="dotrow" style="margin-top:20px">
+        <div class="stat"><b style="color:var(--bu)">2/3</b><span>Python · dict</span></div>
+        <div class="stat"><b style="color:var(--bu)">0.75</b><span>Java · HashMap</span></div>
+      </div>
+      <p class="small" style="margin-top:10px;font-size:17px">El punto en que cada uno crece.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-act="IV · Factor de carga y crecer" data-notes="El enunciado del ejercicio 3: m empieza en 8 y se duplica antes de que α pase de 2/3; el costo es 1 por la clave nueva más 1 por cada clave reubicada. Pregunta: ¿por qué no basta con copiar el arreglo viejo al nuevo? Porque el cajón es k mod m y m acaba de cambiar: cada clave hay que volver a ubicarla. Señala los picos: 6 en la inserción 6, 11 en la 11, 22 en la 22. Cada pico es el doble del anterior, pero también pasa el doble de inserciones baratas antes del siguiente.">
+  <p class="kicker">Ejercicio 3 · crecer a tiempo</p>
+  <h2>Picos cada vez más caros, y cada vez <em>más raros</em></h2>
+  <p class="body" style="font-size:21px;margin-top:18px">Empieza con <code>m = 8</code>. Si la nueva clave haría
+  <code>α &gt; 2/3</code>, se crea una tabla de <code>2m</code> y se <b>reubican todas</b>: <code>k mod m</code>
+  cambió con <code>m</code>.</p>
+  <div class="fill" style="justify-content:flex-end;padding-bottom:8px">
+    <div style="display:flex;gap:14px;align-items:flex-end">
+      <div style="width:92px;flex:none;align-self:stretch;display:flex;flex-direction:column;gap:4px;font-family:var(--fm);color:var(--muted);text-align:right">
+        <span style="flex:1"></span>
+        <span style="font-size:13px;padding-top:4px;border-top:2px solid transparent">inserción</span>
+        <span style="font-size:12px">m después</span></div>
+      <div class="bars" id="growBars"></div>
+    </div>
+  </div>
+  <p class="small" style="font-size:18px">Costo = 1 por la clave nueva + 1 por cada clave reubicada. Los siguientes
+  picos: inserción 43, luego 86…</p>
+</section>
+
+<section class="slide" data-act="IV · Factor de carga y crecer" data-notes="El método agregado: en vez de mirar una inserción, se suma todo y se divide. Escribe la serie en el tablero si hace falta: N + N/2 + N/4 + … menor que 2N. Total menor que 3N, menos de 3 por inserción. A la derecha, lo medido con el programa: ningún valor pasa de 3. Si preguntan por qué 2.75 y 2.40 no coinciden: el costo por inserción es más alto cuando N cae poco después de un crecimiento. Recalca que esto no usa ninguna suposición de azar.">
+  <p class="kicker">Análisis amortizado · método agregado</p>
+  <h2>Sumar todo y dividir: <em>menos de 3</em> por inserción</h2>
+  <div class="cols" style="margin-top:30px;gap:40px">
+    <div>
+      <p class="body" style="font-size:21px">Al insertar <code>N</code> claves: <code>N</code> costos de 1, más las
+      reubicaciones. La última reubica a lo sumo <code>N</code>; la anterior, <code>N/2</code>…</p>
+      <pre style="margin-top:18px;font-size:20px">reubicaciones ≤ N + N/2 + N/4 + …
+              &lt; 2N
+costo total   &lt; N + 2N = 3N
+<span class="hl">por inserción &lt; 3</span></pre>
+    </div>
+    <div>
+      <p class="colhead">Medido con el programa</p>
+      <table class="t cmp" style="font-size:20px">
+        <thead><tr><th>N</th><th class="num">Costo total</th><th class="num">Por inserción</th></tr></thead>
+        <tr><td>1 000</td><td class="num">2 356</td><td class="num">2.36</td></tr>
+        <tr><td>100 000</td><td class="num">274 750</td><td class="num">2.75</td></tr>
+        <tr><td>1 000 000</td><td class="num">2 398 087</td><td class="num">2.40</td></tr>
+      </table>
+      <p class="callout" style="margin-top:22px;font-size:20px">Una inserción puede costar <code>Θ(n)</code>.
+      El costo <b>amortizado</b> es <code>Θ(1)</code>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-act="IV · Factor de carga y crecer" data-notes="El error común: crecer sumando una cantidad fija. Con 8 cajones más cada vez, el costo por inserción pasa de 94.7 a 9 375.4: crece con N, el total es Θ(N²). La razón de multiplicar, en una frase: los picos se vuelven más raros al mismo ritmo al que se vuelven más caros. Cierra con list.append: la tabla de la presentación 4 dice O(1) para agregar al final, y es O(1) amortizado, no en cada llamada.">
+  <p class="kicker">Error común</p>
+  <h2>Crecer <em>sumando</em> en vez de multiplicar</h2>
+  <div class="cols" style="margin-top:28px;gap:40px">
+    <div>
+      <p class="colhead">La misma tabla, creciendo de 8 en 8</p>
+      <table class="t cmp" style="font-size:20px">
+        <thead><tr><th>N</th><th class="num">Costo total</th><th class="num">Por inserción</th></tr></thead>
+        <tr><td>1 000</td><td class="num">94 687</td><td class="num">94.7</td></tr>
+        <tr class="hot"><td>100 000</td><td class="num">937 543 750</td><td class="num">9 375.4</td></tr>
+      </table>
+      <p class="body" style="font-size:20px;margin-top:18px">Crece cada pocas inserciones y cada vez reubica todo:
+      <b>Θ(N²)</b> en total.</p>
+    </div>
+    <div>
+      <p class="callout" style="font-size:21px">Multiplicar funciona porque los picos se vuelven más raros
+      <b>al mismo ritmo</b> al que se vuelven más caros.</p>
+      <div class="box hit-b" style="margin-top:22px">
+        <h3 style="font-size:22px"><code>list.append</code> hace lo mismo</h3>
+        <p class="body" style="font-size:19px;margin-top:8px">Sin espacio, pide un bloque proporcional al tamaño
+        actual y copia todo. Su <code>O(1)</code> de la presentación 4 es <b>amortizado</b>, no en cada llamada.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide thesis-slide" data-act="IV · Factor de carga y crecer" data-notes="PAUSA. Distingue dos promedios que suenan igual. El caso promedio de la tabla hash promedia sobre una suposición de azar en las claves. El amortizado promedia sobre las operaciones de una misma ejecución y vale para cualquier secuencia, sin azar. Pregunta cuál de las dos garantías es más fuerte, y espera la respuesta.">
+  <p>El amortizado no promedia sobre entradas posibles: promedia sobre las operaciones <b>de una misma
+  ejecución</b>, y vale para <b>cualquier</b> secuencia.</p>
+  <p class="attrib">amortizado · sin ninguna suposición de azar</p>
+</section>
+
+<!-- ==================== CIERRE ==================== -->
+<section class="slide" data-act="Cierre" data-notes="Aquí se cierra lo que quedó pendiente en el acto II: por qué el hash de las cadenas cambia entre ejecuciones. Cuenta la historia en orden. En 2003 Crosby y Wallach escogen claves que colisionan todas: cada inserción cuesta Θ(n) y construir la tabla Θ(n²). En 2011, en el 28C3, Klink y Wälde lo llevan a la web: una sola petición HTTP con miles de campos que colisionan ocupa un núcleo del servidor. Termina con las dos respuestas, que son distintas: Python ataca la causa, Java acota el daño.">
+  <p class="kicker">El peor caso existe</p>
+  <h2>Colisiones <em>a propósito</em></h2>
+  <div class="cols" style="margin-top:28px;gap:36px">
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <div class="box td-b" style="padding:18px 22px">
+        <h3 style="font-size:23px">2003 · Crosby y Wallach</h3>
+        <p class="body" style="font-size:19px;margin-top:6px">USENIX Security. Claves escogidas para caer en el mismo
+        cajón: cada inserción <code>Θ(n)</code>, construir la tabla <code>Θ(n²)</code>. Contra Perl, Squid y Bro.</p>
+      </div>
+      <div class="box td-b" style="padding:18px 22px">
+        <h3 style="font-size:23px">2011 · 28C3, Klink y Wälde</h3>
+        <p class="body" style="font-size:19px;margin-top:6px">PHP, Java, Python. <b>Una petición HTTP</b> con miles de
+        campos que colisionan ocupa un núcleo del servidor.</p>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <div class="box bu-b" style="padding:18px 22px">
+        <h3 style="font-size:23px">Python</h3>
+        <p class="body" style="font-size:19px;margin-top:6px">Hash aleatorio para <code>str</code> y
+        <code>bytes</code>, por defecto desde 3.3. Es el <code>hash('amor')</code> que cambia.</p>
+      </div>
+      <div class="box bu-b" style="padding:18px 22px">
+        <h3 style="font-size:23px">Java 8</h3>
+        <p class="body" style="font-size:19px;margin-top:6px">Un cajón con 8 claves se vuelve árbol rojo-negro (con al
+        menos 64 cajones): el peor caso de buscar baja a <code>Θ(log n)</code>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-act="Cierre" data-notes="La idea detrás de la respuesta de Python. En lugar de fijar h, se escoge una al azar al arrancar el programa, de una familia. Para esta familia, dos claves distintas cualesquiera colisionan con probabilidad a lo sumo 1/m. Lee la frase de abajo despacio: el azar ya no está en las claves, que el adversario controla, sino en la función, que no conoce. Pregunta: ¿esto sigue siendo caso promedio? Sí, pero ahora es una garantía sobre el algoritmo y no una suposición sobre los datos.">
+  <p class="kicker">Carter y Wegman, 1979</p>
+  <h2>Hashing universal: la función se escoge <em>al azar</em></h2>
+  <pre style="margin-top:30px;font-size:24px">h<sub>a,b</sub>(k) = ((a·k + b) mod p) mod m</pre>
+  <p class="body" style="font-size:21px;margin-top:16px"><code>p</code> primo mayor que cualquier clave ·
+  <code>a</code> al azar en <code>[1, p−1]</code> · <code>b</code> al azar en <code>[0, p−1]</code></p>
+  <div class="cols" style="margin-top:26px;flex:none;grid-template-columns:auto 1fr;gap:40px;align-items:center">
+    <div class="stat"><b style="color:var(--bu);font-size:54px">≤ 1/m</b><span>prob. de que dos claves distintas colisionen</span></div>
+    <p class="callout" style="font-size:22px">El azar ya no está en las claves, que el adversario controla, sino en
+    <b>la función</b>, que el adversario no conoce.</p>
+  </div>
+</section>
+
+<section class="slide" data-act="Cierre" data-notes="Para mostrar que el tema no está cerrado. En 1985 Yao conjeturó que ningún esquema voraz, de los que ponen cada clave en la primera celda libre y nunca la mueven, baja de unos 1/δ sondeos en el peor caso; con la tabla al 99 %, unos 100. En enero de 2025 Farach-Colton, Krapivin y Kuszmaul la refutan: funnel hashing es voraz y baja el peor caso a log²(1/δ), y sus cotas son óptimas. Cuenta que Krapivin era estudiante de pregrado en Rutgers y no conocía la conjetura. Aclara que el dict de Python no cambia: nunca pasa de dos tercios.">
+  <p class="kicker">2025 · una conjetura de 40 años</p>
+  <h2>Un estudiante de pregrado refuta a <em>Yao</em></h2>
+  <div class="cols" style="margin-top:24px;grid-template-columns:1fr 1.35fr;gap:36px">
+    <div>
+      <p class="body" style="font-size:20px">Tabla llena en <code>1 − δ</code>. En 1985 Yao conjeturó: ningún esquema
+      <b>voraz</b> baja de unos <code>1/δ</code> sondeos en el peor caso. Al 99 %, unos 100.</p>
+      <p class="body" style="font-size:20px;margin-top:16px">Enero de 2025: <b>Farach-Colton, Krapivin y
+      Kuszmaul</b>, <i>Optimal Bounds for Open Addressing Without Reordering</i>.</p>
+      <p class="small" style="margin-top:14px;font-size:17px">Krapivin era estudiante de pregrado en Rutgers y no
+      conocía la conjetura.</p>
+    </div>
+    <table class="t cmp" style="font-size:18px">
+      <thead><tr><th>Esquema</th><th>¿Voraz?</th><th>Amortizado</th><th>Peor caso</th></tr></thead>
+      <tr><td>Sondeo uniforme</td><td>Sí</td><td><code>Θ(log(1/δ))</code></td><td><code>O(1/δ)</code></td></tr>
+      <tr class="hot"><td>Funnel</td><td>Sí</td><td><code>O(log(1/δ))</code></td><td><code>O(log²(1/δ))</code></td></tr>
+      <tr><td>Elastic</td><td>No</td><td><code>O(1)</code></td><td><code>O(log(1/δ))</code></td></tr>
+    </table>
+  </div>
+  <p class="callout" style="margin-top:22px;font-size:20px">El <code>dict</code> de Python no cambia: nunca pasa de
+  dos tercios. Lo que cambia es la idea de que la tabla hash ya no tenía nada que descubrir.</p>
+</section>
+
+<section class="slide" data-act="Cierre" data-notes="Cuándo no usar una tabla hash. Antes de mostrar la tabla, pregunta: ¿qué consulta haría lenta a una tabla hash? Mínimo, sucesor, rangos, recorrido en orden: todo lo que necesita orden. Y la última fila: si se necesita garantía de peor caso, la tabla hash no la da.">
+  <p class="kicker">La letra pequeña, otra vez</p>
+  <h2>Cuándo <em>no</em> usar una tabla hash</h2>
+  <div class="scroller" style="margin-top:30px">
+  <table class="t" style="font-size:21px">
+    <thead><tr><th style="width:470px">Necesita…</th><th>Tabla hash</th><th>Árbol balanceado</th></tr></thead>
+    <tr><td>Buscar, insertar, borrar por clave exacta</td><td><code>Θ(1)</code> promedio</td><td><code>Θ(log n)</code> peor caso</td></tr>
+    <tr class="hot"><td>Mínimo, máximo, sucesor</td><td><code>Θ(n)</code></td><td><code>Θ(log n)</code></td></tr>
+    <tr class="hot"><td>Todas las claves entre a y b</td><td><code>Θ(n)</code></td><td><code>Θ(log n + resultado)</code></td></tr>
+    <tr class="hot"><td>Recorrer en orden de clave</td><td><code>Θ(n log n)</code> (ordenar)</td><td><code>Θ(n)</code></td></tr>
+    <tr class="hot"><td>Garantía de peor caso</td><td>No</td><td>Sí</td></tr>
+  </table></div>
+</section>
+
+<section class="slide" data-act="Cierre" data-notes="El taller. Casilleros del gimnasio usa doble hashing en lugar del sondeo lineal de la demo, con lápidas; la salida pide la celda y el número de sondeos de cada operación, así que un dict no sirve y solo pasa una implementación que siga las reglas exactas. Pagos que suman K es la versión de conteo del par que suma k, con valores repetidos y N hasta 200 000: pide que corran pruebas/pares_grande.in con la versión cuadrática y con la lineal. La parte 2 usa las tablas y fórmulas de esta clase. Recuerda el método: las seis preguntas, en especial el invariante, antes del código.">
+  <p class="kicker">Ahora ustedes</p>
+  <h2>El taller</h2>
+  <div class="cols a3" style="margin-top:30px;align-items:stretch">
+    <div class="box td-b">
+      <h3 style="font-size:24px">Casilleros del gimnasio</h3>
+      <p class="tag">direccionamiento abierto</p>
+      <p class="body" style="font-size:19px">Con <b>doble hashing</b> y lápidas. La salida pide celda y número de
+      sondeos de cada operación: un <code>dict</code> no sirve.</p>
+    </div>
+    <div class="box bu-b">
+      <h3 style="font-size:24px">Pagos que suman K</h3>
+      <p class="tag">conteo con un dict</p>
+      <p class="body" style="font-size:19px">El par que suma <code>k</code>, con repetidos y <code>N</code> hasta
+      200 000. Pruebe <code>pares_grande.in</code>: <code>Θ(N²)</code> contra <code>Θ(N)</code>.</p>
+    </div>
+    <div class="box hit-b">
+      <h3 style="font-size:24px">Parte 2 · análisis</h3>
+      <p class="tag">sobre las tablas de hoy</p>
+      <p class="body" style="font-size:19px">Factor de carga, costo amortizado y elección de <code>m</code>.</p>
+    </div>
+  </div>
+  <p class="callout warn" style="margin-top:24px;font-size:21px">Antes del código: las seis preguntas, en especial el
+  <b>invariante</b>. Casi todo error rompe el invariante en una operación y aparece en otra.</p>
+</section>
+
+<section class="slide cover" data-act="Cierre" data-notes="Última. La guía tiene todo lo de hoy con las trazas completas, la tabla de errores frecuentes de la sección 12 y diez ejercicios propuestos. La página interactiva repite las demos paso a paso. Pide que repasen la tabla de errores antes de entregar.">
+  <p class="kicker">Material de apoyo</p>
+  <h1 style="font-size:58px;max-width:24ch">La guía y las demos quedan en sus manos</h1>
+  <div style="margin-top:34px;display:flex;flex-direction:column;gap:18px;max-width:60ch">
+    <div class="box td-b"><h3 style="font-size:23px"><code style="font-size:21px">guia_estudiante_tablas_hash.md</code></h3>
+      <p class="body" style="font-size:20px;margin-top:4px">Las trazas completas, el GCL de cada operación, la tabla de
+      errores frecuentes y diez ejercicios propuestos.</p></div>
+    <div class="box bu-b"><h3 style="font-size:23px"><code style="font-size:21px">tablas_hash_visual.html</code></h3>
+      <p class="body" style="font-size:20px;margin-top:4px">El reparto según <code>m</code>, las listas del
+      encadenamiento, las lápidas del sondeo lineal y el costo de crecer, paso a paso.</p></div>
+  </div>
+  <p class="meta" style="margin-top:30px">Preguntas.</p>
+</section>
+
+</div></div>
+
+<div id="chrome"><div id="bar"></div></div>
+<div id="actlabel"></div>
+<div id="hud">
+  <span class="num" id="hudNum"></span>
+  <button id="hudPrev" title="Anterior (←)">◀</button>
+  <button id="hudNext" title="Siguiente (→)">▶</button>
+  <button id="hudNotes" title="Notas del expositor (N)">N</button>
+  <button id="hudFull" title="Pantalla completa (F)">⛶</button>
+</div>
+<div id="notes" hidden><h4>Notas del expositor</h4><p id="notesBody"></p></div>
+
+<script>
+/* ENGINE-START · lógica pura de las demos, sin DOM (se verifica aparte con Node) */
+
+/* --- encadenamiento: h(k) = k mod m, se agrega al final de la lista del cajón --- */
+function chainFrames(m, keys, searches){
+  const bk = Array.from({ length: m }, () => []);
+  const snap = () => bk.map(l => l.slice());
+  const frames = [{ bk: snap(), cur: -1, mark: null, op: null, n: 0, comps: null, kind: 'start' }];
+  let n = 0;
+  for (const k of keys){
+    const b = k % m;
+    const had = bk[b].slice();
+    if (bk[b].indexOf(k) === -1){ bk[b].push(k); n++; }
+    frames.push({ bk: snap(), cur: b, mark: { b, j: bk[b].indexOf(k), t: 'new' }, op: { t: 'ins', k, b, had }, n, comps: null, kind: 'ins' });
+  }
+  for (const k of searches){
+    const b = k % m, list = bk[b];
+    if (list.length === 0) frames.push({ bk: snap(), cur: b, mark: null, op: { t: 'find', k, b }, n, comps: 0, kind: 'miss' });
+    for (let j = 0; j < list.length; j++){
+      const hit = list[j] === k, last = j === list.length - 1;
+      frames.push({ bk: snap(), cur: b, mark: { b, j, t: hit ? 'hit' : 'cmp' }, op: { t: 'find', k, b },
+        n, comps: j + 1, kind: hit ? 'hit' : (last ? 'miss' : 'cmp'), seen: list.slice(0, j + 1) });
+      if (hit) break;
+    }
+  }
+  return frames;
+}
+
+/* --- sondeo lineal: celdas { s: 0 VACÍA | 1 OCUPADA | 2 BORRADA, k } --- */
+function lpSondear(cells, k){
+  const m = cells.length;
+  let i = k % m, firstT = -1;
+  const probes = [];
+  for (let c = 0; c < m; c++){
+    probes.push(i);
+    const x = cells[i];
+    if (x.s === 0) return { pos: -1, firstT, empty: i, probes };
+    if (x.s === 2){ if (firstT === -1) firstT = i; }
+    else if (x.k === k) return { pos: i, firstT, empty: -1, probes };
+    i = (i + 1) % m;
+  }
+  return { pos: -1, firstT, empty: -1, probes };
+}
+/* script = lista de operaciones; 'slow' = una diapositiva-paso por sondeo */
+function lpFrames(m, script, mode){
+  const cells = Array.from({ length: m }, () => ({ s: 0, k: null }));
+  const snap = () => cells.map(c => ({ s: c.s, k: c.k }));
+  const log = [];
+  const frames = [{ cells: snap(), probes: [], cur: -1, mark: null, log: [], kind: 'start' }];
+  for (const op of script){
+    const k = op.k, h = k % m;
+    if (op.t === 'ins'){
+      const r = lpSondear(cells, k);
+      const before = snap();
+      let dest = -1;
+      if (r.pos === -1){
+        dest = r.firstT !== -1 ? r.firstT : r.empty;
+        if (dest !== -1) cells[dest] = { s: 1, k };
+      }
+      const row = { op: 'inserta', k, h, probes: r.probes.slice(), res: dest === -1 ? (r.pos !== -1 ? 'ya estaba' : 'llena') : 'celda ' + dest, n: r.probes.length, dest, tomb: r.firstT };
+      if (op.slow){
+        for (let j = 1; j <= r.probes.length; j++){
+          frames.push({ cells: before, probes: r.probes.slice(0, j), cur: r.probes[j - 1], mark: null,
+            log: log.concat([Object.assign({}, row, { partial: j })]), kind: 'insProbe', op: row, j, firstT: r.firstT });
+        }
+        log.push(row);
+        frames.push({ cells: snap(), probes: r.probes.slice(), cur: dest, mark: { i: dest, t: 'placed' }, log: log.slice(), kind: 'insPlace', op: row });
+      } else {
+        log.push(row);
+        frames.push({ cells: snap(), probes: r.probes.slice(), cur: dest, mark: { i: dest, t: 'placed' }, log: log.slice(), kind: 'ins', op: row });
+      }
+    } else if (op.t === 'del'){
+      const r = lpSondear(cells, k);
+      if (r.pos !== -1) cells[r.pos] = mode === 'vacia' ? { s: 0, k: null } : { s: 2, k: null };
+      const row = { op: 'borra', k, h, probes: r.probes.slice(), res: r.pos === -1 ? 'no estaba' : (mode === 'vacia' ? 'celda ' + r.pos + ' → ·' : 'celda ' + r.pos + ' → †'), n: r.probes.length, pos: r.pos };
+      log.push(row);
+      frames.push({ cells: snap(), probes: r.probes.slice(), cur: r.pos, mark: null, log: log.slice(), kind: 'del', op: row });
+    } else if (op.t === 'find'){
+      const r = lpSondear(cells, k);
+      const row = { op: 'busca', k, h, probes: r.probes.slice(), res: r.pos === -1 ? 'no está' : 'celda ' + r.pos, n: r.probes.length, pos: r.pos };
+      for (let j = 1; j <= r.probes.length; j++){
+        const last = j === r.probes.length;
+        const fr = { cells: snap(), probes: r.probes.slice(0, j), cur: r.probes[j - 1], mark: null,
+          log: log.concat([Object.assign({}, row, last ? {} : { partial: j })]), kind: 'findProbe', op: row, j };
+        if (last) fr.mark = { i: r.probes[j - 1], t: r.pos !== -1 ? 'found' : 'stop' };
+        frames.push(fr);
+      }
+      log.push(row);
+    }
+  }
+  return frames;
+}
+const LP_M = 11;
+function lpScript(mode){
+  const s = [22, 1, 13, 11, 24, 33, 18, 42, 31].map(k => ({ t: 'ins', k }));
+  s.push({ t: 'del', k: 13 }, { t: 'find', k: 33 });
+  if (mode === 'lapida') s.push({ t: 'ins', k: 44, slow: true });
+  return s;
+}
+
+/* --- crecer: m = 8, se duplica (o suma) si con la nueva clave α > 2/3 --- */
+function growCosts(N, mult){
+  let m = 8, n = 0;
+  const out = [];
+  for (let i = 0; i < N; i++){
+    let c = 1;
+    if (3 * (n + 1) > 2 * m){ c += n; m = mult ? 2 * m : m + 8; }
+    n++;
+    out.push({ c, m });
+  }
+  return out;
+}
+/* ENGINE-END */
+
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
+
+/* ====== escalado del escenario ====== */
+const stage = $('#stage');
+function fit(){
+  const s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+  stage.style.transform = 'translate(-50%, -50%) scale(' + s + ')';
+}
+window.addEventListener('resize', fit); fit();
+
+/* ====== navegacion ====== */
+const slides = $$('.slide');
+const demos = {};           // nombre -> { step, play }
+let idx = 0;
+function show(i){
+  idx = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((s, k) => s.classList.toggle('on', k === idx));
+  const s = slides[idx];
+  $('#bar').style.width = ((idx) / (slides.length - 1) * 100) + '%';
+  $('#hudNum').textContent = (idx + 1) + ' / ' + slides.length;
+  $('#actlabel').textContent = s.dataset.act || '';
+  $('#notesBody').innerHTML = s.dataset.notes || '<em>Sin notas para esta diapositiva.</em>';
+  $('#hudPrev').disabled = idx === 0;
+  $('#hudNext').disabled = idx === slides.length - 1;
+  /* en un iframe con origen opaco replaceState puede lanzar: el deck no depende de esto */
+  try { if (location.hash !== '#' + (idx + 1)) history.replaceState(null, '', '#' + (idx + 1)); } catch (_){}
+  stopAllPlays();
+}
+function curDemo(){ const d = slides[idx].dataset.demo; return d ? demos[d] : null; }
+function stopAllPlays(){ for (const k in demos) if (demos[k].stop) demos[k].stop(); }
+document.addEventListener('keydown', e => {
+  const t = e.target;
+  const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA');
+  if (typing) return;
+  const onButton = t && t.tagName === 'BUTTON';
+  switch (e.key){
+    case 'ArrowRight': case 'PageDown': show(idx + 1); e.preventDefault(); break;
+    case 'ArrowLeft': case 'PageUp': show(idx - 1); e.preventDefault(); break;
+    case ' ': if (onButton) return; show(idx + 1); e.preventDefault(); break;
+    case 'ArrowDown': case '.': { const d = curDemo(); if (d){ d.step(1); e.preventDefault(); } break; }
+    case 'ArrowUp': case ',': { const d = curDemo(); if (d){ d.step(-1); e.preventDefault(); } break; }
+    case 'Home': show(0); e.preventDefault(); break;
+    case 'End': show(slides.length - 1); e.preventDefault(); break;
+    case 'p': case 'P': { const d = curDemo(); if (d && d.play) d.play(); break; }
+    case 'n': case 'N': $('#notes').hidden = !$('#notes').hidden; break;
+    case 'f': case 'F':
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen().catch(() => {});
+      break;
+  }
+});
+$('#hudPrev').addEventListener('click', () => show(idx - 1));
+$('#hudNext').addEventListener('click', () => show(idx + 1));
+$('#hudNotes').addEventListener('click', () => { $('#notes').hidden = !$('#notes').hidden; });
+$('#hudFull').addEventListener('click', () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(() => {});
+});
+
+/* ====== stepper de demo, atado a su diapositiva ====== */
+function stepper(slideSel, name, opts){
+  const root = $(slideSel);
+  const bar = $('.demobar', root);
+  const count = $('[data-role="count"]', bar);
+  const st = { i: 0, total: 0, timer: null };
+  function paint(){
+    st.i = Math.max(0, Math.min(st.total, st.i));
+    opts.render(st.i);
+    if (count) count.textContent = 'paso ' + st.i + ' / ' + st.total;
+    const p = $('[data-act="prev"]', bar), n = $('[data-act="next"]', bar);
+    if (p) p.disabled = st.i === 0;
+    if (n) n.disabled = st.i === st.total;
+  }
+  bar.addEventListener('click', e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const a = b.dataset.act;
+    if (a === 'next') st.i++; else if (a === 'prev') st.i--; else if (a === 'reset') st.i = 0;
+    if (a !== 'play') paint();
+  });
+  st.reload = (total, start) => { st.total = total; st.i = start === undefined ? total : start; paint(); };
+  st.paint = paint;
+  demos[name] = {
+    step(d){ st.i += d; paint(); },
+    stop(){ if (st.timer){ clearInterval(st.timer); st.timer = null; if (opts.onStop) opts.onStop(); } }
+  };
+  return st;
+}
+function attachPlay(st, btn, name, ms){
+  btn.addEventListener('click', () => toggle());
+  function toggle(){
+    if (st.timer){ clearInterval(st.timer); st.timer = null; btn.textContent = '▶ Reproducir'; btn.classList.remove('on'); return; }
+    if (st.i >= st.total) st.i = 0;
+    btn.textContent = '❙❙ Pausa'; btn.classList.add('on');
+    st.timer = setInterval(() => {
+      if (st.i >= st.total){ clearInterval(st.timer); st.timer = null; btn.textContent = '▶ Reproducir'; btn.classList.remove('on'); return; }
+      st.i++; st.paint();
+    }, ms);
+  }
+  demos[name].play = toggle;
+  demos[name].stop = () => { if (st.timer){ clearInterval(st.timer); st.timer = null; btn.textContent = '▶ Reproducir'; btn.classList.remove('on'); } };
+}
+
+/* ====== DEMO · k mod 10 contra k mod 11 ====== */
+(function(){
+  const KEYS = [10, 20, 30, 40, 50, 60];
+  const rowA = $('#modA'), rowB = $('#modB'), narr = $('#modNarr');
+  function draw(row, m, on){
+    const by = Array.from({ length: m }, () => []);
+    if (on) KEYS.forEach(k => by[k % m].push(k));
+    let h = '<span class="lab">k mod ' + m + '</span><div class="modcells">';
+    for (let c = 0; c < m; c++){
+      h += '<div class="modcell' + (by[c].length ? ' used' : '') + '"><span class="slot">' + c + '</span>' +
+        by[c].map(k => '<span class="kchip">' + k + '</span>').join('') + '</div>';
+    }
+    row.innerHTML = h + '</div>';
+    return by.filter(l => l.length).length;
+  }
+  const S = stepper('[data-demo="mod"]', 'mod', { render(s){
+    const ua = draw(rowA, 10, s >= 1), ub = draw(rowB, 11, s >= 2);
+    if (s === 0) narr.innerHTML = '¿Dónde cae cada clave con <b>m = 10</b>? ¿Y con <b>m = 11</b>?';
+    else if (s === 1) narr.innerHTML = 'Con m = 10, las seis claves caen en <b>' + ua + ' cajón</b>: el 0. La tabla es una lista.';
+    else narr.innerHTML = 'Con m = 11, las mismas seis claves usan <b>' + ub + ' cajones distintos</b>. La función no cambió: cambió <b>m</b>.';
+  }});
+  S.reload(2, 0);
+})();
+
+/* ====== DEMO · encadenamiento, m = 7 ====== */
+(function(){
+  const M = 7, KEYS = [15, 8, 22, 3, 10, 29, 12], FIND = [29, 36];
+  const frames = chainFrames(M, KEYS, FIND);
+  const host = $('#chBk'), opE = $('#chOp'), hE = $('#chH'), nE = $('#chN'), aE = $('#chA'), cE = $('#chC'), narr = $('#chNarr');
+  const fmtA = (n) => (n === M ? '1' : (n / M).toFixed(2));
+  const S = stepper('[data-demo="chain"]', 'chain', { render(s){
+    const f = frames[s];
+    let h = '';
+    for (let b = 0; b < M; b++){
+      h += '<div class="bk-row' + (f.cur === b ? ' cur' : '') + '"><span class="bk-idx">' + b + '</span><span class="bk-slot"></span>';
+      f.bk[b].forEach((k, j) => {
+        let cls = 'chip';
+        if (f.mark && f.mark.b === b){
+          if (f.mark.t === 'new' && j === f.mark.j) cls += ' new';
+          if (f.mark.t === 'hit' && j === f.mark.j) cls += ' hit cmp';
+          if (f.mark.t === 'cmp' && j < f.mark.j) cls += ' no';
+          if (f.mark.t === 'cmp' && j === f.mark.j) cls += (f.kind === 'miss' ? ' no' : '') + ' cmp';
+          if (f.mark.t === 'hit' && j < f.mark.j) cls += ' no';
+        }
+        h += '<span class="bk-arrow">→</span><span class="' + cls + '">' + k + '</span>';
+      });
+      h += '</div>';
+    }
+    host.innerHTML = h;
+    nE.textContent = f.n; aE.textContent = fmtA(f.n);
+    cE.textContent = f.comps === null ? '—' : f.comps;
+    if (!f.op){ opE.innerHTML = '&nbsp;'; hE.innerHTML = '&nbsp;';
+      narr.innerHTML = 'Siete cajones vacíos. Cada uno es una lista de claves.'; return; }
+    const o = f.op;
+    opE.innerHTML = (o.t === 'ins' ? 'inserta ' : 'busca ') + '<b>' + o.k + '</b>';
+    hE.innerHTML = 'h(' + o.k + ') = ' + o.k + ' mod 7 = <span class="h">' + o.b + '</span>';
+    if (f.kind === 'ins'){
+      if (s === KEYS.length)
+        narr.innerHTML = '12 va al cajón 5. Tabla final: <b>α = 1</b>, pero <b>cuatro cajones vacíos</b> y uno con cuatro claves.';
+      else if (o.had.length === 0)
+        narr.innerHTML = 'El cajón ' + o.b + ' estaba vacío: ' + o.k + ' queda sola en su lista.';
+      else
+        narr.innerHTML = 'Colisión: el cajón ' + o.b + ' ya tenía [' + o.had.join(', ') + ']. ' + o.k + ' no estaba, así que se agrega a <b>la misma lista</b>.';
+    } else if (f.kind === 'cmp'){
+      narr.innerHTML = 'Compara ' + o.k + ' con <b>' + f.seen[f.seen.length - 1] + '</b>: no es. Sigue por la lista.';
+    } else if (f.kind === 'hit'){
+      narr.innerHTML = 'Compara con <b>' + o.k + '</b>: encontrada, con <b>' + f.comps + ' comparaciones</b>.';
+    } else if (f.kind === 'miss'){
+      narr.innerHTML = 'Compara con ' + f.seen[f.seen.length - 1] + ': no es, y la lista se acabó. <b>' + o.k + ' no está</b> en ninguna parte: el invariante dice que solo podía estar aquí. ' + f.comps + ' comparaciones.';
+    }
+  }});
+  S.reload(frames.length - 1, 0);
+  attachPlay(S, $('#chPlay'), 'chain', 1100);
+})();
+
+/* ====== DEMO · sondeo lineal, m = 11, con borrado VACÍA o lápida ====== */
+(function(){
+  const cellsE = $('#lpCells'), logE = $('#lpLog'), narr = $('#lpNarr');
+  const bVac = $('#lpVac'), bTomb = $('#lpTomb');
+  let mode = 'vacia', frames = lpFrames(LP_M, lpScript(mode), mode);
+  const ST = ['VACÍA', 'OCUPADA', 'BORRADA'];
+  function longestRun(cells){
+    let best = [0, -1], a = -1;
+    for (let i = 0; i <= cells.length; i++){
+      const occ = i < cells.length && cells[i].s === 1;
+      if (occ && a === -1) a = i;
+      if (!occ && a !== -1){ if (i - a > best[1] - best[0] + 1) best = [a, i - 1]; a = -1; }
+    }
+    return best;
+  }
+  const S = stepper('[data-demo="lp"]', 'lp', { render(s){
+    const f = frames[s];
+    let h = '';
+    for (let i = 0; i < LP_M; i++){
+      const c = f.cells[i];
+      let cls = 'lp' + (c.s === 0 ? ' empty' : (c.s === 2 ? ' tomb' : ''));
+      const ord = f.probes.indexOf(i);
+      if (ord !== -1) cls += ' seen';
+      if (f.mark && f.mark.i === i) cls += f.mark.t === 'found' ? ' found' : (f.mark.t === 'stop' ? (mode === 'vacia' && f.op.k === 33 ? ' wrong' : ' seen') : ' placed');
+      if (f.cur === i) cls += ' cur';
+      const val = c.s === 1 ? c.k : (c.s === 2 ? '†' : '·');
+      h += '<div class="' + cls + '">' + (ord !== -1 ? '<span class="ord">' + (ord + 1) + '</span>' : '') +
+        '<span class="idx">' + i + '</span><span class="val">' + val + '</span><span class="st">' + ST[c.s] + '</span></div>';
+    }
+    cellsE.innerHTML = h;
+    /* bitácora: las últimas 6 filas, la actual resaltada */
+    const rows = f.log.slice(-6);
+    let t = '<thead><tr><th>operación</th><th>h(k)</th><th>celdas revisadas</th><th>resultado</th><th>sondeos</th></tr></thead>';
+    rows.forEach((r, j) => {
+      const isCur = s > 0 && j === rows.length - 1;
+      const pr = r.partial ? r.probes.slice(0, r.partial) : r.probes;
+      const bad = isCur && !r.partial && r.op === 'busca' && r.pos === -1 && mode === 'vacia';
+      t += '<tr class="' + (bad ? 'bad' : (isCur ? 'hot' : '')) + '"><td>' + r.op + ' ' + r.k + '</td><td>' + r.h + '</td><td>' +
+        pr.join(', ') + (r.partial ? ', …' : '') + '</td><td>' + (r.partial ? '…' : r.res) + '</td><td>' + (r.partial ? r.partial : r.n) + '</td></tr>';
+    });
+    logE.innerHTML = t;
+    /* narración */
+    if (f.kind === 'start'){ narr.innerHTML = 'Once celdas VACÍAS. <b>h(k) = k mod 11</b>, y si la celda está ocupada se prueba la siguiente.'; return; }
+    const o = f.op;
+    if (f.kind === 'ins'){
+      const pr = o.probes;
+      let txt = 'Inserta <b>' + o.k + '</b>: h = ' + o.k + ' mod 11 = ' + o.h + '. ';
+      if (pr.length === 1) txt += 'La celda ' + o.dest + ' está VACÍA: queda ahí, 1 sondeo.';
+      else txt += (pr.length === 2 ? 'La celda ' + pr[0] + ' está ocupada' : 'Celdas ' + pr.slice(0, -1).join(', ') + ' ocupadas') + '; la ' + o.dest + ' está VACÍA. Queda en la ' + o.dest + ' con <b>' + pr.length + ' sondeos</b>.';
+      if (o.k === 31){ const r = longestRun(f.cells); txt += ' Fíjese en las celdas ' + r[0] + ' a ' + r[1] + ': un bloque de ' + (r[1] - r[0] + 1) + ' ocupadas. <b>Agrupamiento primario</b>.'; }
+      narr.innerHTML = txt;
+    } else if (f.kind === 'del'){
+      narr.innerHTML = mode === 'vacia'
+        ? 'Borra <b>13</b> (celda ' + o.pos + ') y la marca <b>VACÍA</b>. Parece inofensivo: 13 ya no está.'
+        : 'Borra <b>13</b> (celda ' + o.pos + ') y deja una <b>lápida</b> †: «aquí hubo algo; siga buscando».';
+    } else if (f.kind === 'findProbe'){
+      const i = f.cur, c = f.cells[i], pre = f.j === 1 ? 'Busca <b>' + o.k + '</b>: h = ' + o.h + '. ' : '';
+      if (c.s === 1 && c.k === o.k) narr.innerHTML = pre + 'Celda ' + i + ': <b>' + o.k + ' encontrada</b>, con ' + f.j + ' sondeos.';
+      else if (c.s === 0) narr.innerHTML = pre + 'Celda ' + i + ' VACÍA → «' + o.k + ' no está». <b>Falso</b>: 33 está en la celda 5. El borrado rompió el invariante.';
+      else if (c.s === 2) narr.innerHTML = pre + 'Celda ' + i + ' es una lápida: para buscar cuenta como <b>ocupada</b>. Sigue.';
+      else narr.innerHTML = pre + 'Celda ' + i + ' tiene ' + c.k + ': no es ' + o.k + '. Sigue.';
+    } else if (f.kind === 'insProbe'){
+      const i = f.cur, c = f.cells[i], pre = f.j === 1 ? 'Inserta <b>' + o.k + '</b>: h = ' + o.h + '. Primero hay que confirmar que no está. ' : '';
+      if (c.s === 2) narr.innerHTML = pre + 'Celda ' + i + ' es lápida: se anota como primera libre, pero <b>todavía no se inserta</b>.';
+      else if (c.s === 0) narr.innerHTML = pre + 'Celda ' + i + ' VACÍA: ahora sí se sabe que ' + o.k + ' no está. ' + f.j + ' sondeos.';
+      else narr.innerHTML = pre + 'Celda ' + i + ' tiene ' + c.k + '. Sigue.';
+    } else if (f.kind === 'insPlace'){
+      narr.innerHTML = o.tomb !== -1
+        ? 'Se guarda en la <b>primera lápida</b> vista, la celda ' + o.dest + '. Fueron <b>' + o.n + ' sondeos</b>.'
+        : 'Se guarda en la celda VACÍA ' + o.dest + '. Fueron ' + o.n + ' sondeos.';
+    }
+  }});
+  function setMode(m){
+    mode = m;
+    bVac.classList.toggle('on', m === 'vacia'); bTomb.classList.toggle('on', m === 'lapida');
+    frames = lpFrames(LP_M, lpScript(mode), mode);
+    S.reload(frames.length - 1, Math.min(S.i, frames.length - 1));
+  }
+  bVac.addEventListener('click', () => setMode('vacia'));
+  bTomb.addEventListener('click', () => setMode('lapida'));
+  S.reload(frames.length - 1, 0);
+  attachPlay(S, $('#lpPlay'), 'lp', 1100);
+})();
+
+/* ====== FIGURA · costo de cada inserción al crecer ====== */
+(function(){
+  const host = $('#growBars'), seq = growCosts(24, true);
+  const maxC = Math.max.apply(null, seq.map(x => x.c));
+  host.innerHTML = seq.map((x, i) => {
+    const peak = x.c > 1;
+    return '<div class="barcol' + (peak ? ' peak' : '') + '"><span class="c">' + x.c + '</span>' +
+      '<span class="b" style="height:' + Math.round(6 + 214 * x.c / maxC) + 'px"></span>' +
+      '<span class="n">' + (i + 1) + '</span><span class="m">' + x.m + '</span></div>';
+  }).join('');
+})();
+
+const start = parseInt((location.hash || '').slice(1), 10);
+show(Number.isFinite(start) && start >= 1 ? start - 1 : 0);
+</script>
+</body>
+</html>

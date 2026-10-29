@@ -1,0 +1,1059 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Complemento visual interactivo de la guia de grafos y recorridos: lista de adyacencia, BFS, DFS, componentes conexas y bipartito.">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Anotar, encolar, atender</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --ground:#F1F0F5; --surface:#FDFCFF; --sunk:#E9E7F0;
+  --ink:#191826; --ink-2:#3D3A50; --muted:#6B687E; --line:#DFDCE8; --line-2:#CBC7DA;
+  --baja:#BE5A0E;
+  --sube:#00897B;
+  --memo:#6D46E0;
+  --baja-soft:#F8E9DB; --sube-soft:#DBEFEC; --memo-soft:#E8E2FB;
+  --c0:#6D46E0; --c1:#BE5A0E; --c2:#00897B; --c3:#B4397C;
+  --shadow:0 1px 2px rgba(25,24,38,.05), 0 10px 26px -18px rgba(25,24,38,.4);
+  --fd:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --fb:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --fm:'JetBrains Mono','Cascadia Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#131220; --surface:#1C1B25; --sunk:#232232;
+    --ink:#E9E7F2; --ink-2:#C3BFD3; --muted:#948FA8; --line:#2F2D3E; --line-2:#413E54;
+    --baja:#CE7526; --sube:#0BA187; --memo:#8E76EC;
+    --baja-soft:#372516; --sube-soft:#0D2C29; --memo-soft:#231D40;
+    --c0:#8E76EC; --c1:#CE7526; --c2:#0BA187; --c3:#D45A9C;
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 26px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#131220; --surface:#1C1B25; --sunk:#232232;
+  --ink:#E9E7F2; --ink-2:#C3BFD3; --muted:#948FA8; --line:#2F2D3E; --line-2:#413E54;
+  --baja:#CE7526; --sube:#0BA187; --memo:#8E76EC;
+  --baja-soft:#372516; --sube-soft:#0D2C29; --memo-soft:#231D40;
+  --c0:#8E76EC; --c1:#CE7526; --c2:#0BA187; --c3:#D45A9C;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 26px -18px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--fb);font-size:17px;line-height:1.62;
+  -webkit-font-smoothing:antialiased;padding:0 20px 80px}
+.wrap{max-width:1080px;margin:0 auto}
+h1,h2,h3,h4{font-family:var(--fd);text-wrap:balance;margin:0;line-height:1.15;letter-spacing:-.015em}
+p{margin:0}
+code{font-family:var(--fm);font-size:.85em}
+sup,sub{font-size:.66em;line-height:0}
+.eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500}
+a{color:var(--memo)}
+
+header.hero{padding:56px 0 34px;border-bottom:1px solid var(--line)}
+.hero h1{font-size:clamp(38px,6.6vw,66px);font-weight:800;max-width:17ch;margin-top:14px}
+.hero h1 em{font-style:normal;color:var(--baja)}
+.hero .sub{margin-top:22px;max-width:63ch;font-size:19px;color:var(--ink-2)}
+.thesis{margin-top:26px;border-left:3px solid var(--memo);padding:2px 0 2px 18px;max-width:58ch;
+  font-size:19px;font-style:italic}
+
+.key{margin-top:30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--surface)}
+.key div{padding:14px 17px;border-right:1px solid var(--line)}
+.key div:last-child{border-right:0}
+.key b{font-family:var(--fd);font-size:14.5px;display:flex;align-items:center;gap:9px;font-weight:600}
+.key .dot{width:13px;height:13px;border-radius:50%;flex:none}
+.key p{font-size:14px;color:var(--muted);margin-top:4px;line-height:1.45}
+
+section.lab{padding:54px 0;border-bottom:1px solid var(--line);scroll-margin-top:8px}
+html{scroll-behavior:smooth}
+.toplink{margin-left:auto;flex:none;font-family:var(--fm);font-size:12px;color:var(--muted);text-decoration:none;padding:2px 6px;border-radius:3px}
+.toplink:hover{color:var(--memo);background:var(--memo-soft)}
+.about{margin-top:16px;max-width:65ch}
+.about .mini{color:var(--baja);margin-bottom:5px}
+.about p{font-size:17px;color:var(--ink);line-height:1.6}
+.about .src{display:block;margin-top:6px;font-family:var(--fm);font-size:12px;color:var(--muted)}
+
+/* mapa */
+.map{padding:50px 0 54px;border-bottom:1px solid var(--line);scroll-margin-top:8px}
+.map h2{font-size:clamp(25px,3.4vw,34px);font-weight:600;margin-top:10px}
+.map .lede{max-width:65ch;margin-top:13px;color:var(--ink-2)}
+.map h3{font-size:19px;font-weight:600;margin-top:40px}
+.map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:12px;margin-top:20px}
+.map-card{display:flex;flex-direction:column;gap:6px;padding:14px 16px 13px;background:var(--surface);border:1px solid var(--line);border-radius:4px;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s,box-shadow .2s}
+.map-card:hover{border-color:var(--ink-2);transform:translateY(-2px);box-shadow:var(--shadow)}
+.map-card .n{font-family:var(--fm);font-size:11px;font-weight:700;color:var(--baja);letter-spacing:.08em}
+.map-card b{font-family:var(--fd);font-size:16.5px;font-weight:600;line-height:1.25}
+.map-card p{font-size:14px;color:var(--ink-2);line-height:1.45}
+.map-card .go{margin-top:auto;padding-top:4px;font-family:var(--fm);font-size:12px;color:var(--memo)}
+.algos{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:0 30px;margin-top:14px}
+.algo{padding:14px 0 15px;border-top:1px solid var(--line)}
+.algo h4{font-family:var(--fd);font-size:16.5px;font-weight:600}
+.algo .rec{display:block;margin-top:3px;font-family:var(--fm);font-size:12px;color:var(--muted)}
+.algo p{font-size:14.5px;color:var(--ink-2);line-height:1.5;margin-top:6px}
+.algo .links{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.algo .links a,.algo .links span{font-family:var(--fm);font-size:11.5px;padding:3px 8px;border-radius:2px;text-decoration:none;border:1px solid var(--line-2)}
+.algo .links a{color:var(--memo);border-color:var(--memo);background:var(--memo-soft)}
+.algo .links a:hover{background:var(--memo);color:#fff}
+.algo .links span{color:var(--muted)}
+@media (max-width:420px){.algos{grid-template-columns:1fr}}
+.lab-head{display:flex;gap:15px;align-items:baseline}
+.lab-num{font-family:var(--fm);font-size:12px;font-weight:700;color:var(--baja);letter-spacing:.08em;flex:none}
+.lab h2{font-size:clamp(25px,3.4vw,34px);font-weight:600}
+.lab .lede{max-width:65ch;margin-top:13px;color:var(--ink-2)}
+.goal{margin-top:18px;max-width:65ch;padding:12px 16px 13px;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--sube);border-radius:3px}
+.goal .mini{margin-bottom:5px}
+.goal p{font-size:15.5px;color:var(--ink-2);line-height:1.55}
+.goal b{color:var(--ink)}
+.stage{margin-top:26px;background:var(--surface);border:1px solid var(--line);border-radius:4px;
+  box-shadow:var(--shadow);overflow:hidden}
+.stage-body{padding:22px;min-width:0}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 300px}
+.split>.rail{border-left:1px solid var(--line);padding:20px;background:var(--sunk);min-width:0}
+@media (max-width:860px){.split{grid-template-columns:1fr}.split>.rail{border-left:0;border-top:1px solid var(--line)}}
+
+.ctl{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);
+  background:var(--sunk)}
+button{font-family:var(--fd);font-size:14px;font-weight:600;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:3px;padding:6px 12px;cursor:pointer;line-height:1.25}
+button:hover:not(:disabled){border-color:var(--ink-2)}
+button:disabled{opacity:.35;cursor:default}
+button.primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+button.on{background:var(--memo);border-color:var(--memo);color:#fff}
+:focus-visible{outline:2px solid var(--memo);outline-offset:2px}
+.ctl label{font-family:var(--fm);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+input[type=range]{accent-color:var(--memo);width:108px}
+.step-count{font-family:var(--fm);font-size:12px;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line-2);border-radius:3px;overflow:hidden}
+.seg button{border:0;border-radius:0;border-right:1px solid var(--line-2)}
+.seg button:last-child{border-right:0}
+
+.mono{font-family:var(--fm)}
+.rail h4,.mini{font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+  font-weight:500;margin-bottom:11px}
+.rail-block+.rail-block{margin-top:24px}
+.narration{font-size:15px;color:var(--ink-2);line-height:1.5;min-height:6em}
+.narration b{color:var(--ink);font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--fm);font-size:11.5px;font-weight:500;
+  padding:3px 8px;border-radius:2px;border:1px solid var(--line-2);color:var(--muted);background:var(--surface)}
+.pill.baja{color:var(--baja);border-color:var(--baja);background:var(--baja-soft)}
+.pill.sube{color:var(--sube);border-color:var(--sube);background:var(--sube-soft)}
+.pill.memo{color:var(--memo);border-color:var(--memo);background:var(--memo-soft)}
+.pills{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+figure{margin:0}
+figcaption{font-size:14.5px;color:var(--muted);margin-top:13px;line-height:1.5;max-width:72ch}
+.scroller{overflow-x:auto;padding-bottom:4px}
+pre{font-family:var(--fm);font-size:13px;line-height:1.65;background:var(--surface);border:1px solid var(--line);
+  border-radius:3px;padding:12px 14px;overflow-x:auto;margin:0;color:var(--ink-2)}
+pre b{color:var(--ink);font-weight:700}
+pre.code span{display:block;padding:0 6px;margin:0 -6px;border-radius:2px;transition:background .25s,box-shadow .25s;white-space:pre}
+pre.code span.hi{background:var(--memo-soft);color:var(--ink);box-shadow:inset 2px 0 0 var(--memo)}
+.stat-row{display:flex;gap:22px;flex-wrap:wrap}
+.stat b{display:block;font-family:var(--fd);font-size:26px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{font-family:var(--fm);font-size:10.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.note{margin-top:24px;padding:16px 19px;background:var(--memo-soft);border:1px solid var(--memo);
+  border-radius:3px;font-size:15.5px;max-width:75ch}
+.note b{font-family:var(--fd)}
+.note p+p{margin-top:8px}
+.hint{font-size:13.5px;color:var(--muted);margin-top:12px}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;margin:0;align-items:baseline}
+.kv dt{font-family:var(--fm);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kv dd{margin:0;font-size:15px;color:var(--ink);overflow-wrap:anywhere}
+.noanim,.noanim *{transition:none!important}
+
+/* grafo (SVG) */
+.graph{display:block;width:100%;max-width:520px;height:auto;margin:0 auto}
+.graph .edge{stroke:var(--line-2);stroke-width:2;transition:stroke .3s,stroke-width .3s,opacity .3s}
+.graph .edge.tree{stroke:var(--sube);stroke-width:3}
+.graph .edge.cur{stroke:var(--baja);stroke-width:4}
+.graph .edge.bad{stroke:#C62828;stroke-width:4;stroke-dasharray:6 4;animation:flow 1s linear infinite}
+.graph .edge.dim{opacity:.3}
+.graph .node circle{fill:var(--surface);stroke:var(--line-2);stroke-width:2;transition:fill .3s,stroke .3s,stroke-width .3s,r .3s}
+.graph .node text{font-family:var(--fm);font-size:15px;font-weight:700;fill:var(--ink);text-anchor:middle;dominant-baseline:central;pointer-events:none;transition:fill .3s}
+.graph .node .lbl{font-size:11px;font-weight:500;fill:var(--muted);dominant-baseline:auto}
+.graph .node.queued circle{fill:var(--memo-soft);stroke:var(--memo)}
+.graph .node.cur circle{fill:var(--baja);stroke:var(--baja);r:19}
+.graph .node.cur text:not(.lbl){fill:#fff}
+.graph .node.done circle{fill:var(--sube);stroke:var(--sube)}
+.graph .node.done text:not(.lbl){fill:#fff}
+.graph .node.sel circle{stroke:var(--memo);stroke-width:4}
+.graph .node.pick{cursor:pointer}
+.graph .node.pick:hover circle{stroke:var(--ink-2)}
+.graph .node.k0 circle{fill:var(--c0);stroke:var(--c0)} .graph .node.k1 circle{fill:var(--c1);stroke:var(--c1)}
+.graph .node.k2 circle{fill:var(--c2);stroke:var(--c2)} .graph .node.k3 circle{fill:var(--c3);stroke:var(--c3)}
+.graph .node.k0 text:not(.lbl),.graph .node.k1 text:not(.lbl),.graph .node.k2 text:not(.lbl),.graph .node.k3 text:not(.lbl){fill:#fff}
+.graph .node.colA circle{fill:var(--memo);stroke:var(--memo)} .graph .node.colA text:not(.lbl){fill:#fff}
+.graph .node.colB circle{fill:var(--baja-soft);stroke:var(--baja);stroke-width:3}
+.graph .node.conf circle{stroke:#C62828;stroke-width:5}
+.graph .node.dimn{opacity:.35}
+@keyframes flow{to{stroke-dashoffset:-20}}
+
+/* cola / pila */
+.qbox{margin-top:18px}
+.qbox h4{margin-bottom:8px}
+.cells{display:flex;flex-wrap:wrap;gap:5px;min-height:44px;align-items:center}
+.cell{width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--line-2);border-radius:3px;
+  background:var(--surface);font-family:var(--fm);font-size:14px;font-weight:700;color:var(--ink);
+  transition:background .3s,border-color .3s,transform .4s}
+.cell.q{background:var(--memo-soft);border-color:var(--memo);color:var(--memo)}
+.cell.front{background:var(--baja-soft);border-color:var(--baja);color:var(--baja)}
+.cell.top{box-shadow:0 0 0 2px var(--baja)}
+.cell.empty{border-style:dashed;color:var(--muted);font-weight:500;font-size:11px;width:auto;padding:0 10px}
+.cell.frame{width:auto;padding:0 9px;gap:6px;font-size:12.5px}
+.cell.frame i{font-style:normal;font-weight:500;color:var(--muted);font-size:11px}
+.cell.new{animation:pop .35s ease}
+@keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:none;opacity:1}}
+.qarrow{font-family:var(--fm);font-size:11px;color:var(--muted);margin:0 4px}
+.order{font-family:var(--fm);font-size:13.5px;color:var(--ink);margin-top:8px;min-height:1.4em}
+.order b{color:var(--sube)}
+.dist-row{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px;margin-top:10px;max-width:420px}
+.dist-row div{text-align:center;font-family:var(--fm);font-size:12px;border:1px solid var(--line);border-radius:2px;padding:3px 0;background:var(--surface);color:var(--ink);transition:background .3s,border-color .3s}
+.dist-row div small{display:block;font-size:9.5px;color:var(--muted)}
+.dist-row div.set{background:var(--sube-soft);border-color:var(--sube)}
+.dist-row div.just{background:var(--baja-soft);border-color:var(--baja)}
+.dist-row div.cA{background:var(--memo-soft);border-color:var(--memo)}
+.dist-row div.cB{background:var(--baja-soft);border-color:var(--baja)}
+
+/* 01 · adyacencia */
+.adj-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:700px){.adj-wrap{grid-template-columns:1fr}}
+table.adj{border-collapse:collapse;font-family:var(--fm);font-size:13px;width:100%}
+table.adj th{font-weight:500;color:var(--muted);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line-2);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+table.adj td{padding:5px 8px;border-bottom:1px solid var(--line);transition:background .25s;font-variant-numeric:tabular-nums}
+table.adj tr{cursor:pointer}
+table.adj tr:hover td{background:var(--sunk)}
+table.adj tr.on td{background:var(--memo-soft);color:var(--ink)}
+table.adj td.u{font-weight:700}
+table.adj td.n{color:var(--muted)}
+table.adj td.v{color:var(--ink-2)}
+table.adj tr.on td.v b{color:var(--memo)}
+table.adj tfoot td{border-bottom:0;color:var(--muted);font-size:12px;padding-top:9px}
+
+/* 06 · errores */
+.errgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:18px;margin-top:26px}
+.errcard{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:18px 19px;box-shadow:var(--shadow)}
+.errcard h4{font-size:16.5px;font-weight:600;margin-bottom:4px}
+.errcard .sym{font-family:var(--fm);font-size:12px;color:var(--baja);margin-bottom:12px;letter-spacing:.02em}
+.errcard p{font-size:14.5px;color:var(--ink-2);line-height:1.5;margin-top:12px}
+.errcard pre{font-size:12px;margin-top:10px}
+.errcard svg{width:100%;max-width:430px;height:auto;display:block}
+.errcard .grow{transform:scaleX(0);transform-box:fill-box;transform-origin:0 50%;transition:transform .9s cubic-bezier(.2,.75,.25,1)}
+.errcard.in .grow{transform:scaleX(1)}
+.errcard .growy{transform:scaleY(0);transform-box:fill-box;transform-origin:50% 100%;transition:transform 1.1s cubic-bezier(.2,.75,.25,1)}
+.errcard.in .growy{transform:scaleY(1)}
+.errcard .pulse{animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.3}}
+
+/* cierre */
+.cmp2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}
+@media (max-width:700px){.cmp2{grid-template-columns:1fr}}
+.cmp2 figure{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:14px}
+.cmp2 .graph{max-width:100%}
+.cmp2 .rv{opacity:0;transition:opacity .6s ease}
+.cmp2.in .rv{opacity:1}
+footer{padding:46px 0 0;color:var(--muted);font-size:15px;max-width:70ch}
+
+@media (max-width:520px){
+  body{padding:0 16px 70px}
+  .stage-body{padding:16px}
+  .split>.rail{padding:16px}
+  .ctl{padding:10px 12px}
+  .cell{width:34px;height:34px;font-size:12.5px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <p class="eyebrow">Complemento visual · Estructuras de datos y algoritmos</p>
+  <h1>Anotar, encolar, atender — <em>y no volver a mirar</em></h1>
+  <p class="sub">La guía escrita define los grafos, la lista de adyacencia y los dos recorridos, BFS y DFS, con
+  sus aplicaciones: distancias, componentes conexas y bipartición. Esta página los pone en movimiento sobre el mismo
+  grafo de la guía y de la presentación 6: una cola que se llena y se vacía, una pila que crece y retrocede, y
+  vértices que se van pintando.</p>
+  <p class="thesis">Un recorrido anota cada vértice una sola vez, en el momento en que lo descubre, y revisa cada
+  arista dos veces. De la primera regla sale que termina; de la segunda, que cuesta O(n + m). Todo lo demás es
+  decidir qué vértice se atiende primero.</p>
+  <div class="key">
+    <div><b><span class="dot" style="background:var(--baja)"></span>Actual</b>
+      <p>El vértice que se está atendiendo: el gerente revisa sus vecinos uno por uno.</p></div>
+    <div><b><span class="dot" style="background:var(--memo)"></span>En espera</b>
+      <p>Descubierto y anotado, pero todavía en la cola (BFS) o en la pila (DFS).</p></div>
+    <div><b><span class="dot" style="background:var(--sube)"></span>Terminado</b>
+      <p>Ya revisó todos sus vecinos. No se vuelve a tocar.</p></div>
+  </div>
+</header>
+
+<!-- ============ mapa ============ -->
+<section class="map" id="mapa">
+  <p class="eyebrow">Antes de empezar</p>
+  <h2>Mapa de la página</h2>
+  <p class="lede">Esta página acompaña la guía escrita. Cada laboratorio tiene controles: <b>Adelante</b> y <b>Atrás</b> avanzan paso a paso, <b>Reproducir</b> anima solo y la velocidad se puede ajustar. Conviene seguir el orden: primero cómo se guarda el grafo (01), después los dos recorridos sobre el mismo grafo (02 y 03), luego las dos aplicaciones (04 y 05) y al final los errores (06). Si nunca ha visto alguno de los algoritmos, lea primero su descripción en la lista de abajo.</p>
+  <div class="map-grid">
+    <a class="map-card" href="#lab-01"><span class="n">01</span><b>La lista de adyacencia</b><p>Cómo se guarda el grafo en dos arreglos, grado[u] y ady[u,i], y por qué recorrer los vecinos de todos cuesta 2m y no n².</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-02"><span class="n">02</span><b>BFS: la cola de pendientes</b><p>El recorrido por niveles, arista por arista, con la cola visible y las distancias apareciendo.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-03"><span class="n">03</span><b>DFS: delegar al primer vecino</b><p>El mismo grafo, en profundidad: la pila de llamadas como camino, y lo que pasa cuando esa pila es la de Python.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-04"><span class="n">04</span><b>Componentes conexas</b><p>Reiniciar el recorrido desde cada vértice sin marca, y por qué el total sigue siendo O(n + m).</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-05"><span class="n">05</span><b>¿Es bipartito?</b><p>BFS que pinta con dos colores forzados y detecta la arista que cierra un ciclo impar.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-06"><span class="n">06</span><b>Cuatro formas de romper un recorrido</b><p>Errores de código que lo vuelven lento, incompleto o lo hacen caer sin mensaje.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-cierre"><span class="n">◆</span><b>BFS y DFS, lado a lado</b><p>El mismo algoritmo con dos estructuras distintas, y qué cambia en lo que cada uno garantiza.</p><span class="go">Ir al laboratorio →</span></a>
+  </div>
+  <h3 id="algoritmos" style="scroll-margin-top:8px">Los algoritmos que aparecen en esta página</h3>
+  <p class="lede">Qué hace cada uno, su costo y dónde verlo. Los botones llevan al laboratorio correspondiente.</p>
+  <div class="algos">
+    <div class="algo"><h4>Lista de adyacencia</h4><span class="rec">memoria Θ(n + m) · vecinos de u en Θ(grado[u])</span><p>Para cada vértice, la lista de sus vecinos. En GCL son dos arreglos: grado[u] y ady[u,i]. Es la representación por defecto del curso.</p><div class="links"><a href="#lab-01">01 tabla</a><span>Guía, sección 3</span></div></div>
+    <div class="algo"><h4>BFS (búsqueda en anchura)</h4><span class="rec">O(n + m) · dist[v] = distancia mínima</span><p>Atiende los vértices en orden de descubrimiento con una cola. Visita por niveles y por eso la primera vez que ve un vértice lo ve por un camino más corto.</p><div class="links"><a href="#lab-02">02 animación</a><a href="#lab-cierre">◆ comparación</a><span>Guía, ejercicio 1</span></div></div>
+    <div class="algo"><h4>DFS (búsqueda en profundidad)</h4><span class="rec">O(n + m) · pila de profundidad hasta n</span><p>Se mete por el primer vecino libre y solo retrocede cuando no hay salida. La recursión es su pila; en Python, con límite.</p><div class="links"><a href="#lab-03">03 animación</a><a href="#lab-06">06 error «pila»</a><span>Guía, ejercicio 2</span></div></div>
+    <div class="algo"><h4>Componentes conexas</h4><span class="rec">O(n + m) en total, con varios recorridos</span><p>Un recorrido desde s marca exactamente la componente de s. Reiniciar desde cada vértice sin marca cuenta todas, incluidas las de un solo vértice.</p><div class="links"><a href="#lab-04">04 animación</a><span>Guía, ejercicio 3 · Taller, problema 1</span></div></div>
+    <div class="algo"><h4>Bipartito (2-coloración)</h4><span class="rec">O(n + m) · falla ⇔ hay un ciclo impar</span><p>BFS que da a cada vecino el color contrario y compara los colores en toda arista. Como la coloración está forzada, si falla no había otra.</p><div class="links"><a href="#lab-05">05 animación</a><span>Guía, ejercicio 4 · Tarea 3, Bicoloring</span></div></div>
+    <div class="algo"><h4>Relleno de una cuadrícula</h4><span class="rec">O(F · C) · 4 u 8 vecinos</span><p>Componentes conexas sobre un grafo implícito: cada celda es un vértice y sus vecinas se generan con una tabla de desplazamientos, sin construir la lista.</p><div class="links"><a href="#lab-04">04 misma idea</a><span>Guía, sección 3.3 · Tarea 3, Oil Deposits</span></div></div>
+  </div>
+</section>
+
+<!-- ============ 1 ============ -->
+<section class="lab" id="lab-01">
+  <div class="lab-head"><span class="lab-num">01</span>
+    <h2>La lista de adyacencia</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>Antes de recorrer un grafo hay que <b>guardarlo</b>. La lista de adyacencia guarda, para cada vértice, la lista de sus vecinos. En GCL, que solo tiene arreglos, son dos: <code>grado[u]</code>, cuántos vecinos tiene u, y <code>ady[u,i]</code>, el i-ésimo de ellos. En un grafo no dirigido cada arista aparece dos veces, una en la fila de cada extremo, así que la suma de la columna grado es 2m.<span class="src">Guía, sección 3 · presentación 6</span></p></div>
+  <p class="lede">Este es el grafo de la guía y de la presentación 6: <b>n = 8</b> vértices y <b>m = 9</b> aristas. Haga clic en un vértice del dibujo o en una fila de la tabla: se resaltan sus aristas y su fila. Recorrer los vecinos de u cuesta exactamente grado[u] pasos.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Que cada arista aparece en <b>dos filas</b> (la de u y la de v) y que la suma de los grados es 2m = 18. Por eso, cuando un recorrido revisa los vecinos de todos los vértices, hace 2m revisiones y no n²: ese número es la mitad del argumento de O(n + m).</p></div>
+
+  <div class="stage">
+    <div class="stage-body">
+      <div class="adj-wrap">
+        <div><svg class="graph" id="adjSvg" viewBox="0 0 480 300" role="img" aria-label="Grafo de ocho vértices; al hacer clic en uno se resaltan sus aristas"></svg></div>
+        <div>
+          <table class="adj" id="adjTable">
+            <thead><tr><th>u</th><th>grado[u]</th><th>ady[u,0], ady[u,1], ...</th></tr></thead>
+            <tbody></tbody>
+            <tfoot><tr><td></td><td id="adjSum"></td><td>= 2m: cada arista, dos veces</td></tr></tfoot>
+          </table>
+          <p class="hint" id="adjHint">Seleccione un vértice.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>En Python.</b> <code>adj = [[] for _ in range(n)]</code> y, por cada arista u–v, <code>adj[u].append(v)</code> y
+  <code>adj[v].append(u)</code>. Nunca <code>[[]] * n</code>: son n referencias a la misma lista (laboratorio 06).</p>
+</section>
+
+<!-- ============ 2 ============ -->
+<section class="lab" id="lab-02">
+  <div class="lab-head"><span class="lab-num">02</span>
+    <h2>BFS: la cola de pendientes</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>La <b>búsqueda en anchura</b> es el gerente con una bandeja de pendientes: saca el vértice más antiguo, revisa a todos sus vecinos, y a cada vecino que todavía no esté anotado lo anota y lo pone al final de la bandeja. Como atiende por orden de llegada, atiende primero a todo lo que está a distancia 1, luego a todo lo que está a distancia 2, y así: <b>por niveles</b>. Por eso <code>dist[v]</code>, la distancia con la que se descubre v, es la mínima.<span class="src">Guía, ejercicio 1</span></p></div>
+  <p class="lede">Cada paso es <b>una revisión de arista</b>: el vértice actual mira a un vecino y, o lo descubre (le asigna distancia y lo encola), o lo encuentra ya anotado y no hace nada. Mire la cola: nunca mezcla más de dos niveles, y los del nivel menor van adelante.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Dos cosas. Que un vértice se anota <b>al entrar</b> a la cola, no al salir: por eso el contador de atendidos llega justo a n. Y que al terminar, las revisiones de aristas son exactamente <b>2m = 18</b>, una por cada entrada de la tabla del laboratorio 01. Cambie el inicio s y compruebe que ninguno de los dos números cambia.</p></div>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="bfs">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <button data-act="play">▶ Reproducir</button>
+      <label>velocidad <input type="range" data-role="speed" min="300" max="1400" step="50" value="900" aria-label="Velocidad"></label>
+      <label>inicio s = <input type="range" id="bfsS" min="0" max="7" step="1" value="0"><b class="mono" id="bfsSv">0</b></label>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <svg class="graph" id="bfsSvg" viewBox="0 0 480 300" role="img" aria-label="BFS paso a paso sobre el grafo de ocho vértices"></svg>
+        <div class="qbox"><h4 class="mini">Cola · frente a la izquierda</h4><div class="cells" id="bfsQ"></div></div>
+        <div class="qbox"><h4 class="mini">dist[v]</h4><div class="dist-row" id="bfsDist"></div></div>
+        <div class="pills">
+          <span class="pill baja">actual: revisa sus vecinos</span>
+          <span class="pill memo">en la cola</span>
+          <span class="pill sube">terminado · arista del árbol BFS</span>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="bfsNarr"></p></div>
+        <div class="rail-block"><h4>Cuenta en vivo</h4>
+          <div class="stat-row">
+            <div class="stat"><b id="bfsAt">0</b><span>atendidos · n = 8</span></div>
+            <div class="stat"><b id="bfsRev">0</b><span>revisiones · 2m = 18</span></div>
+            <div class="stat"><b id="bfsLvl">—</b><span>nivel</span></div>
+          </div></div>
+        <div class="rail-block"><h4>El código</h4>
+<pre class="code" id="bfsCode"><span>dist = [-1] * n</span><span>dist[s] = 0; cola = deque([s])</span><span>while cola:</span><span>  u = cola.popleft()</span><span>  for v in adj[u]:</span><span>    if dist[v] == -1:</span><span>      dist[v] = dist[u] + 1</span><span>      cola.append(v)</span></pre></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>Por qué la distancia es mínima.</b> Si v se descubre desde u con dist[u] = d, cualquier camino
+  más corto hasta v tendría un penúltimo vértice con distancia menor que d, que habría salido de la cola antes que u
+  y habría descubierto a v primero. Por eso nunca hay que «mejorar» una distancia: la primera vez ya es la mejor.</p>
+</section>
+
+<!-- ============ 3 ============ -->
+<section class="lab" id="lab-03">
+  <div class="lab-head"><span class="lab-num">03</span>
+    <h2>DFS: delegar al primer vecino</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>La <b>búsqueda en profundidad</b> es el gerente que delega: anota el vértice que le tocó, y al primer vecino sin anotar le pasa el recorrido a un clon y <b>espera</b>. Cuando el clon vuelve, sigue con el siguiente vecino. La pila de llamadas es, en todo momento, el camino desde s hasta el vértice actual; cada llamada recuerda por cuál vecino iba (su índice i).<span class="src">Guía, ejercicio 2</span></p></div>
+  <p class="lede">Mismo grafo, misma cuenta, otro orden. Mire la pila: crece mientras hay por dónde avanzar y se desarma cuando no. Aquí llega a tener los <b>ocho</b> vértices a la vez; en un grafo que sea un camino de n vértices, tendría n. Esa es la pila que Python limita a 1000.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Que DFS llega al vértice 2 en el <b>sexto</b> lugar, por un camino de cinco aristas, cuando 2 es vecino directo de 0: la profundidad en la pila <b>no</b> es la distancia. Y que atendidos y revisiones terminan en los mismos 8 y 18 del BFS: el costo es el mismo, lo que cambia es la estructura.</p></div>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="dfs">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <button data-act="play">▶ Reproducir</button>
+      <label>velocidad <input type="range" data-role="speed" min="300" max="1400" step="50" value="900" aria-label="Velocidad"></label>
+      <label>inicio s = <input type="range" id="dfsS" min="0" max="7" step="1" value="0"><b class="mono" id="dfsSv">0</b></label>
+      <div class="seg" id="dfsMode"><button data-m="rec" class="on">recursivo</button><button data-m="it">iterativo</button></div>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <svg class="graph" id="dfsSvg" viewBox="0 0 480 300" role="img" aria-label="DFS paso a paso sobre el grafo de ocho vértices"></svg>
+        <div class="qbox"><h4 class="mini" id="dfsStackTitle">Pila de llamadas · tope a la derecha · (vértice, próximo vecino i)</h4><div class="cells" id="dfsStack"></div></div>
+        <div class="qbox"><h4 class="mini">Orden de visita</h4><p class="order" id="dfsOrder"></p></div>
+        <div class="pills">
+          <span class="pill baja">actual: la llamada abierta</span>
+          <span class="pill memo">en la pila, esperando a su clon</span>
+          <span class="pill sube">terminado · arista del árbol DFS</span>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="dfsNarr"></p></div>
+        <div class="rail-block"><h4>Cuenta en vivo</h4>
+          <div class="stat-row">
+            <div class="stat"><b id="dfsAt">0</b><span>atendidos · n = 8</span></div>
+            <div class="stat"><b id="dfsRev">0</b><span>revisiones · 2m = 18</span></div>
+            <div class="stat"><b id="dfsDepth">0</b><span>profundidad máx.</span></div>
+          </div></div>
+        <div class="rail-block"><h4>El código</h4>
+<pre class="code" id="dfsCodeRec"><span>def dfs(u):</span><span>  visto[u] = True</span><span>  orden.append(u)</span><span>  for v in adj[u]:</span><span>    if not visto[v]:</span><span>      dfs(v)</span><span>  # return: vuelve a quien llamó</span></pre>
+<pre class="code" id="dfsCodeIt" hidden><span>visto[s] = True; pila = [(s, 0)]</span><span>while pila:</span><span>  u, i = pila[-1]</span><span>  if i &lt; len(adj[u]):</span><span>    pila[-1] = (u, i + 1)</span><span>    v = adj[u][i]</span><span>    if not visto[v]:</span><span>      visto[v] = True</span><span>      pila.append((v, 0))</span><span>  else:</span><span>    pila.pop()</span></pre>
+          <p class="hint">Las dos versiones hacen exactamente los mismos pasos: cambie el selector y la animación no se mueve.</p></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>El riesgo de la pila.</b> Python se niega a abrir más de 1000 llamadas anidadas: un camino de 1000
+  vértices ya produce <code>RecursionError</code>. Subir el límite con <code>sys.setrecursionlimit</code> alcanza para
+  unos miles o decenas de miles (Oil Deposits, en la Tarea 3, lo necesita); con 10⁵ el intérprete puede caerse sin
+  mensaje. La versión iterativa de la derecha guarda en una lista lo mismo que guardaba cada marco, (u, i), y no
+  tiene límite.</p>
+</section>
+
+<!-- ============ 4 ============ -->
+<section class="lab" id="lab-04">
+  <div class="lab-head"><span class="lab-num">04</span>
+    <h2>Componentes conexas</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>Un recorrido desde s marca <b>exactamente</b> la componente de s: lo que no está conectado con s no se descubre. Para ver todo el grafo, el ciclo externo recorre los vértices 0, 1, ..., n − 1 y cada vértice que todavía no tiene marca es la semilla de una componente <b>nueva</b>: si perteneciera a una ya contada, ese recorrido lo habría marcado.<span class="src">Guía, ejercicio 3 · Taller, problema 1 (Grupos de amigos)</span></p></div>
+  <p class="lede">Otro grafo, el de la traza de la guía: un triángulo, una pareja, un vértice solo y otra pareja. Cada BFS pinta su componente de un color. Fíjese en el vértice 5: no tiene aristas y el recorrido desde él termina de inmediato, pero cuenta como componente.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Que hay <b>cuatro</b> recorridos y aun así las revisiones de aristas suman 2m = 10 y los atendidos n = 8: cada vértice pertenece a un solo recorrido. Por eso el total es O(n + m) y no O(n · (n + m)). Y que el contador k sube justo cuando aparece una semilla sin marca.</p></div>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="cc">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <button data-act="play">▶ Reproducir</button>
+      <label>velocidad <input type="range" data-role="speed" min="300" max="1400" step="50" value="950" aria-label="Velocidad"></label>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <svg class="graph" id="ccSvg" viewBox="0 0 480 270" role="img" aria-label="Grafo con cuatro componentes conexas que se van coloreando"></svg>
+        <div class="qbox"><h4 class="mini">Ciclo externo · s recorre 0, 1, ..., n − 1</h4><div class="cells" id="ccOuter"></div></div>
+        <div class="qbox"><h4 class="mini">Cola del BFS en curso</h4><div class="cells" id="ccQ"></div></div>
+        <div class="qbox"><h4 class="mini">comp[v]</h4><div class="dist-row" id="ccComp"></div></div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="ccNarr"></p></div>
+        <div class="rail-block"><h4>Cuenta en vivo</h4>
+          <div class="stat-row">
+            <div class="stat"><b id="ccK">0</b><span>componentes k</span></div>
+            <div class="stat"><b id="ccAt">0</b><span>atendidos · n = 8</span></div>
+            <div class="stat"><b id="ccRev">0</b><span>revisiones · 2m = 10</span></div>
+          </div>
+          <p class="hint" id="ccSizes"></p></div>
+        <div class="rail-block"><h4>El código</h4>
+<pre class="code" id="ccCode"><span>comp = [-1] * n; k = 0</span><span>for s in range(n):</span><span>  if comp[s] != -1: continue</span><span>  comp[s] = k; cola = deque([s])</span><span>  while cola:</span><span>    u = cola.popleft()</span><span>    for v in adj[u]:</span><span>      if comp[v] == -1:</span><span>        comp[v] = k; cola.append(v)</span><span>  k += 1</span></pre></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>La misma idea en una cuadrícula.</b> Oil Deposits (Tarea 3) es este laboratorio sobre un grafo implícito:
+  cada celda con petróleo es un vértice y sus vecinas son las 8 celdas de alrededor. El ciclo externo recorre las celdas,
+  cada celda sin marca inicia un yacimiento nuevo, y el recorrido lo marca completo. Con cuadrículas de 100 × 100,
+  decida antes si usa BFS o DFS iterativo (laboratorio 03).</p>
+</section>
+
+<!-- ============ 5 ============ -->
+<section class="lab" id="lab-05">
+  <div class="lab-head"><span class="lab-num">05</span>
+    <h2>¿Es bipartito?</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>Un grafo es <b>bipartito</b> si sus vértices se pueden pintar con dos colores sin que ninguna arista una dos del mismo color: dos equipos sin enemigos adentro, dos bandos, placebo y droga. Dentro de una componente, el color de s decide el de todos los demás: los vecinos de s llevan el contrario, los vecinos de esos el de s, y así. El BFS asigna ese color forzado al descubrir cada vértice y <b>compara</b> colores en toda arista. Si encuentra una arista con los dos extremos iguales, no había ninguna coloración posible: esa arista cierra un ciclo de longitud impar.<span class="src">Guía, ejercicio 4 · Tarea 3, Bicoloring</span></p></div>
+  <p class="lede">El grafo de la guía es bipartito: el color de cada vértice es la paridad de su distancia a s. Active la arista <b>4–5</b> y vuelva a correr: une dos vértices a distancia 2 del inicio, los dos del mismo bando, y cierra el ciclo impar 0–1–4–5–2–0.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Que el conflicto aparece siempre con un vecino que <b>ya tiene color</b>: por eso hay que comparar en cada revisión de arista, no solo cuando se descubre un vértice. Y que una vez encontrado el conflicto, el recorrido puede detenerse: una sola arista mala ya decide la respuesta.</p></div>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="bip">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <button data-act="play">▶ Reproducir</button>
+      <label>velocidad <input type="range" data-role="speed" min="300" max="1400" step="50" value="900" aria-label="Velocidad"></label>
+      <button id="bipExtra">+ arista 4–5</button>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <svg class="graph" id="bipSvg" viewBox="0 0 480 300" role="img" aria-label="BFS que colorea el grafo con dos colores"></svg>
+        <div class="qbox"><h4 class="mini">Cola · frente a la izquierda</h4><div class="cells" id="bipQ"></div></div>
+        <div class="qbox"><h4 class="mini">color[v]</h4><div class="dist-row" id="bipCol"></div></div>
+        <div class="pills">
+          <span class="pill memo">color 0 (bando A)</span>
+          <span class="pill baja">color 1 (bando B)</span>
+          <span class="pill" style="color:#C62828;border-color:#C62828">conflicto: arista dentro de un bando</span>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="bipNarr"></p></div>
+        <div class="rail-block"><h4>Veredicto</h4><p class="theta" id="bipRes" style="font-family:var(--fd);font-size:20px;font-weight:600"></p>
+          <div class="stat-row" style="margin-top:10px">
+            <div class="stat"><b id="bipRev">0</b><span>revisiones</span></div>
+            <div class="stat"><b id="bipOk">0</b><span>aristas bien</span></div>
+          </div></div>
+        <div class="rail-block"><h4>El código</h4>
+<pre class="code" id="bipCode"><span>color[s] = 0; cola = deque([s])</span><span>while cola:</span><span>  u = cola.popleft()</span><span>  for v in adj[u]:</span><span>    if color[v] == -1:</span><span>      color[v] = 1 - color[u]</span><span>      cola.append(v)</span><span>    elif color[v] == color[u]:</span><span>      return False</span></pre></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>No olvide las otras componentes.</b> Esta animación corre desde s = 0 sobre un grafo conexo. En
+  Bicoloring (Tarea 3) el grafo puede no serlo, y el ciclo impar puede estar en una componente que 0 no alcanza: el
+  ciclo externo del laboratorio 04 va antes de este BFS.</p>
+</section>
+
+<!-- ============ 6 ============ -->
+<section class="lab" id="lab-06">
+  <div class="lab-head"><span class="lab-num">06</span>
+    <h2>Cuatro formas de romper un recorrido</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>Errores de programación reales. Algunos dan la respuesta correcta en los ejemplos pequeños y fallan solo en los casos grandes o en los no conexos del juez; otros hacen que el programa termine sin imprimir nada. Todos se reconocen con una pregunta de la tabla de la guía.<span class="src">Guía, sección 10</span></p></div>
+  <p class="lede">Cada tarjeta tiene un síntoma reconocible y la pregunta que lo detecta.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Relacionar cada error de <b>código</b> con la regla que rompe: anotar al descubrir, revisar cada arista dos veces, reiniciar desde cada vértice sin marca, y no confiar en la pila de Python. Si puede decir cuál regla rompe su código, puede detectar el error antes de enviarlo.</p></div>
+  <div class="errgrid" id="errGrid"></div>
+</section>
+
+<!-- ============ cierre ============ -->
+<section class="lab" id="lab-cierre" style="border-bottom:0">
+  <div class="lab-head"><span class="lab-num">◆</span>
+    <h2>BFS y DFS, lado a lado</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>Los dos recorridos son el mismo algoritmo con una estructura distinta: cola en uno, pila en el otro. La cola atiende por antigüedad y produce niveles; la pila atiende lo más reciente y produce profundidad. Lo que cada uno <b>garantiza</b> es distinto; lo que <b>cuesta</b> es igual.<span class="src">Guía, sección 9</span></p></div>
+  <div class="cmp2" id="cmp2">
+    <figure><h4 class="mini">BFS desde 0 · árbol por niveles</h4>
+      <svg class="graph" id="cmpBfs" viewBox="0 0 480 300" role="img" aria-label="Árbol BFS: las aristas por las que se descubrió cada vértice, con su distancia"></svg>
+      <figcaption>Orden 0 1 2 3 4 5 6 7. Cada vértice se descubre por un camino más corto: dist = 0 1 1 2 2 2 3 3. La cola nunca tiene más de dos niveles.</figcaption></figure>
+    <figure><h4 class="mini">DFS desde 0 · un camino largo</h4>
+      <svg class="graph" id="cmpDfs" viewBox="0 0 480 300" role="img" aria-label="Árbol DFS: un camino que llega al vértice 2 por cinco aristas"></svg>
+      <figcaption>Orden 0 1 3 6 4 2 5 7. El árbol es un solo camino de ocho vértices: 2 se descubre a profundidad 5 aunque esté a distancia 1. La pila llega a tener n marcos.</figcaption></figure>
+  </div>
+  <p class="note"><b>La pregunta que decide el recorrido.</b> Si el enunciado dice mínimo, más corto o menos pasos, es BFS.
+  Si pide componentes, ciclos o la estructura del recorrido (quién es ancestro de quién, orden de terminación), DFS sirve,
+  y en Python conviene la versión iterativa. Para contar componentes, cualquiera de los dos.</p>
+  <footer>
+    <p>Complemento visual de <em>Grafos y recorridos: guía para el estudiante</em>. Sugerencia de uso en clase: proyecte el
+    laboratorio 02 y, antes de cada paso, pregunte qué vértice sale de la cola y qué descubre; después pase al 03 con el
+    mismo s y pida predecir cuándo llega al vértice 2.</p>
+  </footer>
+</section>
+</div>
+
+<script>
+/* ===== utilidades comunes ===== */
+const $ = (s, r) => (r || document).querySelector(s);
+const SVGNS = 'http://www.w3.org/2000/svg';
+const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function el(tag, attrs, text){
+  const n = document.createElementNS(SVGNS, tag);
+  let style = '';
+  for (const k in attrs){
+    const v = String(attrs[k]);
+    if (v.indexOf('var(') !== -1) style += k + ':' + v + ';';
+    else n.setAttribute(k, v);
+  }
+  if (style) n.setAttribute('style', style);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+/* Un solo patrón de control para todos los laboratorios, con reproducción. */
+function stepper(name, opts){
+  const bar = document.querySelector('[data-ctl="' + name + '"]');
+  const st = { i: 0, total: 0, timer: null };
+  const count = $('[data-role="count"]', bar);
+  const playBtn = $('[data-act="play"]', bar);
+  const speed = $('[data-role="speed"]', bar);
+  function clamp(){ st.i = Math.max(0, Math.min(st.total, st.i)); }
+  function paint(){
+    clamp();
+    opts.render(st.i);
+    count.textContent = 'paso ' + st.i + ' / ' + st.total;
+    $('[data-act="prev"]', bar).disabled = st.i === 0;
+    $('[data-act="next"]', bar).disabled = st.i === st.total;
+  }
+  const delay = () => speed ? 1700 - (+speed.value) : 800;
+  function stop(){
+    if (st.timer){ clearTimeout(st.timer); st.timer = null; }
+    if (playBtn){ playBtn.textContent = '▶ Reproducir'; playBtn.classList.remove('on'); }
+  }
+  function tick(){
+    st.timer = null;
+    if (st.i >= st.total){ stop(); return; }
+    st.i++; paint();
+    if (st.i >= st.total){ stop(); return; }
+    st.timer = setTimeout(tick, delay());
+  }
+  function play(){
+    if (st.i >= st.total){ st.i = 0; paint(); }
+    if (playBtn){ playBtn.textContent = '❙❙ Pausa'; playBtn.classList.add('on'); }
+    st.timer = setTimeout(tick, st.i === 0 ? 450 : delay());
+  }
+  bar.addEventListener('click', e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const a = b.dataset.act;
+    if (a === 'play'){ if (st.timer) stop(); else play(); return; }
+    stop();
+    if (a === 'next') st.i++;
+    else if (a === 'prev') st.i--;
+    else if (a === 'reset') st.i = 0;
+    paint();
+  });
+  st.reload = (total, start) => { stop(); st.total = total; st.i = start === undefined ? total : start; paint(); };
+  st.paint = paint; st.play = play; st.stop = stop;
+  return st;
+}
+function onVisible(node, fn, threshold){
+  if (!('IntersectionObserver' in window)){ fn(); return; }
+  const io = new IntersectionObserver(es => { es.forEach(e => { if (e.isIntersecting){ fn(); io.disconnect(); } }); },
+    { threshold: threshold || 0.2 });
+  io.observe(node);
+}
+const hiLines = (pre, idx) => pre.querySelectorAll('span').forEach((ln, j) => ln.classList.toggle('hi', idx.indexOf(j) !== -1));
+
+/* ===== el grafo de la guía (presentación 6) ===== */
+const G1 = {
+  pos: [[52, 150], [172, 66], [172, 234], [300, 34], [300, 150], [300, 266], [424, 92], [424, 240]],
+  edges: [[0, 1], [0, 2], [1, 3], [1, 4], [2, 4], [2, 5], [3, 6], [4, 6], [5, 7]]
+};
+/* el grafo de la traza de componentes */
+const G2 = {
+  pos: [[60, 70], [150, 30], [150, 130], [255, 60], [345, 60], [430, 135], [255, 210], [345, 210]],
+  edges: [[0, 1], [1, 2], [2, 0], [3, 4], [6, 7]]
+};
+function adjOf(g, extra){
+  const n = g.pos.length, adj = []; for (let i = 0; i < n; i++) adj.push([]);
+  g.edges.concat(extra || []).forEach(([u, v]) => { adj[u].push(v); adj[v].push(u); });
+  adj.forEach(l => l.sort((a, b) => a - b));
+  return adj;
+}
+const ekey = (u, v) => u < v ? u + '-' + v : v + '-' + u;
+/* Dibuja el grafo y devuelve manejadores para pintar estados. */
+function drawGraph(svg, g, extra, opts){
+  opts = opts || {};
+  svg.innerHTML = '';
+  const edges = {}, nodes = [], labels = [];
+  g.edges.concat(extra || []).forEach(([u, v]) => {
+    const [x1, y1] = g.pos[u], [x2, y2] = g.pos[v];
+    const ln = el('line', { x1, y1, x2, y2, class: 'edge' });
+    svg.appendChild(ln); edges[ekey(u, v)] = ln;
+  });
+  g.pos.forEach(([x, y], i) => {
+    const grp = el('g', { class: 'node' + (opts.pick ? ' pick' : ''), transform: 'translate(' + x + ',' + y + ')' });
+    grp.appendChild(el('circle', { r: 17 }));
+    grp.appendChild(el('text', {}, String(i)));
+    const lbl = el('text', { class: 'lbl', y: 32 }, '');
+    grp.appendChild(lbl);
+    if (opts.pick) grp.addEventListener('click', () => opts.pick(i));
+    svg.appendChild(grp); nodes.push(grp); labels.push(lbl);
+  });
+  return {
+    node: (i, cls) => { nodes[i].setAttribute('class', 'node' + (opts.pick ? ' pick' : '') + (cls ? ' ' + cls : '')); },
+    label: (i, t) => { labels[i].textContent = t; },
+    edge: (u, v, cls) => { const e = edges[ekey(u, v)]; if (e) e.setAttribute('class', 'edge' + (cls ? ' ' + cls : '')); },
+    allEdges: cls => Object.values(edges).forEach(e => e.setAttribute('class', 'edge' + (cls ? ' ' + cls : ''))),
+    keys: Object.keys(edges)
+  };
+}
+function cellsHTML(box, items){
+  box.innerHTML = '';
+  if (!items.length){ const d = document.createElement('div'); d.className = 'cell empty'; d.textContent = 'vacía'; box.appendChild(d); return; }
+  items.forEach(it => {
+    const d = document.createElement('div'); d.className = 'cell ' + (it.cls || '');
+    d.innerHTML = it.html; box.appendChild(d);
+  });
+}
+
+/* ===== 01 · lista de adyacencia ===== */
+(function(){
+  const svg = $('#adjSvg'), tbody = $('#adjTable tbody'), hint = $('#adjHint');
+  const adj = adjOf(G1);
+  let sel = -1;
+  const D = drawGraph(svg, G1, null, { pick: i => select(i) });
+  const rows = adj.map((l, u) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td class="u">' + u + '</td><td class="n">' + l.length + '</td><td class="v">' + l.map(v => '<b>' + v + '</b>').join(', ') + '</td>';
+    tr.addEventListener('click', () => select(u));
+    tbody.appendChild(tr); return tr;
+  });
+  $('#adjSum').textContent = 'Σ = ' + adj.reduce((s, l) => s + l.length, 0);
+  function select(u){
+    sel = sel === u ? -1 : u;
+    rows.forEach((r, i) => r.classList.toggle('on', i === sel));
+    D.allEdges(sel === -1 ? '' : 'dim');
+    for (let i = 0; i < 8; i++) D.node(i, sel === -1 ? '' : (i === sel ? 'sel' : (adj[sel].indexOf(i) !== -1 ? 'queued' : 'dimn')));
+    if (sel === -1){ hint.textContent = 'Seleccione un vértice.'; return; }
+    adj[sel].forEach(v => D.edge(sel, v, 'cur'));
+    hint.innerHTML = 'grado[' + sel + '] = <b>' + adj[sel].length + '</b>: recorrer sus vecinos cuesta ' + adj[sel].length +
+      ' pasos. Cada una de esas ' + adj[sel].length + ' aristas aparece también en la fila del otro extremo.';
+  }
+})();
+
+/* ===== 02 · BFS ===== */
+(function(){
+  const svg = $('#bfsSvg'), qbox = $('#bfsQ'), distBox = $('#bfsDist'), narr = $('#bfsNarr');
+  const at = $('#bfsAt'), rev = $('#bfsRev'), lvl = $('#bfsLvl'), code = $('#bfsCode');
+  const sl = $('#bfsS'), sv = $('#bfsSv');
+  const adj = adjOf(G1);
+  let snaps = [], D = drawGraph(svg, G1);
+  function model(s){
+    const n = 8, dist = new Array(n).fill(-1), q = [], done = [], tree = [];
+    let atendidos = 0, revis = 0;
+    const snap = (o) => snaps.push(Object.assign({ dist: dist.slice(), q: q.slice(), done: done.slice(), tree: tree.slice(), at: atendidos, rev: revis }, o));
+    snaps = [];
+    dist[s] = 0; q.push(s);
+    snap({ kind: 'init', u: -1, v: -1, hi: [0, 1] });
+    while (q.length){
+      const u = q.shift(); atendidos++;
+      snap({ kind: 'pop', u, v: -1, hi: [2, 3] });
+      for (const v of adj[u]){
+        revis++;
+        if (dist[v] === -1){ dist[v] = dist[u] + 1; q.push(v); tree.push(ekey(u, v)); snap({ kind: 'new', u, v, hi: [4, 5, 6, 7] }); }
+        else snap({ kind: 'seen', u, v, hi: [4, 5] });
+      }
+      done.push(u);
+    }
+    snap({ kind: 'end', u: -1, v: -1, hi: [2] });
+  }
+  function render(i){
+    const sn = snaps[i], s = +sl.value;
+    for (let v = 0; v < 8; v++){
+      let cls = '';
+      if (sn.done.indexOf(v) !== -1) cls = 'done';
+      else if (v === sn.u) cls = 'cur';
+      else if (sn.q.indexOf(v) !== -1) cls = 'queued';
+      D.node(v, cls);
+      D.label(v, sn.dist[v] === -1 ? '' : 'd=' + sn.dist[v]);
+    }
+    D.allEdges('');
+    sn.tree.forEach(k => { const [a, b] = k.split('-').map(Number); D.edge(a, b, 'tree'); });
+    if (sn.v !== -1) D.edge(sn.u, sn.v, 'cur');
+    cellsHTML(qbox, sn.q.map((v, j) => ({ html: v, cls: 'q' + (j === 0 ? ' front' : '') + (sn.kind === 'new' && v === sn.v ? ' new' : '') })));
+    distBox.innerHTML = '';
+    sn.dist.forEach((d, v) => {
+      const c = document.createElement('div');
+      c.className = d === -1 ? '' : (sn.kind === 'new' && v === sn.v ? 'just' : 'set');
+      c.innerHTML = (d === -1 ? '−1' : d) + '<small>v=' + v + '</small>'; distBox.appendChild(c);
+    });
+    at.textContent = sn.at; rev.textContent = sn.rev;
+    lvl.textContent = sn.u === -1 ? '—' : sn.dist[sn.u];
+    hiLines(code, sn.hi);
+    let t;
+    if (sn.kind === 'init') t = 'Inicio desde <b>s = ' + s + '</b>: dist[' + s + '] = 0 y la cola contiene solo a ' + s + '. Todo lo demás vale −1: no descubierto.';
+    else if (sn.kind === 'pop') t = 'Saca <b>' + sn.u + '</b> de la cola (el más antiguo, nivel ' + sn.dist[sn.u] + ') y va a revisar sus ' + adj[sn.u].length + ' vecinos: ' + adj[sn.u].join(', ') + '.';
+    else if (sn.kind === 'new') t = 'Revisa la arista ' + sn.u + '–' + sn.v + ': <b>' + sn.v + '</b> no estaba descubierto. Se anota <b>dist[' + sn.v + '] = ' + sn.dist[sn.v] + '</b> y entra al final de la cola. Esa es su distancia definitiva.';
+    else if (sn.kind === 'seen') t = 'Revisa la arista ' + sn.u + '–' + sn.v + ': ' + sn.v + ' ya tiene dist = ' + sn.dist[sn.v] + '. No se toca: la primera vez ya fue la mejor. La revisión cuenta igual.';
+    else t = '<b>Cola vacía: fin.</b> ' + sn.at + ' vértices atendidos, ' + sn.rev + ' revisiones de aristas = 2m. Las aristas verdes forman el árbol BFS y dist[v] es la distancia mínima desde ' + s + '.';
+    narr.innerHTML = t;
+  }
+  const S = stepper('bfs', { render });
+  function build(){ sv.textContent = sl.value; model(+sl.value); S.reload(snaps.length - 1, 0); }
+  sl.addEventListener('input', build);
+  build();
+})();
+
+/* ===== 03 · DFS ===== */
+(function(){
+  const svg = $('#dfsSvg'), stackBox = $('#dfsStack'), orderEl = $('#dfsOrder'), narr = $('#dfsNarr');
+  const at = $('#dfsAt'), rev = $('#dfsRev'), depth = $('#dfsDepth');
+  const codeRec = $('#dfsCodeRec'), codeIt = $('#dfsCodeIt'), modeSeg = $('#dfsMode');
+  const sl = $('#dfsS'), sv = $('#dfsSv');
+  const adj = adjOf(G1);
+  let snaps = [], mode = 'rec', D = drawGraph(svg, G1);
+  function model(s){
+    const n = 8, visto = new Array(n).fill(false), stack = [], order = [], done = [], tree = [];
+    let revis = 0, maxd = 0;
+    const snap = (o) => { maxd = Math.max(maxd, stack.length); snaps.push(Object.assign({ visto: visto.slice(), stack: stack.map(f => f.slice()), order: order.slice(), done: done.slice(), tree: tree.slice(), rev: revis, maxd }, o)); };
+    snaps = [];
+    snap({ kind: 'init', u: -1, v: -1, hr: [0], hi: [0] });
+    visto[s] = true; order.push(s); stack.push([s, 0]);
+    snap({ kind: 'enter', u: s, v: -1, hr: [1, 2], hi: [0] });
+    while (stack.length){
+      const f = stack[stack.length - 1], u = f[0];
+      if (f[1] < adj[u].length){
+        const v = adj[u][f[1]]; f[1]++; revis++;
+        if (!visto[v]){
+          visto[v] = true; order.push(v); tree.push(ekey(u, v)); stack.push([v, 0]);
+          snap({ kind: 'call', u, v, hr: [3, 4, 5, 1, 2], hi: [2, 3, 4, 5, 6, 7, 8] });
+        } else snap({ kind: 'seen', u, v, hr: [3, 4], hi: [2, 3, 4, 5, 6] });
+      } else {
+        stack.pop(); done.push(u);
+        snap({ kind: 'ret', u, v: -1, hr: [6], hi: [2, 3, 9, 10] });
+      }
+    }
+    snap({ kind: 'end', u: -1, v: -1, hr: [], hi: [1] });
+  }
+  function render(i){
+    const sn = snaps[i], s = +sl.value;
+    const top = sn.stack.length ? sn.stack[sn.stack.length - 1][0] : -1;
+    const inStack = sn.stack.map(f => f[0]);
+    for (let v = 0; v < 8; v++){
+      let cls = '';
+      if (sn.done.indexOf(v) !== -1) cls = 'done';
+      else if (v === top && sn.kind !== 'ret') cls = 'cur';
+      else if (inStack.indexOf(v) !== -1) cls = 'queued';
+      D.node(v, cls);
+      const k = sn.order.indexOf(v);
+      D.label(v, k === -1 ? '' : (k + 1) + '.º');
+    }
+    D.allEdges('');
+    sn.tree.forEach(k => { const [a, b] = k.split('-').map(Number); D.edge(a, b, 'tree'); });
+    if (sn.v !== -1) D.edge(sn.u, sn.v, 'cur');
+    cellsHTML(stackBox, sn.stack.map((f, j) => ({ html: '<b>' + f[0] + '</b><i>i=' + f[1] + '</i>', cls: 'frame q' + (j === sn.stack.length - 1 ? ' top' : '') + (sn.kind === 'call' && f[0] === sn.v ? ' new' : '') })));
+    orderEl.innerHTML = sn.order.length ? sn.order.map((v, j) => j === sn.order.length - 1 && sn.kind === 'call' ? '<b>' + v + '</b>' : v).join(' ') : '—';
+    at.textContent = sn.order.length; rev.textContent = sn.rev; depth.textContent = sn.maxd;
+    hiLines(codeRec, sn.hr); hiLines(codeIt, sn.hi);
+    let t;
+    if (sn.kind === 'init') t = 'Nada visitado. Se va a llamar <b>dfs(' + s + ')</b>: la primera llamada abre la pila.';
+    else if (sn.kind === 'enter') t = '<b>dfs(' + sn.u + ')</b>: marca ' + sn.u + ' como visto, lo agrega al orden y empieza a revisar sus vecinos desde i = 0.';
+    else if (sn.kind === 'call') t = 'Desde <b>' + sn.u + '</b>, el vecino ' + sn.v + ' no está visto: se <b>delega dfs(' + sn.v + ')</b>. La llamada de ' + sn.u + ' queda en la pila esperando, con su i ya avanzado; ' + sn.v + ' se marca y entra al tope.';
+    else if (sn.kind === 'seen') t = 'Desde <b>' + sn.u + '</b>, el vecino ' + sn.v + ' ya está visto: se salta y avanza i. La arista se revisó igual (cuenta en 2m).';
+    else if (sn.kind === 'ret') t = '<b>' + sn.u + '</b> no tiene más vecinos: su llamada <b>termina</b> y se saca de la pila. El control vuelve a ' + (sn.stack.length ? sn.stack[sn.stack.length - 1][0] + ', que sigue con su siguiente vecino.' : 'nadie: era la primera llamada.');
+    else t = '<b>Pila vacía: fin.</b> Orden ' + sn.order.join(' ') + '. ' + sn.order.length + ' vértices, ' + sn.rev + ' revisiones = 2m, igual que BFS. La pila llegó a ' + sn.maxd + ' marcos: en un camino de n vértices llegaría a n.';
+    narr.innerHTML = t;
+  }
+  const S = stepper('dfs', { render });
+  function build(){ sv.textContent = sl.value; model(+sl.value); S.reload(snaps.length - 1, 0); }
+  sl.addEventListener('input', build);
+  modeSeg.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    mode = b.dataset.m;
+    [...modeSeg.children].forEach(x => x.classList.toggle('on', x === b));
+    codeRec.hidden = mode !== 'rec'; codeIt.hidden = mode !== 'it';
+    $('#dfsStackTitle').textContent = mode === 'rec' ? 'Pila de llamadas · tope a la derecha · (vértice, próximo vecino i)' : 'pila = [(u, i), ...] · tope a la derecha';
+  });
+  build();
+})();
+
+/* ===== 04 · componentes conexas ===== */
+(function(){
+  const svg = $('#ccSvg'), outer = $('#ccOuter'), qbox = $('#ccQ'), compBox = $('#ccComp'), narr = $('#ccNarr');
+  const kEl = $('#ccK'), at = $('#ccAt'), rev = $('#ccRev'), sizes = $('#ccSizes'), code = $('#ccCode');
+  const adj = adjOf(G2);
+  const D = drawGraph(svg, G2);
+  const snaps = [];
+  (function model(){
+    const n = 8, comp = new Array(n).fill(-1), q = [];
+    let k = 0, atend = 0, revis = 0;
+    const snap = (o) => snaps.push(Object.assign({ comp: comp.slice(), q: q.slice(), k, at: atend, rev: revis }, o));
+    snap({ kind: 'init', s: -1, u: -1, hi: [0] });
+    for (let s = 0; s < n; s++){
+      if (comp[s] !== -1){ snap({ kind: 'skip', s, u: -1, hi: [1, 2] }); continue; }
+      comp[s] = k; q.push(s);
+      snap({ kind: 'seed', s, u: -1, hi: [1, 3] });
+      while (q.length){
+        const u = q.shift(); atend++;
+        const nuevos = [];
+        for (const v of adj[u]){ revis++; if (comp[v] === -1){ comp[v] = k; q.push(v); nuevos.push(v); } }
+        snap({ kind: 'pop', s, u, nuevos, hi: [4, 5, 6, 7, 8] });
+      }
+      k++;
+      snap({ kind: 'close', s, u: -1, hi: [9] });
+    }
+    snap({ kind: 'end', s: -1, u: -1, hi: [1] });
+  })();
+  function render(i){
+    const sn = snaps[i];
+    for (let v = 0; v < 8; v++){
+      let cls = sn.comp[v] === -1 ? '' : 'k' + sn.comp[v];
+      if (v === sn.u) cls = 'cur';
+      else if (sn.q.indexOf(v) !== -1) cls = 'queued';
+      D.node(v, cls);
+      D.label(v, sn.comp[v] === -1 ? '' : 'comp=' + sn.comp[v]);
+    }
+    D.allEdges('');
+    if (sn.kind === 'pop') adj[sn.u].forEach(v => D.edge(sn.u, v, sn.nuevos.indexOf(v) !== -1 ? 'cur' : 'tree'));
+    cellsHTML(outer, Array.from({ length: 8 }, (_, s) => ({ html: s, cls: s === sn.s ? 'front' : (s < sn.s || sn.kind === 'end' ? 'q' : '') })));
+    cellsHTML(qbox, sn.q.map((v, j) => ({ html: v, cls: 'q' + (j === 0 ? ' front' : '') })));
+    compBox.innerHTML = '';
+    sn.comp.forEach((c, v) => { const d = document.createElement('div'); d.className = c === -1 ? '' : 'set'; d.innerHTML = (c === -1 ? '−1' : c) + '<small>v=' + v + '</small>'; compBox.appendChild(d); });
+    kEl.textContent = sn.k; at.textContent = sn.at; rev.textContent = sn.rev;
+    const t = []; sn.comp.forEach(c => { if (c !== -1) t[c] = (t[c] || 0) + 1; });
+    sizes.innerHTML = t.length ? 'tamaños: [' + t.join(', ') + ']' + (sn.kind === 'end' ? ' · el grupo más grande tiene ' + Math.max(...t) : '') : '';
+    hiLines(code, sn.hi);
+    let s;
+    if (sn.kind === 'init') s = 'comp[v] = −1 en todos los vértices y k = 0. El ciclo externo va a recorrer s = 0, 1, ..., 7.';
+    else if (sn.kind === 'skip') s = '<b>s = ' + sn.s + '</b> ya tiene comp = ' + sn.comp[sn.s] + ': lo marcó un recorrido anterior. Se salta sin hacer nada.';
+    else if (sn.kind === 'seed') s = '<b>s = ' + sn.s + '</b> no tiene marca: ningún recorrido anterior lo alcanzó, así que no está en ninguna componente contada. Es la <b>semilla de la componente ' + sn.k + '</b>; entra a la cola.';
+    else if (sn.kind === 'pop') s = 'Saca <b>' + sn.u + '</b> y revisa sus ' + adj[sn.u].length + ' vecinos' + (adj[sn.u].length ? ': ' + (sn.nuevos.length ? 'marca ' + sn.nuevos.join(' y ') + ' con comp = ' + sn.k : 'todos ya estaban marcados') + '.' : ': no tiene ninguno. Su componente es él solo.');
+    else if (sn.kind === 'close') s = 'Cola vacía: la componente ' + (sn.k - 1) + ' está completa. <b>k = ' + sn.k + '</b>. El ciclo externo sigue con el siguiente s.';
+    else s = '<b>Fin: k = ' + sn.k + ' componentes.</b> Hubo cuatro recorridos, pero cada vértice entró a una cola una sola vez (' + sn.at + ' atendidos) y cada arista se revisó dos veces (' + sn.rev + ' = 2m). Para conectar todo harían falta k − 1 = ' + (sn.k - 1) + ' aristas.';
+    narr.innerHTML = s;
+  }
+  const S = stepper('cc', { render });
+  S.reload(snaps.length - 1, 0);
+})();
+
+/* ===== 05 · bipartito ===== */
+(function(){
+  const svg = $('#bipSvg'), qbox = $('#bipQ'), colBox = $('#bipCol'), narr = $('#bipNarr');
+  const res = $('#bipRes'), rev = $('#bipRev'), okEl = $('#bipOk'), code = $('#bipCode'), btn = $('#bipExtra');
+  let extra = false, snaps = [], D = null, adj = null;
+  function model(){
+    adj = adjOf(G1, extra ? [[4, 5]] : []);
+    const n = 8, color = new Array(n).fill(-1), q = [], done = [];
+    let revis = 0, okc = 0, verdict = null;
+    const snap = (o) => snaps.push(Object.assign({ color: color.slice(), q: q.slice(), done: done.slice(), rev: revis, okc, verdict }, o));
+    snaps = [];
+    color[0] = 0; q.push(0);
+    snap({ kind: 'init', u: -1, v: -1, hi: [0] });
+    outer: while (q.length){
+      const u = q.shift();
+      snap({ kind: 'pop', u, v: -1, hi: [1, 2] });
+      for (const v of adj[u]){
+        revis++;
+        if (color[v] === -1){ color[v] = 1 - color[u]; q.push(v); snap({ kind: 'new', u, v, hi: [3, 4, 5, 6] }); }
+        else if (color[v] === color[u]){ verdict = false; snap({ kind: 'bad', u, v, hi: [3, 7, 8] }); break outer; }
+        else { okc++; snap({ kind: 'ok', u, v, hi: [3, 4, 7] }); }
+      }
+      done.push(u);
+    }
+    if (verdict === null){ verdict = true; snap({ kind: 'end', u: -1, v: -1, hi: [1] }); }
+  }
+  function render(i){
+    const sn = snaps[i];
+    for (let v = 0; v < 8; v++){
+      let cls = sn.color[v] === -1 ? '' : (sn.color[v] === 0 ? 'colA' : 'colB');
+      if (v === sn.u && sn.kind !== 'bad') cls += ' sel';
+      if (sn.kind === 'bad' && (v === sn.u || v === sn.v)) cls += ' conf';
+      D.node(v, cls);
+      D.label(v, sn.color[v] === -1 ? '' : 'c=' + sn.color[v]);
+    }
+    D.allEdges('');
+    if (sn.v !== -1) D.edge(sn.u, sn.v, sn.kind === 'bad' ? 'bad' : (sn.kind === 'ok' ? 'tree' : 'cur'));
+    cellsHTML(qbox, sn.q.map((v, j) => ({ html: v, cls: 'q' + (j === 0 ? ' front' : '') })));
+    colBox.innerHTML = '';
+    sn.color.forEach((c, v) => { const d = document.createElement('div'); d.className = c === -1 ? '' : (c === 0 ? 'cA' : 'cB'); d.innerHTML = (c === -1 ? '−1' : c) + '<small>v=' + v + '</small>'; colBox.appendChild(d); });
+    rev.textContent = sn.rev; okEl.textContent = sn.okc;
+    res.textContent = sn.verdict === null ? '…' : (sn.verdict ? 'BICOLORABLE' : 'NOT BICOLORABLE');
+    res.style.color = sn.verdict === null ? 'var(--muted)' : (sn.verdict ? 'var(--sube)' : '#C62828');
+    hiLines(code, sn.hi);
+    let t;
+    if (sn.kind === 'init') t = 'color[0] = 0: el inicio fija el bando A. Desde aquí todo está <b>forzado</b>: no habrá ninguna elección.';
+    else if (sn.kind === 'pop') t = 'Saca <b>' + sn.u + '</b> (color ' + sn.color[sn.u] + ') y revisa sus vecinos ' + adj[sn.u].join(', ') + ', comparando colores en <b>cada</b> arista.';
+    else if (sn.kind === 'new') t = 'Arista ' + sn.u + '–' + sn.v + ': ' + sn.v + ' no tenía color. Recibe el contrario, <b>color[' + sn.v + '] = ' + sn.color[sn.v] + '</b>, y entra a la cola.';
+    else if (sn.kind === 'ok') t = 'Arista ' + sn.u + '–' + sn.v + ': ' + sn.v + ' ya tiene color ' + sn.color[sn.v] + ' ≠ ' + sn.color[sn.u] + '. La arista cruza los bandos: bien. Esta comparación es la que el error común se salta.';
+    else if (sn.kind === 'bad') t = 'Arista ' + sn.u + '–' + sn.v + ': los dos tienen color <b>' + sn.color[sn.u] + '</b>. Una arista dentro de un bando: <b>no es bipartito</b>. Cierra el ciclo impar 0–1–4–5–2–0, de longitud 5. Se puede parar aquí.';
+    else t = '<b>Cola vacía sin conflictos: bipartito.</b> Bandos A = {' + sn.color.map((c, v) => c === 0 ? v : -1).filter(v => v !== -1).join(', ') + '} y B = {' + sn.color.map((c, v) => c === 1 ? v : -1).filter(v => v !== -1).join(', ') + '}. Compare con las distancias del laboratorio 02: color[v] = dist[v] mod 2.';
+    narr.innerHTML = t;
+  }
+  const S = stepper('bip', { render });
+  function build(){
+    D = drawGraph(svg, G1, extra ? [[4, 5]] : []);
+    model(); S.reload(snaps.length - 1, 0);
+  }
+  btn.addEventListener('click', () => { extra = !extra; btn.classList.toggle('on', extra); btn.textContent = extra ? '− quitar arista 4–5' : '+ arista 4–5'; build(); });
+  build();
+})();
+
+/* ===== 06 · errores ===== */
+(function(){
+  const grid = $('#errGrid');
+  const cards = [
+    { h: 'Una sola lista repetida n veces', sym: 'adj = [[]] * n',
+      code: 'adj = [[]] * n          # INCORRECTO\nadj[0].append(1)\nprint(adj[5])           # [1]',
+      p: 'Las n entradas son la <b>misma</b> lista: agregar un vecino a adj[0] lo agrega a todos. Cualquier recorrido ve todo desde cualquier parte. La pregunta: ¿son n listas distintas? Use <code>[[] for _ in range(n)]</code>.',
+      svg: s => {
+        s.setAttribute('viewBox', '0 0 430 110');
+        for (let i = 0; i < 6; i++){
+          s.appendChild(el('rect', { x: 10 + i * 50, y: 14, width: 40, height: 26, rx: 3, fill: 'var(--surface)', stroke: 'var(--line-2)' }));
+          s.appendChild(el('text', { x: 30 + i * 50, y: 31, 'text-anchor': 'middle', 'font-family': 'var(--fm)', 'font-size': 11, fill: 'var(--ink)' }, 'adj[' + i + ']'));
+          s.appendChild(el('line', { x1: 30 + i * 50, y1: 40, x2: 160, y2: 84, stroke: 'var(--baja)', 'stroke-width': 1.5, class: 'pulse' }));
+        }
+        s.appendChild(el('rect', { x: 120, y: 84, width: 80, height: 22, rx: 3, fill: 'var(--baja-soft)', stroke: 'var(--baja)' }));
+        s.appendChild(el('text', { x: 160, y: 99, 'text-anchor': 'middle', 'font-family': 'var(--fm)', 'font-size': 11, fill: 'var(--baja)' }, '[1]'));
+        s.appendChild(el('text', { x: 330, y: 99, 'text-anchor': 'middle', 'font-family': 'var(--fm)', 'font-size': 11, fill: 'var(--muted)' }, 'una sola lista'));
+      } },
+    { h: 'Marcar al sacar de la cola', sym: 'dist[u] = ... después del popleft',
+      code: 'u = cola.popleft()\nif dist[u] != -1: continue   # tarde\ndist[u] = d\nfor v in adj[u]: cola.append(v)',
+      p: 'Entre que v entra y sale, otros vecinos lo vuelven a meter. En una cuadrícula con 8 vecinas la cola crece sin control: tiempo o memoria agotados. La pregunta: ¿la asignación a dist está junto al <code>append</code>?',
+      svg: s => {
+        s.setAttribute('viewBox', '0 0 430 110');
+        const w = [8, 14, 26, 48, 90, 170, 330];
+        w.forEach((x, i) => {
+          s.appendChild(el('rect', { x: 70, y: 8 + i * 14, width: x, height: 10, rx: 2, fill: i < 3 ? 'var(--memo)' : 'var(--baja)', class: 'grow', style: 'transition-delay:' + (i * .12) + 's' }));
+          s.appendChild(el('text', { x: 62, y: 17 + i * 14, 'text-anchor': 'end', 'font-family': 'var(--fm)', 'font-size': 9.5, fill: 'var(--muted)' }, 'nivel ' + i));
+        });
+        s.appendChild(el('text', { x: 420, y: 104, 'text-anchor': 'end', 'font-family': 'var(--fm)', 'font-size': 10, fill: 'var(--baja)' }, 'tamaño de la cola por nivel'));
+      } },
+    { h: 'Un solo recorrido desde 0', sym: 'sin ciclo externo',
+      code: 'bfs(0)                     # ¿y lo demás?\nprint(k)                   # 1',
+      p: 'Correcto en los casos conexos, incorrecto en los demás: el conteo da 1, y en bipartito el ciclo impar de otra componente no se ve. La pregunta: ¿el enunciado garantiza conexidad? Si no lo dice, no.',
+      svg: s => {
+        s.setAttribute('viewBox', '0 0 430 110');
+        const P = [[40, 40], [100, 20], [100, 70], [220, 30], [280, 60], [360, 25], [400, 80]];
+        [[0, 1], [1, 2], [0, 2], [3, 4], [5, 6]].forEach(([a, b]) => s.appendChild(el('line', { x1: P[a][0], y1: P[a][1], x2: P[b][0], y2: P[b][1], stroke: 'var(--line-2)', 'stroke-width': 2 })));
+        P.forEach(([x, y], i) => {
+          s.appendChild(el('circle', { cx: x, cy: y, r: 13, fill: i < 3 ? 'var(--sube)' : 'var(--surface)', stroke: i < 3 ? 'var(--sube)' : 'var(--line-2)', 'stroke-width': 2, class: i >= 3 ? 'pulse' : '' }));
+          s.appendChild(el('text', { x, y: y + 4, 'text-anchor': 'middle', 'font-family': 'var(--fm)', 'font-size': 11, 'font-weight': 700, fill: i < 3 ? '#fff' : 'var(--ink)' }, String(i)));
+        });
+        s.appendChild(el('text', { x: 300, y: 104, 'text-anchor': 'middle', 'font-family': 'var(--fm)', 'font-size': 10, fill: 'var(--baja)' }, 'nunca marcados'));
+      } },
+    { h: 'DFS recursivo en un grafo profundo', sym: 'RecursionError · o nada',
+      code: 'def dfs(u):\n    visto[u] = True\n    for v in adj[u]:\n        if not visto[v]: dfs(v)   # 10⁵ niveles',
+      p: 'Un camino de 1000 vértices ya pasa el límite de Python. Subir el límite sirve hasta unos miles; con 10⁵ el intérprete puede caerse sin mensaje. La pregunta: ¿qué profundidad puede tener la pila? Si es grande, versión iterativa.',
+      svg: s => {
+        s.setAttribute('viewBox', '0 0 430 110');
+        for (let i = 0; i < 22; i++){
+          const h = 6 + i * 4.2, over = i >= 16;
+          s.appendChild(el('rect', { x: 12 + i * 19, y: 100 - h, width: 14, height: h, rx: 2, fill: over ? 'var(--baja)' : 'var(--memo)', class: 'growy', style: 'transition-delay:' + (i * .05) + 's' }));
+        }
+        s.appendChild(el('line', { x1: 8, y1: 100 - (6 + 16 * 4.2), x2: 425, y2: 100 - (6 + 16 * 4.2), stroke: 'var(--baja)', 'stroke-dasharray': '4 3' }));
+        s.appendChild(el('text', { x: 425, y: 100 - (6 + 16 * 4.2) - 4, 'text-anchor': 'end', 'font-family': 'var(--fm)', 'font-size': 10, fill: 'var(--baja)' }, 'límite de recursión'));
+      } }
+  ];
+  cards.forEach(c => {
+    const d = document.createElement('div'); d.className = 'errcard';
+    d.innerHTML = '<h4>' + c.h + '</h4><div class="sym">' + c.sym + '</div>';
+    const s = el('svg', { role: 'img', 'aria-label': c.h }); c.svg(s); d.appendChild(s);
+    const pre = document.createElement('pre'); pre.textContent = c.code; d.appendChild(pre);
+    const p = document.createElement('p'); p.innerHTML = c.p; d.appendChild(p);
+    grid.appendChild(d);
+    onVisible(d, () => d.classList.add('in'), 0.3);
+  });
+})();
+
+/* ===== cierre · BFS y DFS lado a lado ===== */
+(function(){
+  const adj = adjOf(G1);
+  /* BFS */
+  const B = drawGraph($('#cmpBfs'), G1);
+  const dist = new Array(8).fill(-1); dist[0] = 0; const q = [0]; const tb = [];
+  while (q.length){ const u = q.shift(); for (const v of adj[u]) if (dist[v] === -1){ dist[v] = dist[u] + 1; q.push(v); tb.push([u, v]); } }
+  B.allEdges('dim'); tb.forEach(([u, v]) => B.edge(u, v, 'tree'));
+  for (let v = 0; v < 8; v++){ B.node(v, 'done'); B.label(v, 'd=' + dist[v]); }
+  /* DFS */
+  const Dd = drawGraph($('#cmpDfs'), G1);
+  const visto = new Array(8).fill(false), order = [], td = [];
+  (function dfs(u){ visto[u] = true; order.push(u); for (const v of adj[u]) if (!visto[v]){ td.push([u, v]); dfs(v); } })(0);
+  Dd.allEdges('dim'); td.forEach(([u, v]) => Dd.edge(u, v, 'tree'));
+  order.forEach((v, k) => { Dd.node(v, 'done'); Dd.label(v, (k + 1) + '.º'); });
+  onVisible($('#cmp2'), () => $('#cmp2').classList.add('in'), 0.25);
+})();
+</script>
+</body>
+</html>

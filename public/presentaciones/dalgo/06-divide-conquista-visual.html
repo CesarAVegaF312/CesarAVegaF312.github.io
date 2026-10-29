@@ -1,0 +1,2421 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Complemento visual interactivo de la guia de divide y conquista y teorema maestro.">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Partir, resolver, juntar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --ground:#F1F0F5; --surface:#FDFCFF; --sunk:#E9E7F0;
+  --ink:#191826; --ink-2:#3D3A50; --muted:#6B687E; --line:#DFDCE8; --line-2:#CBC7DA;
+  --baja:#BE5A0E;
+  --sube:#00897B;
+  --memo:#6D46E0;
+  --baja-soft:#F8E9DB; --sube-soft:#DBEFEC; --memo-soft:#E8E2FB;
+  --shadow:0 1px 2px rgba(25,24,38,.05), 0 10px 26px -18px rgba(25,24,38,.4);
+  --fd:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --fb:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --fm:'JetBrains Mono','Cascadia Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#131220; --surface:#1C1B25; --sunk:#232232;
+    --ink:#E9E7F2; --ink-2:#C3BFD3; --muted:#948FA8; --line:#2F2D3E; --line-2:#413E54;
+    --baja:#CE7526; --sube:#0BA187; --memo:#8E76EC;
+    --baja-soft:#372516; --sube-soft:#0D2C29; --memo-soft:#231D40;
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 26px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#131220; --surface:#1C1B25; --sunk:#232232;
+  --ink:#E9E7F2; --ink-2:#C3BFD3; --muted:#948FA8; --line:#2F2D3E; --line-2:#413E54;
+  --baja:#CE7526; --sube:#0BA187; --memo:#8E76EC;
+  --baja-soft:#372516; --sube-soft:#0D2C29; --memo-soft:#231D40;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 26px -18px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--fb);font-size:17px;line-height:1.62;
+  -webkit-font-smoothing:antialiased;padding:0 20px 80px}
+.wrap{max-width:1080px;margin:0 auto}
+h1,h2,h3,h4{font-family:var(--fd);text-wrap:balance;margin:0;line-height:1.15;letter-spacing:-.015em}
+p{margin:0}
+code{font-family:var(--fm);font-size:.85em}
+sup,sub{font-size:.66em;line-height:0}
+sup sub,sub sup{font-size:.85em}
+.eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500}
+a{color:var(--memo)}
+
+header.hero{padding:56px 0 34px;border-bottom:1px solid var(--line)}
+.hero h1{font-size:clamp(38px,6.6vw,66px);font-weight:800;max-width:17ch;margin-top:14px}
+.hero h1 em{font-style:normal;color:var(--baja)}
+.hero .sub{margin-top:22px;max-width:63ch;font-size:19px;color:var(--ink-2)}
+.thesis{margin-top:26px;border-left:3px solid var(--memo);padding:2px 0 2px 18px;max-width:58ch;
+  font-size:19px;font-style:italic}
+
+.key{margin-top:30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--surface)}
+.key div{padding:14px 17px;border-right:1px solid var(--line)}
+.key div:last-child{border-right:0}
+.key b{font-family:var(--fd);font-size:14.5px;display:flex;align-items:center;gap:9px;font-weight:600}
+.key .dot{width:13px;height:13px;border-radius:2px;flex:none}
+.key p{font-size:14px;color:var(--muted);margin-top:4px;line-height:1.45}
+
+section.lab{padding:54px 0;border-bottom:1px solid var(--line);scroll-margin-top:8px}
+html{scroll-behavior:smooth}
+.toplink{margin-left:auto;flex:none;font-family:var(--fm);font-size:12px;color:var(--muted);text-decoration:none;padding:2px 6px;border-radius:3px}
+.toplink:hover{color:var(--memo);background:var(--memo-soft)}
+.about{margin-top:16px;max-width:65ch}
+.about .mini{color:var(--baja);margin-bottom:5px}
+.about p{font-size:17px;color:var(--ink);line-height:1.6}
+.about .src{display:block;margin-top:6px;font-family:var(--fm);font-size:12px;color:var(--muted)}
+
+/* mapa */
+.map{padding:50px 0 54px;border-bottom:1px solid var(--line);scroll-margin-top:8px}
+.map h2{font-size:clamp(25px,3.4vw,34px);font-weight:600;margin-top:10px}
+.map .lede{max-width:65ch;margin-top:13px;color:var(--ink-2)}
+.map h3{font-size:19px;font-weight:600;margin-top:40px}
+.map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:12px;margin-top:20px}
+.map-card{display:flex;flex-direction:column;gap:6px;padding:14px 16px 13px;background:var(--surface);border:1px solid var(--line);border-radius:4px;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s,box-shadow .2s}
+.map-card:hover{border-color:var(--ink-2);transform:translateY(-2px);box-shadow:var(--shadow)}
+.map-card .n{font-family:var(--fm);font-size:11px;font-weight:700;color:var(--baja);letter-spacing:.08em}
+.map-card b{font-family:var(--fd);font-size:16.5px;font-weight:600;line-height:1.25}
+.map-card p{font-size:14px;color:var(--ink-2);line-height:1.45}
+.map-card .go{margin-top:auto;padding-top:4px;font-family:var(--fm);font-size:12px;color:var(--memo)}
+.algos{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:0 30px;margin-top:14px}
+.algo{padding:14px 0 15px;border-top:1px solid var(--line)}
+.algo h4{font-family:var(--fd);font-size:16.5px;font-weight:600}
+.algo .rec{display:block;margin-top:3px;font-family:var(--fm);font-size:12px;color:var(--muted)}
+.algo p{font-size:14.5px;color:var(--ink-2);line-height:1.5;margin-top:6px}
+.algo .links{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.algo .links a,.algo .links span{font-family:var(--fm);font-size:11.5px;padding:3px 8px;border-radius:2px;text-decoration:none;border:1px solid var(--line-2)}
+.algo .links a{color:var(--memo);border-color:var(--memo);background:var(--memo-soft)}
+.algo .links a:hover{background:var(--memo);color:#fff}
+.algo .links span{color:var(--muted)}
+@media (max-width:420px){.algos{grid-template-columns:1fr}}
+.lab-head{display:flex;gap:15px;align-items:baseline}
+.lab-num{font-family:var(--fm);font-size:12px;font-weight:700;color:var(--baja);letter-spacing:.08em;flex:none}
+.lab h2{font-size:clamp(25px,3.4vw,34px);font-weight:600}
+.lab .lede{max-width:65ch;margin-top:13px;color:var(--ink-2)}
+.goal{margin-top:18px;max-width:65ch;padding:12px 16px 13px;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--sube);border-radius:3px}
+.goal .mini{margin-bottom:5px}
+.goal p{font-size:15.5px;color:var(--ink-2);line-height:1.55}
+.goal b{color:var(--ink)}
+.stage{margin-top:26px;background:var(--surface);border:1px solid var(--line);border-radius:4px;
+  box-shadow:var(--shadow);overflow:hidden}
+.stage-body{padding:22px;min-width:0}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 292px}
+.split>.rail{border-left:1px solid var(--line);padding:20px;background:var(--sunk);min-width:0}
+@media (max-width:860px){.split{grid-template-columns:1fr}.split>.rail{border-left:0;border-top:1px solid var(--line)}}
+
+.ctl{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);
+  background:var(--sunk)}
+button{font-family:var(--fd);font-size:14px;font-weight:600;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:3px;padding:6px 12px;cursor:pointer;line-height:1.25}
+button:hover:not(:disabled){border-color:var(--ink-2)}
+button:disabled{opacity:.35;cursor:default}
+button.primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+button.on{background:var(--memo);border-color:var(--memo);color:#fff}
+:focus-visible{outline:2px solid var(--memo);outline-offset:2px}
+.ctl label{font-family:var(--fm);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+input[type=range]{accent-color:var(--memo);width:108px}
+.step-count{font-family:var(--fm);font-size:12px;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line-2);border-radius:3px;overflow:hidden}
+.seg button{border:0;border-radius:0;border-right:1px solid var(--line-2)}
+.seg button:last-child{border-right:0}
+.ctl2{border-top:0}
+
+.mono{font-family:var(--fm)}
+.rail h4,.mini{font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+  font-weight:500;margin-bottom:11px}
+.rail-block+.rail-block{margin-top:24px}
+.narration{font-size:15px;color:var(--ink-2);line-height:1.5;min-height:4.5em}
+.narration b{color:var(--ink);font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--fm);font-size:11.5px;font-weight:500;
+  padding:3px 8px;border-radius:2px;border:1px solid var(--line-2);color:var(--muted);background:var(--surface)}
+.pill.baja{color:var(--baja);border-color:var(--baja);background:var(--baja-soft)}
+.pill.sube{color:var(--sube);border-color:var(--sube);background:var(--sube-soft)}
+.pill.memo{color:var(--memo);border-color:var(--memo);background:var(--memo-soft)}
+.pills{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+figure{margin:0}
+figcaption{font-size:14.5px;color:var(--muted);margin-top:13px;line-height:1.5;max-width:72ch}
+.scroller{overflow-x:auto;padding-bottom:4px}
+pre{font-family:var(--fm);font-size:13px;line-height:1.65;background:var(--surface);border:1px solid var(--line);
+  border-radius:3px;padding:12px 14px;overflow-x:auto;margin:0;color:var(--ink-2)}
+pre b{color:var(--ink);font-weight:700}
+.stat-row{display:flex;gap:22px;flex-wrap:wrap}
+.stat b{display:block;font-family:var(--fd);font-size:26px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{font-family:var(--fm);font-size:10.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.note{margin-top:24px;padding:16px 19px;background:var(--memo-soft);border:1px solid var(--memo);
+  border-radius:3px;font-size:15.5px;max-width:75ch}
+.note b{font-family:var(--fd)}
+.note p+p{margin-top:8px}
+.hint{font-size:13.5px;color:var(--muted);margin-top:12px}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;margin:0;align-items:baseline}
+.kv dt{font-family:var(--fm);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kv dd{margin:0;font-size:15px;color:var(--ink);overflow-wrap:anywhere}
+.theta{font-family:var(--fd);font-size:22px;font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+.noanim,.noanim *{transition:none!important}
+.rv{opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s ease}
+.rv.in{opacity:1;transform:none}
+
+/* 01 · merge sort */
+#msCode span,#mzCode span,#qsCode span{display:block;padding:0 6px;margin:0 -6px;border-radius:2px;transition:background .25s,box-shadow .25s}
+#msCode span.hi,#mzCode span.hi,#qsCode span.hi{background:var(--memo-soft);color:var(--ink);box-shadow:inset 2px 0 0 var(--memo)}
+#msCode .k-baja{color:var(--baja)} #msCode .k-sube{color:var(--sube)} #msCode .k-memo{color:var(--memo)}
+.ms{position:relative;width:100%}
+.ms-guide{position:absolute;left:0;right:0;height:0;border-top:1px dashed var(--line-2);transition:border-color .3s}
+.ms-guide span{position:absolute;left:0;top:-17px;font-family:var(--fm);font-size:10px;color:var(--muted)}
+.ms-guide.cur{border-top-color:var(--ink-2)}
+.ms-guide.cur span{color:var(--ink);font-weight:700}
+.ms-bar{position:absolute;border-radius:2px 2px 0 0;background:var(--muted);display:flex;justify-content:center;
+  align-items:flex-start;overflow:hidden;
+  transition:top .45s cubic-bezier(.45,.05,.25,1),left .6s cubic-bezier(.45,.05,.25,1) .18s,
+    height .3s,width .3s,background-color .4s,opacity .4s}
+.ms-bar span{font-family:var(--fm);font-size:10.5px;font-weight:700;color:#fff;padding-top:3px}
+.ms-bar.tiny span{display:none}
+.ms-bar.div{background:var(--baja)}
+.ms-bar.base{background:var(--memo)}
+.ms-bar.merged{background:var(--sube)}
+.ms-bar.dim{opacity:.38}
+
+/* 01 · zoom a mezclar */
+.sub-h{font-size:clamp(21px,2.8vw,26px);font-weight:600;margin-top:48px}
+.mz{display:flex;flex-direction:column;gap:12px}
+#mzCode{font-size:11px;padding:10px}
+.mz-row{display:grid;grid-template-columns:34px minmax(0,1fr);align-items:start;gap:10px}
+.mz-lbl{font-family:var(--fm);font-size:12px;font-weight:700;color:var(--muted);padding-top:11px}
+.mz-cells{display:flex;flex-wrap:wrap;gap:5px;padding-bottom:17px}
+.mz-cell{position:relative;width:44px;height:40px;display:grid;place-items:center;border:1px solid var(--line-2);
+  border-radius:3px;background:var(--surface);font-family:var(--fm);font-size:14px;color:var(--ink);
+  font-variant-numeric:tabular-nums;
+  transition:opacity .35s,background-color .3s,border-color .3s,box-shadow .3s,transform .6s cubic-bezier(.45,.05,.25,1)}
+.mz-cell b{font-weight:500}
+.mz-cell.front{border-color:var(--baja);background:var(--baja-soft);box-shadow:0 0 0 1px var(--baja)}
+.mz-cell.front b{font-weight:700;color:var(--baja)}
+.mz-cell.used{opacity:.25}
+.mz-cell.won{opacity:.35;border-color:var(--sube);border-style:dashed}
+.mz-ptr{position:absolute;bottom:-18px;font-style:normal;font-family:var(--fm);font-size:11px;font-weight:700;color:var(--baja)}
+.mz-cell.slot{border-style:dashed;background:transparent}
+.mz-cell.slot.fill{border-style:solid;border-color:var(--sube);background:var(--sube-soft)}
+.mz-cell.slot.new{box-shadow:0 0 0 2px var(--sube)}
+.mz-cell.slot.new b{font-weight:700;color:var(--sube)}
+.mz-cmp{font-family:var(--fm);font-size:14px;color:var(--ink-2);padding:10px 14px;border:1px solid var(--line);
+  border-radius:3px;background:var(--sunk);min-height:46px;display:flex;flex-wrap:wrap;gap:4px 9px;align-items:center;
+  margin-bottom:14px}
+.mz-cmp b{font-weight:700;color:var(--ink);font-size:16px}
+.mz-cmp b.w{color:var(--sube)} .mz-cmp b.l{color:var(--baja)}
+.mz-k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+@media (max-width:520px){.mz-cell{width:35px;height:36px;font-size:12.5px}.mz-row{grid-template-columns:28px minmax(0,1fr);gap:6px}}
+
+.mzlv-fig{margin-top:30px}
+.mzlv{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.mzlv-row{display:grid;grid-template-columns:200px minmax(0,1fr) 130px;gap:12px;align-items:center}
+.mzlv-lbl{font-family:var(--fm);font-size:12px;color:var(--ink-2)}
+.mzlv-track{display:flex;gap:4px;min-width:0}
+.mzlv-blk{flex:1 1 0;min-width:0;height:34px;display:grid;place-items:center;border-radius:2px;background:var(--sube-soft);
+  border:1px solid var(--sube);font-family:var(--fm);font-size:11px;color:var(--ink);overflow:hidden;white-space:nowrap;
+  transform:scaleX(0);transform-origin:0 50%;transition:transform .6s cubic-bezier(.2,.75,.25,1)}
+.mzlv.in .mzlv-blk{transform:scaleX(1)}
+.mzlv-row.leaf .mzlv-blk{background:var(--memo-soft);border-color:var(--memo)}
+.mzlv-tot{font-family:var(--fm);font-size:12.5px;font-weight:700;color:var(--sube);text-align:right;
+  font-variant-numeric:tabular-nums;opacity:0;transition:opacity .4s}
+.mzlv.in .mzlv-tot{opacity:1}
+.mzlv-row.leaf .mzlv-tot{color:var(--muted);font-weight:500}
+.mzlv-sum{margin-top:16px;font-family:var(--fm);font-size:14px;color:var(--ink);opacity:0;transition:opacity .5s}
+.mzlv-sum.in{opacity:1}
+.mzlv-sum b{color:var(--sube)}
+@media (max-width:640px){.mzlv-row{grid-template-columns:minmax(0,1fr) auto;gap:4px 10px}
+  .mzlv-tot{grid-row:1;grid-column:2}.mzlv-track{grid-column:1 / -1;grid-row:2}}
+
+/* 02 · búsqueda */
+.bs-grid{position:relative;display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:34px 4px;
+  padding-top:16px;margin-bottom:26px}
+.bs-grid.lin{gap:18px 4px}
+.bs-cell{height:34px;display:grid;place-items:center;font-family:var(--fm);font-size:12.5px;font-weight:500;
+  border:1px solid var(--line-2);border-radius:3px;background:var(--surface);color:var(--ink);cursor:pointer;
+  font-variant-numeric:tabular-nums;
+  transition:opacity .45s,transform .45s,background-color .3s,border-color .3s,color .3s}
+.bs-cell.target{border-color:var(--memo);border-style:dashed;border-width:1.5px}
+.bs-cell.off{opacity:.2;transform:scale(.84)}
+.bs-cell.probe{background:var(--baja-soft);border-color:var(--baja);border-style:solid;color:var(--baja);font-weight:700}
+.bs-cell.hit{background:var(--sube);border-color:var(--sube);border-style:solid;color:#fff;font-weight:700;transform:scale(1.08)}
+.bs-tag{position:absolute;font-family:var(--fm);font-size:10.5px;font-weight:700;line-height:1;white-space:nowrap;
+  pointer-events:none;transition:left .45s cubic-bezier(.4,.1,.2,1),top .45s cubic-bezier(.4,.1,.2,1),opacity .3s}
+.bs-tag.lo,.bs-tag.hi{color:var(--ink-2)}
+.bs-tag.mid,.bs-tag.i{color:var(--baja)}
+.bs-tag.gone{opacity:0}
+
+/* 03 · árbol */
+.t3-lvl{opacity:0;transform:translateY(-10px);transition:opacity .5s ease,transform .5s ease}
+.t3-lvl.on{opacity:1;transform:none}
+.t3-bar{transform:scaleX(0);transform-box:fill-box;transform-origin:0 50%;
+  transition:transform .85s cubic-bezier(.2,.75,.25,1) .15s,opacity .4s}
+.t3-lvl.on .t3-bar{transform:scaleX(1)}
+#t3Svg.dom .t3-bar:not(.hot){opacity:.25}
+#t3Svg{display:block;min-width:640px;width:100%;height:auto}
+
+/* 04 · balanza */
+#balSvg{display:block;width:100%;max-width:540px;height:auto;margin:0 auto}
+.cases{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:18px}
+.case{border:1px solid var(--line);border-radius:4px;padding:12px 14px;background:var(--surface);opacity:.55;
+  transition:opacity .35s,transform .35s,border-color .35s,background-color .35s,box-shadow .35s}
+.case h4{font-size:14.5px;font-weight:600}
+.case p{font-size:13.5px;color:var(--muted);line-height:1.4;margin-top:4px}
+.case .r{font-family:var(--fd);font-size:17px;font-weight:600;margin-top:8px}
+.case .g{font-family:var(--fm);font-size:11px;color:var(--muted);margin-top:4px}
+.case.on{opacity:1;transform:translateY(-4px);box-shadow:var(--shadow)}
+.case.c1.on{border-color:var(--memo);background:var(--memo-soft)}
+.case.c2.on{border-color:var(--ink-2);background:var(--sunk)}
+.case.c3.on{border-color:var(--sube);background:var(--sube-soft)}
+#growSvg{display:block;width:100%;min-width:440px;max-width:640px;height:auto}
+#growSvg .curve{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1.8s cubic-bezier(.4,.1,.3,1)}
+#growSvg .clbl{opacity:0;transition:opacity .6s ease}
+#growSvg.go .curve{stroke-dashoffset:0}
+#growSvg.go .clbl{opacity:1}
+#growSvg .curve:nth-of-type(2),#growSvg .clbl.d2{transition-delay:.35s}
+#growSvg .curve:nth-of-type(3),#growSvg .clbl.d3{transition-delay:.7s}
+.figrow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+
+/* 05 · suma máxima */
+.msa{position:relative}
+.msa-cells{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:5px}
+.msa-cell{text-align:center;min-width:0}
+.msa-idx{font-family:var(--fm);font-size:10.5px;color:var(--muted);height:18px}
+.msa-val{height:48px;display:grid;place-items:center;border:1px solid var(--line-2);border-radius:3px;
+  background:var(--surface);font-family:var(--fm);font-size:16px;font-weight:500;
+  transition:opacity .4s,background-color .3s,border-color .3s,box-shadow .3s,color .3s}
+.msa-cell.out .msa-val{opacity:.25}
+.msa-cell.in .msa-val{border-color:var(--ink-2)}
+.msa-cell.leaf .msa-val{background:var(--memo-soft);border-color:var(--memo);color:var(--memo);font-weight:700}
+.msa-cell.best .msa-val{background:var(--sube-soft);border-color:var(--sube);color:var(--ink);font-weight:700}
+.msa-cell.scan .msa-val{box-shadow:0 0 0 2px var(--sube)}
+.msa-sum{height:22px;margin-top:14px;font-family:var(--fm);font-size:11.5px;color:var(--muted);opacity:0;
+  transition:opacity .3s,color .3s}
+.msa-sum.show{opacity:1}
+.msa-sum.top{color:var(--sube);font-weight:700}
+.msa-split{position:absolute;top:12px;height:60px;width:0;border-left:2px dashed var(--baja);opacity:0;
+  transition:left .5s cubic-bezier(.4,.1,.2,1),opacity .3s}
+.msa-split.show{opacity:1}
+.msa-band{position:absolute;height:6px;border-radius:3px;background:var(--sube);opacity:0;
+  transition:left .4s cubic-bezier(.4,.1,.2,1),width .4s cubic-bezier(.4,.1,.2,1),opacity .3s}
+.msa-band.show{opacity:1}
+.msa-band.final{background:var(--memo)}
+.msa-cmp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:18px 0 22px}
+.chip{border:1px solid var(--line-2);border-radius:3px;padding:8px 8px;text-align:center;background:var(--surface);
+  transition:opacity .35s,transform .35s,border-color .35s,background-color .35s}
+.chip span{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.chip b{display:block;font-family:var(--fd);font-size:21px;font-weight:600;font-variant-numeric:tabular-nums}
+.chip i{display:block;font-style:normal;font-family:var(--fm);font-size:10.5px;color:var(--muted);min-height:1.3em}
+.chip.idle{opacity:.4}
+.chip.win{border-color:var(--sube);background:var(--sube-soft);transform:translateY(-4px)}
+.msa-tree{position:relative}
+.msa-node{position:absolute;height:28px;border:1px solid var(--line-2);border-radius:3px;background:var(--surface);
+  display:grid;place-items:center;font-family:var(--fm);font-size:11px;color:var(--muted);overflow:hidden;
+  white-space:nowrap;opacity:0;transform:translateY(-6px);
+  transition:opacity .35s,transform .35s,background-color .3s,border-color .3s,color .3s,left .3s,width .3s}
+.msa-node.show{opacity:1;transform:none}
+.msa-node.open{border-color:var(--baja);color:var(--baja)}
+.msa-node.act{background:var(--baja-soft);border-color:var(--baja);color:var(--baja);font-weight:700;border-width:2px}
+.msa-node.ret{background:var(--sube-soft);border-color:var(--sube);color:var(--ink);font-weight:700}
+.msa-node.leafn{background:var(--memo-soft);border-color:var(--memo);color:var(--memo);font-weight:700}
+
+/* 06 · quickselect */
+.qs-rows{display:flex;flex-direction:column;gap:10px}
+.qs-row{border:1px solid var(--line);border-radius:3px;padding:10px 12px 9px;background:var(--surface);
+  transition:opacity .3s,border-color .3s}
+.qs-row.cur{border-color:var(--ink-2)}
+.qs-row.past{opacity:.5}
+.qs-head{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;font-family:var(--fm);font-size:12px;color:var(--muted);margin-bottom:8px}
+.qs-head b{color:var(--ink);font-size:13px}
+.qs-len{margin-left:auto}
+.qs-body{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:flex-start}
+.qs-group{display:flex;flex-direction:column;gap:4px;transition:opacity .35s}
+.qs-group.off{opacity:.28}
+.qs-cells{display:flex;flex-wrap:wrap;gap:4px;min-height:36px;align-items:center}
+.qs-group.grp .qs-cells{padding:3px;border:1px dashed var(--line-2);border-radius:3px}
+.qs-group.hit .qs-cells{border:1.5px solid var(--sube);background:var(--sube-soft)}
+.qs-cell{width:38px;height:34px;display:grid;place-items:center;font-family:var(--fm);font-size:13.5px;color:var(--ink);
+  background:var(--surface);border:1px solid var(--line-2);border-radius:3px;font-variant-numeric:tabular-nums;
+  transition:transform .6s cubic-bezier(.45,.05,.25,1),background-color .3s,border-color .3s}
+.qs-cell.piv{background:var(--memo-soft);border-color:var(--memo);color:var(--memo);font-weight:700}
+.qs-lbl{font-family:var(--fm);font-size:11px;color:var(--muted)}
+.qs-lbl b{color:var(--sube)}
+.qs-empty{font-family:var(--fm);font-size:11px;color:var(--muted);padding:0 8px}
+.qs-next{margin-top:8px;font-family:var(--fm);font-size:12px;color:var(--ink-2)}
+.qs-next b{color:var(--sube)}
+#qsCode{font-size:11px;padding:10px}
+@media (max-width:520px){.qs-cell{width:31px;height:30px;font-size:12px}.qs-body{gap:8px 10px}}
+.qsbars-fig{margin-top:30px}
+.qsbars{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.qsbar{display:grid;grid-template-columns:200px minmax(0,1fr);gap:4px 14px;align-items:center}
+.qsbar-lbl{font-family:var(--fm);font-size:12px;color:var(--ink-2)}
+.qsbar-track{height:26px;background:var(--sunk);border-radius:2px;overflow:hidden}
+.qsbar-fill{height:100%;width:0;min-width:3px;border-radius:2px;transition:width 1.1s cubic-bezier(.2,.75,.25,1)}
+.qsbar-val{grid-column:2;font-family:var(--fm);font-size:12px;color:var(--muted)}
+.qsbar-val b{color:var(--ink)}
+@media (max-width:640px){.qsbar{grid-template-columns:1fr}.qsbar-val{grid-column:1}}
+
+/* 07 · quiz */
+.quiz-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:22px}
+.score{font-family:var(--fm);font-size:13px;color:var(--ink-2)}
+.score b{font-family:var(--fd);font-size:20px;color:var(--sube)}
+.quiz{display:grid;grid-template-columns:repeat(auto-fill,minmax(262px,1fr));gap:16px;margin-top:16px}
+.qcard{perspective:1100px}
+.qinner{display:grid;height:100%;transform-style:preserve-3d;transition:transform .65s cubic-bezier(.3,.7,.3,1)}
+.qcard.flip .qinner{transform:rotateY(180deg)}
+.qface{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--surface);
+  border:1px solid var(--line);border-radius:4px;padding:15px 16px;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;gap:10px;min-width:0}
+.qback{transform:rotateY(180deg)}
+.qback.ok{border-color:var(--sube);background:var(--sube-soft)}
+.qback.bad{border-color:var(--baja);background:var(--baja-soft)}
+.qrec{font-family:var(--fd);font-size:19px;font-weight:600;line-height:1.3;flex:1;display:flex;align-items:center;min-height:2.8em}
+.qopts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.qopts button{font-size:13px;padding:6px 8px}
+.qverdict{font-family:var(--fd);font-weight:600;font-size:15px}
+.qback.ok .qverdict{color:var(--sube)}
+.qback.bad .qverdict{color:var(--baja)}
+.qexp{font-size:14px;color:var(--ink-2);line-height:1.45;flex:1}
+.qres{font-family:var(--fd);font-size:16px;font-weight:600}
+.qback button{align-self:flex-start;font-size:12.5px;padding:4px 10px}
+
+/* 08 · errores */
+.errgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:18px;margin-top:26px}
+.errcard{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:18px 19px;box-shadow:var(--shadow)}
+.errcard h4{font-size:16.5px;font-weight:600;margin-bottom:4px}
+.errcard .sym{font-family:var(--fm);font-size:12px;color:var(--baja);margin-bottom:12px;letter-spacing:.02em}
+.errcard p{font-size:14.5px;color:var(--ink-2);line-height:1.5;margin-top:12px}
+.errcard svg{width:100%;max-width:430px;height:auto;display:block}
+.errcard .flow{stroke-dasharray:5 4;animation:flow 1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-18}}
+.errcard .pulse{animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.errcard .grow{transform:scaleX(0);transform-box:fill-box;transform-origin:0 50%;transition:transform .9s cubic-bezier(.2,.75,.25,1)}
+.errcard.in .grow{transform:scaleX(1)}
+
+/* cierre */
+#closeSvg{display:block}
+#closeSvg .cn{opacity:0;transition:opacity .5s ease}
+#closeSvg.in .cn{opacity:1}
+footer{padding:46px 0 0;color:var(--muted);font-size:15px;max-width:70ch}
+
+@media (max-width:520px){
+  body{padding:0 16px 70px}
+  .stage-body{padding:16px}
+  .split>.rail{padding:16px}
+  .ctl{padding:10px 12px}
+  .msa-val{font-size:13px;height:40px}
+  .chip b{font-size:17px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <p class="eyebrow">Complemento visual · Estructuras de datos y algoritmos</p>
+  <h1>Partir, resolver, juntar — <em>y saber cuánto cuesta</em></h1>
+  <p class="sub">La guía escrita define divide y conquista (también llamada «divide y vencerás») y enuncia el
+  teorema maestro. Esta página los pone en movimiento: barras que se parten y se mezclan, punteros que descartan
+  mitades, un árbol que crece nivel por nivel y una balanza que decide el caso.</p>
+  <p class="thesis">Todo algoritmo de divide y conquista trae dos recurrencias: la de lo que devuelve, que dice si
+  es correcto, y la de lo que cuesta, que dice cuánto tarda. No las mezcle. Casi todo lo que sigue es sobre la
+  segunda.</p>
+  <div class="key">
+    <div><b><span class="dot" style="background:var(--baja)"></span>Dividir</b>
+      <p>El gerente reparte: a subproblemas de tamaño n/b. En el árbol, es la bajada.</p></div>
+    <div><b><span class="dot" style="background:var(--sube)"></span>Combinar</b>
+      <p>Las respuestas vuelven y se juntan. Ese costo, más el de repartir, es f(n).</p></div>
+    <div><b><span class="dot" style="background:var(--memo)"></span><span>Hojas · n<sup>log<sub>b</sub> a</sup></span></b>
+      <p>Los casos base. Hay a<sup>log<sub>b</sub> n</sup> = n<sup>log<sub>b</sub> a</sup>: el exponente crítico.</p></div>
+  </div>
+</header>
+
+<!-- ============ mapa ============ -->
+<section class="map" id="mapa">
+  <p class="eyebrow">Antes de empezar</p>
+  <h2>Mapa de la página</h2>
+  <p class="lede">Esta página acompaña la guía escrita. Cada laboratorio tiene controles: <b>Adelante</b> y <b>Atrás</b> avanzan paso a paso, <b>Reproducir</b> anima solo y la velocidad se puede ajustar. Conviene seguir el orden: primero dos algoritmos concretos (01 y 02), después cómo medir su costo (03 y 04), dos ejemplos más (05 y 06) y al final práctica y errores (07 y 08). Si nunca ha visto alguno de los algoritmos, lea primero su descripción en la lista de abajo.</p>
+  <div class="map-grid">
+    <a class="map-card" href="#lab-01"><span class="n">01</span><b>Merge Sort en tres fases</b><p>Cómo se ordena una lista partiéndola en mitades y mezclándolas, y por qué cuesta n·log n. Incluye un zoom a la mezcla, comparación por comparación.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-02"><span class="n">02</span><b>Búsqueda binaria contra lineal</b><p>Las dos formas de buscar un valor, lado a lado: descartar la mitad o revisar uno por uno.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-03"><span class="n">03</span><b>El árbol de recursión</b><p>Cómo se suma el trabajo de todas las llamadas nivel por nivel, y las tres formas que puede tomar esa suma.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-04"><span class="n">04</span><b>La balanza del teorema maestro</b><p>El atajo: comparar dos exponentes para saber el costo total sin dibujar el árbol.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-05"><span class="n">05</span><b>Suma máxima: el tramo que cruza</b><p>Un problema distinto con la misma receta: la mejor racha de números consecutivos.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-06"><span class="n">06</span><b>Quickselect: el k-ésimo sin ordenar</b><p>Cómo encontrar la mediana o cualquier posición sin ordenar la lista, y por qué la elección del pivote lo cambia todo.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-07"><span class="n">07</span><b>¿Qué caso es?</b><p>Práctica: 15 recurrencias para clasificar, incluidas las que no admiten el teorema.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-08"><span class="n">08</span><b>Cuatro formas de romper divide y conquista</b><p>Errores de código que vuelven lento un algoritmo o hacen que no termine.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-cierre"><span class="n">◆</span><b>Divide y conquista no memoiza</b><p>Por qué aquí no sirve la libreta que salvó a Fibonacci en la unidad anterior.</p><span class="go">Ir al laboratorio →</span></a>
+  </div>
+  <h3 id="algoritmos" style="scroll-margin-top:8px">Los algoritmos que aparecen en esta página</h3>
+  <p class="lede">Qué hace cada uno, su recurrencia de costo y dónde verlo. Los botones llevan al laboratorio correspondiente.</p>
+  <div class="algos">
+    <div class="algo"><h4>Merge Sort</h4><span class="rec">T(n) = 2T(n/2) + Θ(n) → Θ(n log n)</span><p>Ordena una lista: la parte en dos mitades, ordena cada una con el mismo método y mezcla las dos mitades ordenadas.</p><div class="links"><a href="#lab-01">01 animación</a><a href="#lab-03">03 preset</a><a href="#lab-04">04 preset</a><span>Guía, ej. 2</span></div></div>
+    <div class="algo"><h4>Mezclar (merge)</h4><span class="rec">Θ(n) para n elementos</span><p>Junta dos listas ya ordenadas en una sola lista ordenada, tomando siempre el menor de los dos primeros elementos. Es la fase de combinar de Merge Sort.</p><div class="links"><a href="#lab-mezclar">01 zoom paso a paso</a><span>Guía, ej. 2</span></div></div>
+    <div class="algo"><h4>Búsqueda lineal</h4><span class="rec">T(n) = T(n−1) + Θ(1) → Θ(n)</span><p>Busca un valor revisando los elementos uno por uno. Funciona con cualquier lista, ordenada o no.</p><div class="links"><a href="#lab-02">02 carrera</a><span>Guía, ej. 1 (para pensar)</span></div></div>
+    <div class="algo"><h4>Búsqueda binaria</h4><span class="rec">T(n) = T(n/2) + Θ(1) → Θ(log n)</span><p>Busca un valor en una lista <b>ordenada</b>: mira el elemento del centro y descarta la mitad donde el valor no puede estar.</p><div class="links"><a href="#lab-02">02 carrera</a><a href="#lab-03">03 preset</a><a href="#lab-07">07 práctica</a><span>Guía, ej. 1</span></div></div>
+    <div class="algo"><h4>Suma máxima partiendo por la mitad</h4><span class="rec">T(n) = 2T(n/2) + Θ(n) → Θ(n log n)</span><p>Encuentra el tramo de posiciones consecutivas con la mayor suma: el mejor está a la izquierda, a la derecha o cruzando el centro.</p><div class="links"><a href="#lab-05">05 animación</a><span>Guía, ej. 3</span></div></div>
+    <div class="algo"><h4>Multiplicación escolar recursiva</h4><span class="rec">T(n) = 4T(n/2) + Θ(n) → Θ(n²)</span><p>Multiplica dos números de n dígitos partiendo cada uno en mitad alta y mitad baja; necesita cuatro productos de números de la mitad de dígitos. Cuesta lo mismo que multiplicar como en el colegio.</p><div class="links"><a href="#lab-03">03 preset</a><a href="#lab-04">04 curvas</a><span>Guía, ej. 4</span></div></div>
+    <div class="algo"><h4>Karatsuba</h4><span class="rec">T(n) = 3T(n/2) + Θ(n) → Θ(n^1.585)</span><p>La misma multiplicación de números grandes, pero con un truco algebraico que necesita solo <b>tres</b> productos en lugar de cuatro. Una llamada menos cambia el exponente.</p><div class="links"><a href="#lab-03">03 preset</a><a href="#lab-04">04 preset y curvas</a><span>Guía, ej. 4</span></div></div>
+    <div class="algo"><h4>Strassen</h4><span class="rec">T(n) = 7T(n/2) + Θ(n²) → Θ(n^2.807)</span><p>Multiplica dos matrices de n × n partiéndolas en cuatro bloques. La forma directa necesita 8 productos de bloques; Strassen lo logra con 7. En el curso solo aparece como ejemplo del teorema maestro.</p><div class="links"><a href="#lab-03">03 preset</a><a href="#lab-04">04 preset</a><span>Guía, sección 7.4</span></div></div>
+    <div class="algo"><h4>Potencia rápida</h4><span class="rec">T(n) = T(n/2) + Θ(1) → Θ(log n)</span><p>Calcula b<sup>n</sup> calculando una sola vez b<sup>n/2</sup> y elevándolo al cuadrado. Si por error se llama dos veces a la mitad, se vuelve Θ(n).</p><div class="links"><a href="#lab-08">08 error «dos llamadas»</a><a href="#lab-07">07 práctica</a><span>Guía de recurrencias, ej. 2</span></div></div>
+    <div class="algo"><h4>Quickselect</h4><span class="rec">caso ideal: T(n) = T(n/2) + Θ(n) → Θ(n)</span><p>Encuentra el k-ésimo menor de una lista (por ejemplo, la mediana) sin ordenarla: reparte alrededor de un pivote y sigue buscando solo en un lado.</p><div class="links"><a href="#lab-06">06 animación</a><a href="#lab-07">07 práctica</a><span>Guía, ej. 5</span></div></div>
+    <div class="algo"><h4>Fibonacci con y sin memoización</h4><span class="rec">sin memo: exponencial · con memo: Θ(n)</span><p>Calcula el n-ésimo número de Fibonacci. Sin memoización repite subproblemas; es el contraste con divide y conquista, donde nada se repite.</p><div class="links"><a href="#lab-cierre">◆ cierre</a><span>Guía de recurrencias, ej. 3</span></div></div>
+  </div>
+</section>
+
+<!-- ============ 1 ============ -->
+<section class="lab" id="lab-01">
+  <div class="lab-head"><span class="lab-num">01</span>
+    <h2>Merge Sort en tres fases</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p><b>Ordenar</b> es poner los elementos de una lista de menor a mayor: las notas de un curso, los productos por precio, los resultados de una búsqueda. <b>Merge Sort</b> (ordenamiento por mezcla, propuesto por John von Neumann en 1945) lo hace así: parte la lista en dos mitades, ordena cada mitad con el mismo método y al final <b>mezcla</b> las dos mitades ya ordenadas en una sola lista ordenada. Una lista de un solo elemento ya está ordenada: ahí se detiene. Es el ejemplo más claro de las tres fases de divide y conquista.<span class="src">Guía, ejercicio 2</span></p></div>
+  <p class="lede">El ejemplo de manual. <b>Dividir</b> casi no cuesta: calcular la mitad. <b>Conquistar</b> es
+  confiar en dos clones. <b>Combinar</b> —&nbsp;mezclar dos mitades ya ordenadas&nbsp;— es donde se paga: Θ(n)
+  por nivel. Mire cómo las barras bajan separándose y suben ya ordenadas.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Que el trabajo de <b>combinar</b> de cada nivel suma lo mismo: los n elementos se mezclan una vez por nivel, repartidos en pedazos. Mire el contador: las comparaciones nunca pasan de n·log₂n. Con eso debería poder explicar de dónde sale <code>T(n) = 2T(n/2) + Θ(n)</code>.</p></div>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="ms">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <button data-act="play">▶ Reproducir</button>
+      <label>velocidad <input type="range" data-role="speed" min="300" max="1400" step="50" value="900" aria-label="Velocidad"></label>
+      <label>n = <input type="range" id="msN" min="4" max="16" step="1" value="12"><b class="mono" id="msNv">12</b></label>
+      <button id="msShuffle">Barajar</button>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <div class="ms" id="msStage" role="img" aria-label="Barras de un arreglo que se dividen por niveles y se mezclan ordenadas"></div>
+        <div class="pills">
+          <span class="pill baja">dividido</span>
+          <span class="pill memo">caso base (hoja)</span>
+          <span class="pill sube">mezclado y ordenado</span>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="msNarr"></p></div>
+        <div class="rail-block"><h4>Cuenta en vivo</h4>
+          <div class="stat-row">
+            <div class="stat"><b id="msComp">0</b><span>comparaciones</span></div>
+            <div class="stat"><b id="msRef" style="color:var(--muted)">0</b><span>n·log₂n</span></div>
+            <div class="stat"><b id="msLvl">0</b><span>nivel</span></div>
+          </div></div>
+        <div class="rail-block"><h4>El código</h4>
+<pre id="msCode"><span>def merge_sort(a):</span><span class="k-memo">  if len(a) &lt;= 1: return a[:]</span><span class="k-baja">  m = len(a) // 2</span><span>  izq = merge_sort(a[:m])</span><span>  der = merge_sort(a[m:])</span><span class="k-sube">  return mezclar(izq, der)</span></pre>
+          <p class="hint">T(n) = 2T(n/2) + Θ(n)</p></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>Sobre el orden de la animación.</b> El código real recorre el árbol en profundidad: ordena
+  toda la mitad izquierda antes de tocar la derecha. Aquí se muestra nivel por nivel para que se vea el trabajo de
+  cada nivel, pero las mezclas son exactamente las mismas y cuestan lo mismo.</p>
+
+  <h3 class="sub-h" id="lab-mezclar" style="scroll-margin-top:8px">Zoom a <code>mezclar</code>: por qué cuesta Θ(n)</h3>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p><b>Mezclar</b> (en inglés <i>merge</i>) es la operación que le da el nombre a Merge Sort. Recibe dos listas que <b>ya están ordenadas</b> y produce una sola lista ordenada con todos sus elementos. Es lo mismo que hace una persona que junta dos pilas de exámenes, cada una ya en orden alfabético, en una sola pila: mira el examen de encima de cada pila y toma el que va primero.<span class="src">Guía, ejercicio 2 · «¿Por qué mezclar cuesta Θ(n)?»</span></p></div>
+  <p class="lede">Arriba cada mezcla pasa en un solo paso. Aquí se abre una sola, comparación por comparación.
+  Las dos mitades ya vienen ordenadas, así que el menor de lo que falta siempre está en uno de los dos
+  <b>frentes</b>: se comparan esos dos, el menor se coloca en <code>res</code> y ese frente avanza.
+  <b>Cada paso coloca exactamente un elemento</b> y nunca se retrocede: n elementos, n pasos.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Que <b>cada paso coloca exactamente un elemento</b> y ninguno se mira dos veces: el contador de pasos llega justo a n y las comparaciones a lo sumo a n − 1. Fíjese también en por qué basta mirar los dos frentes: las mitades ya vienen ordenadas.</p></div>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="mz">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <button data-act="play">▶ Reproducir</button>
+      <label>velocidad <input type="range" data-role="speed" min="300" max="1400" step="50" value="800" aria-label="Velocidad"></label>
+      <button id="mzGuide">Ejemplo de la guía</button>
+      <button id="mzRand">Otro par</button>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <div class="mz" role="img" aria-label="Mezcla de dos listas ordenadas: se comparan los frentes y el menor pasa a la lista resultado">
+          <div class="mz-row"><span class="mz-lbl">izq</span><div class="mz-cells" id="mzL"></div></div>
+          <div class="mz-row"><span class="mz-lbl">der</span><div class="mz-cells" id="mzR"></div></div>
+          <div class="mz-cmp" id="mzCmp"></div>
+          <div class="mz-row"><span class="mz-lbl">res</span><div class="mz-cells" id="mzRes"></div></div>
+        </div>
+        <div class="pills">
+          <span class="pill baja">frente (i, j): se compara</span>
+          <span class="pill sube">el menor: se coloca</span>
+          <span class="pill">ya colocado: no se vuelve a mirar</span>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="mzNarr"></p></div>
+        <div class="rail-block"><h4>Cuenta en vivo</h4>
+          <div class="stat-row">
+            <div class="stat"><b id="mzPut">0</b><span>pasos = colocados</span></div>
+            <div class="stat"><b id="mzComp">0</b><span>comparaciones</span></div>
+          </div>
+          <p class="hint" id="mzInv"></p></div>
+        <div class="rail-block"><h4>El código</h4>
+<pre id="mzCode"><span>def mezclar(izq, der):</span><span>  res = []; i = j = 0</span><span>  while i&lt;len(izq) and j&lt;len(der):</span><span>    if izq[i] &lt;= der[j]:</span><span>      res.append(izq[i]); i+=1</span><span>    else:</span><span>      res.append(der[j]); j+=1</span><span>  res.extend(izq[i:])</span><span>  res.extend(der[j:])</span><span>  return res</span></pre></div>
+      </div>
+    </div>
+  </div>
+
+  <figure class="mzlv-fig">
+    <div class="figrow"><h4 class="mini" style="margin:0">Nivel por nivel · n es el tamaño de cada llamada</h4>
+      <button id="mzLvBtn">↻ Animar de nuevo</button></div>
+    <div class="mzlv" id="mzLv"></div>
+    <p class="mzlv-sum" id="mzLvSum"></p>
+    <figcaption>El Θ(n) de <code>T(n) = 2T(n/2) + Θ(n)</code> es lo que mezcla <b>una</b> llamada de tamaño n.
+    Cada llamada mezcla solo sus propios elementos, así que en cada nivel se mezclan, repartidos en pedazos,
+    los n elementos del arreglo: n pasos por nivel. Hay log₂ n niveles que mezclan; por eso Merge Sort cuesta
+    n·log n y no n².</figcaption>
+  </figure>
+</section>
+
+<!-- ============ 2 ============ -->
+<section class="lab" id="lab-02">
+  <div class="lab-head"><span class="lab-num">02</span>
+    <h2>Búsqueda binaria contra búsqueda lineal</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p><b>Buscar</b> es decidir si un valor está en una lista y en qué posición. La <b>búsqueda lineal</b> revisa los elementos uno por uno desde el principio: sirve para cualquier lista, pero en el peor caso los mira todos. La <b>búsqueda binaria</b> solo sirve si la lista está <b>ordenada</b>, y aprovecha ese orden como quien busca una palabra en un diccionario de papel: abre por la mitad y, según la letra, descarta la mitad de adelante o la de atrás, y repite.<span class="src">Guía, ejercicio 1</span></p></div>
+  <p class="lede">La búsqueda binaria es divide y conquista con <b>a = 1</b>: parte el arreglo en dos, pero
+  resuelve solo una mitad; la otra se descarta sin mirarla. Combinar no cuesta nada. Haga clic en una celda para
+  elegir el objetivo y ponga a correr las dos búsquedas a la vez.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Cuántas celdas mira cada búsqueda. Pruebe con n = 32 y con n = 64: la binaria mira a lo sumo <b>una celda más</b>, mientras que la lineal puede tener que mirar el doble. Esa es la diferencia entre Θ(log n) y Θ(n), y viene de que la binaria hace <b>una sola</b> llamada (a = 1).</p></div>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="bs">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <button data-act="play">▶ Reproducir</button>
+      <label>velocidad <input type="range" data-role="speed" min="300" max="1400" step="50" value="950" aria-label="Velocidad"></label>
+      <label>n = <input type="range" id="bsN" min="32" max="64" step="8" value="48"><b class="mono" id="bsNv">48</b></label>
+      <button id="bsRand">Objetivo al azar</button>
+      <button id="bsMiss">Objetivo ausente</button>
+      <span class="pill memo">x = <b id="bsX">—</b></span>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <h4 class="mini">Búsqueda binaria · descarta la mitad</h4>
+        <div class="bs-grid" id="bsBin"></div>
+        <h4 class="mini">Búsqueda lineal · descarta un elemento</h4>
+        <div class="bs-grid lin" id="bsLin"></div>
+        <p class="hint">Borde punteado morado = dónde está el objetivo. Celdas atenuadas = ya descartadas.</p>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="bsNarr"></p></div>
+        <div class="rail-block"><h4>Sondeos</h4>
+          <div class="stat-row">
+            <div class="stat"><b id="bsCB" style="color:var(--baja)">0</b><span>binaria</span></div>
+            <div class="stat"><b id="bsCL">0</b><span>lineal</span></div>
+            <div class="stat"><b id="bsMax" style="color:var(--muted)">0</b><span>máx. binaria</span></div>
+          </div></div>
+        <div class="rail-block"><h4>Las dos recurrencias de costo</h4>
+<pre>binaria:
+  T(n) = T(n/2) + Θ(1)
+       = Θ(log n)
+lineal:
+  T(n) = T(n−1) + Θ(1)
+       = Θ(n)</pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section class="lab" id="lab-03">
+  <div class="lab-head"><span class="lab-num">03</span>
+    <h2>El árbol de recursión</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>Para saber cuánto <b>tarda</b> un algoritmo de divide y conquista no basta con mirar una llamada: cada llamada hace otras llamadas, y esas hacen otras. El <b>árbol de recursión</b> dibuja cada llamada como un nodo, con sus subllamadas debajo, y anota el trabajo propio de cada una (lo que cuesta dividir y combinar). Sumando nivel por nivel se obtiene el costo total. Los botones de presets cargan algoritmos concretos; si alguno no le suena, búsquelo en la <a href="#algoritmos">lista de algoritmos</a> del mapa.<span class="src">Guía, sección 6</span></p></div>
+  <p class="lede">El teorema maestro no se memoriza: se <b>lee</b> en este dibujo. En el nivel i hay a<sup>i</sup>
+  subproblemas de tamaño n/b<sup>i</sup>, y cada uno cuesta f(n/b<sup>i</sup>). Con f(n) = n<sup>d</sup>, el
+  trabajo del nivel es n<sup>d</sup>·(a/b<sup>d</sup>)<sup>i</sup>: una serie geométrica. Su razón
+  r = a/b<sup>d</sup> lo decide todo.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>La <b>forma</b> de la columna de barras: si el trabajo por nivel decrece, se mantiene o crece. Esa forma, y no el tamaño del árbol, decide el caso del teorema maestro. Antes de ver el resultado de cada preset, prediga usted el caso mirando solo a, b y d.</p></div>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="t3">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <button data-act="play">▶ Reproducir</button>
+      <label>velocidad <input type="range" data-role="speed" min="300" max="1400" step="50" value="850" aria-label="Velocidad"></label>
+      <label>a = <input type="range" id="t3A" min="1" max="8" step="1" value="2"><b class="mono" id="t3Av">2</b></label>
+      <label>b = <input type="range" id="t3B" min="2" max="4" step="1" value="2"><b class="mono" id="t3Bv">2</b></label>
+      <label>d = <input type="range" id="t3D" min="0" max="3" step="1" value="1"><b class="mono" id="t3Dv">1</b></label>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="ctl ctl2">
+      <span class="mono" style="font-size:12px;color:var(--muted)">presets</span>
+      <div class="seg" id="t3Presets"></div>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <div class="scroller"><svg id="t3Svg" role="img" aria-label="Árbol de recursión nivel por nivel, con una barra del trabajo de cada nivel"></svg></div>
+        <div class="pills">
+          <span class="pill baja">subproblema (gerente)</span>
+          <span class="pill memo">hoja · caso base</span>
+          <span class="pill sube">trabajo del nivel</span>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="t3Narr"></p></div>
+        <div class="rail-block"><h4>La cuenta</h4>
+          <dl class="kv">
+            <dt>T(n)</dt><dd id="t3Rec"></dd>
+            <dt>razón</dt><dd id="t3R"></dd>
+            <dt>domina</dt><dd id="t3Dom"></dd>
+            <dt>hojas</dt><dd id="t3Leaves"></dd>
+          </dl></div>
+        <div class="rail-block"><h4>Resultado</h4><p class="theta" id="t3Res"></p><p class="hint" id="t3Case"></p></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>Tres formas de una misma serie.</b> Si r &lt; 1, la suma la domina su primer término: la raíz.
+  Si r = 1, todos los términos son iguales y hay log<sub>b</sub> n + 1 de ellos. Si r &gt; 1, la domina el último:
+  las hojas, que son a<sup>log<sub>b</sub> n</sup> = n<sup>log<sub>b</sub> a</sup>. Eso es, literalmente, el teorema
+  maestro. Aquí n = b<sup>6</sup> para que haya exactamente 7 niveles.</p>
+</section>
+
+<!-- ============ 4 ============ -->
+<section class="lab" id="lab-04">
+  <div class="lab-head"><span class="lab-num">04</span>
+    <h2>La balanza del teorema maestro</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>El <b>teorema maestro</b> es un atajo para no tener que dibujar el árbol. Sirve para recurrencias de costo de la forma T(n) = a·T(n/b) + f(n), donde <b>a</b> es cuántas llamadas recursivas hace cada invocación, <b>b</b> cuánto se achica el problema en cada llamada y <b>f(n)</b> lo que cuesta dividir y combinar. En lugar de sumar todos los niveles, basta con comparar dos cantidades.<span class="src">Guía, sección 7</span></p></div>
+  <p class="lede">El teorema compara dos pesos: lo que cuesta la raíz, f(n) = Θ(n<sup>d</sup>), y cuántas hojas
+  hay, n<sup>log<sub>b</sub> a</sup>. Gana el de exponente mayor. Si empatan, el empate se paga en cada uno de los
+  log n niveles. Mueva los controles y mire hacia dónde se inclina.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Que el teorema maestro compara solo <b>dos exponentes</b>: el de f(n), que es d, y el de las hojas, log<sub>b</sub> a. Deje d fijo y mueva a: vea en qué valor la balanza se equilibra (a = b<sup>d</sup>) y hacia dónde se inclina a cada lado.</p></div>
+
+  <div class="stage">
+    <div class="ctl">
+      <label>a = <input type="range" id="balA" min="1" max="8" step="1" value="3"><b class="mono" id="balAv">3</b></label>
+      <label>b = <input type="range" id="balB" min="2" max="4" step="1" value="2"><b class="mono" id="balBv">2</b></label>
+      <label>d = <input type="range" id="balD" min="0" max="3" step="0.5" value="1"><b class="mono" id="balDv">1</b></label>
+      <label>k = <input type="range" id="balK" min="0" max="2" step="1" value="0"><b class="mono" id="balKv">0</b></label>
+    </div>
+    <div class="ctl ctl2">
+      <span class="mono" style="font-size:12px;color:var(--muted)">presets</span>
+      <div class="seg" id="balPresets"></div>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <p class="mono" style="font-size:13px;color:var(--ink-2);text-align:center" id="balRec"></p>
+        <svg id="balSvg" viewBox="0 0 400 262" role="img" aria-label="Balanza que compara el exponente de f(n) con log base b de a"></svg>
+        <div class="cases" id="balCases">
+          <div class="case c1"><h4>Caso 1 · d &lt; log<sub>b</sub> a</h4>
+            <p>Pesan más las hojas. Cada nivel cuesta más que el anterior (r &gt; 1).</p>
+            <p class="r">Θ(n<sup>log<sub>b</sub> a</sup>)</p><p class="g">general: f = O(n<sup>c−ε</sup>)</p></div>
+          <div class="case c2"><h4>Caso 2 · d = log<sub>b</sub> a</h4>
+            <p>Empate: todos los niveles cuestan lo mismo (r = 1).</p>
+            <p class="r">Θ(n<sup>d</sup> log n)</p><p class="g">general: f = Θ(n<sup>c</sup> log<sup>k</sup> n) → Θ(n<sup>c</sup> log<sup>k+1</sup> n)</p></div>
+          <div class="case c3"><h4>Caso 3 · d &gt; log<sub>b</sub> a</h4>
+            <p>Pesa más la raíz. El trabajo decrece hacia abajo (r &lt; 1).</p>
+            <p class="r">Θ(n<sup>d</sup>) = Θ(f(n))</p><p class="g">general: f = Ω(n<sup>c+ε</sup>) y regularidad</p></div>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Exponente crítico</h4>
+          <p class="theta" id="balC"></p></div>
+        <div class="rail-block"><h4>Comparación</h4>
+          <dl class="kv">
+            <dt>exp.</dt><dd id="balCmp"></dd>
+            <dt>equiv.</dt><dd id="balEq"></dd>
+            <dt>caso</dt><dd id="balCase"></dd>
+          </dl></div>
+        <div class="rail-block"><h4>Resultado</h4><p class="theta" id="balRes"></p></div>
+        <div class="rail-block"><p class="narration" id="balNarr" style="min-height:0"></p></div>
+      </div>
+    </div>
+  </div>
+
+  <figure style="margin-top:30px">
+    <div class="figrow"><h4 class="mini" style="margin:0">Lo que cuesta un exponente · n de 1 a 32</h4>
+      <button id="growBtn">↻ Dibujar de nuevo</button></div>
+    <div class="scroller"><svg id="growSvg" viewBox="0 0 470 260" role="img" aria-label="Curvas de n al cuadrado, n a la 1.585 y n log n"></svg></div>
+    <figcaption>Tres recurrencias con b = 2 y la misma f(n) = Θ(n): lo único que cambia es a. Con a = 4 la
+    multiplicación escolar es caso 1 y cuesta n<sup>2</sup>; Karatsuba baja a a = 3 y el exponente cae a
+    log<sub>2</sub>3 ≈ 1.585; con a = 2 se llega al empate de Merge Sort, n log n. En n = 32 ya son 1&#8239;024, 243 y
+    160 operaciones.</figcaption>
+  </figure>
+
+  <div class="note">
+    <p><b>El enunciado que usamos.</b> T(n) = a·T(n/b) + f(n), con a ≥ 1 y b &gt; 1 constantes. Sea
+    c = log<sub>b</sub> a. Con f(n) = Θ(n<sup>d</sup>): d &lt; c → Θ(n<sup>c</sup>); d = c → Θ(n<sup>d</sup> log n);
+    d &gt; c → Θ(n<sup>d</sup>).</p>
+    <p><b>Con logaritmos (k &gt; 0).</b> Si f(n) = Θ(n<sup>d</sup> log<sup>k</sup> n), el caso lo sigue decidiendo el
+    exponente polinomial d. Solo en el empate d = c el logaritmo suma uno: Θ(n<sup>c</sup> log<sup>k+1</sup> n). En el
+    caso 3 el resultado es Θ(f(n)), con su log<sup>k</sup> incluido; en el caso 1, el logaritmo no importa.</p>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section class="lab" id="lab-05">
+  <div class="lab-head"><span class="lab-num">05</span>
+    <h2>Suma máxima: el subarreglo que cruza</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>Dada una lista de números positivos y negativos —por ejemplo, las ganancias y pérdidas diarias de una tienda— se busca el <b>tramo de posiciones consecutivas con la mayor suma</b>: la mejor racha de días seguidos. Probar todos los tramos cuesta Θ(n²) o más. Partiendo la lista por la mitad se logra Θ(n log n). En el ejemplo de abajo, el mejor tramo es [4, −1, 2, 1], con suma 6.<span class="src">Guía, ejercicio 3 · guía de recurrencias, ejercicio 5</span></p></div>
+  <p class="lede">El problema de la guía de recurrencias, con la estrategia de partir por la mitad. El mejor
+  subarreglo está completo en la izquierda, completo en la derecha, o <b>cruza</b> el centro. Los dos primeros los
+  resuelven clones. El tercero lo calcula el gerente en Θ(n): mejor sufijo de la izquierda que termina en m, más
+  mejor prefijo de la derecha que empieza en m + 1.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Que combinar exige resolver un problema <b>distinto</b> al original, el cruce, que no se delega: lo calcula el gerente. Observe que el cruce recorre el rango una sola vez hacia cada lado; por eso f(n) = Θ(n) y la recurrencia es la misma de Merge Sort.</p></div>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="msa">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <button data-act="play">▶ Reproducir</button>
+      <label>velocidad <input type="range" data-role="speed" min="300" max="1400" step="50" value="950" aria-label="Velocidad"></label>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <div class="msa" id="msaBox">
+          <div class="msa-cells" id="msaCells"></div>
+          <div class="msa-split" id="msaSplit"></div>
+          <div class="msa-band" id="msaBandL"></div>
+          <div class="msa-band" id="msaBandR"></div>
+        </div>
+        <div class="msa-cmp">
+          <div class="chip idle" id="chipL"><span>izquierda</span><b>—</b><i>f(i, m)</i></div>
+          <div class="chip idle" id="chipC"><span>cruce</span><b>—</b><i>sufijo + prefijo</i></div>
+          <div class="chip idle" id="chipR"><span>derecha</span><b>—</b><i>f(m+1, j)</i></div>
+        </div>
+        <h4 class="mini">Árbol de llamadas · cada barra es un segmento a[i..j]</h4>
+        <div class="msa-tree" id="msaTree"></div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="msaNarr" style="min-height:7.5em"></p></div>
+        <div class="rail-block"><h4>La recurrencia</h4>
+<pre>f(i, j) =
+  a[i]            si i = j
+  max( f(i, m),
+       f(m+1, j),
+       cruce(i,m,j) ) si i &lt; j
+m = (i + j) div 2</pre>
+          <p class="hint">Costo: T(n) = 2T(n/2) + Θ(n) = Θ(n log n)</p></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>Por qué el cruce cabe en Θ(n).</b> Un subarreglo que cruza contiene a[m] y a[m+1]: es un
+  sufijo de la izquierda pegado a un prefijo de la derecha, y los dos pedazos se eligen por separado. Por eso
+  combinar es lineal y el costo total es caso 2, como Merge Sort. (Kadane, de la guía anterior, lo resuelve en
+  Θ(n): divide y conquista no siempre es lo más rápido.)</p>
+</section>
+
+<!-- ============ 6 ============ -->
+<section class="lab" id="lab-06">
+  <div class="lab-head"><span class="lab-num">06</span>
+    <h2>Quickselect: el k-ésimo menor sin ordenar</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>Muchas veces no hace falta ordenar todos los datos,
+  sino saber qué elemento quedaría en cierta posición si se ordenaran: la <b>mediana</b> de unos salarios (el
+  del medio), el percentil 90 de unos tiempos de carga o el tercer mejor puntaje de un examen. A eso se le llama
+  buscar el <b>k-ésimo menor</b>. <b>Quickselect</b> (Tony Hoare, 1961) lo encuentra sin ordenar: escoge un
+  <b>pivote</b>, reparte la lista en los menores, los iguales y los mayores que él, y sigue buscando <b>solo</b> en
+  el grupo donde tiene que estar la respuesta.<span class="src">Guía, ejercicio 5</span></p></div>
+  <p class="lede">Es divide y conquista con <b>a = 1</b>, como la búsqueda binaria, pero dividir cuesta
+  <b>Θ(n)</b>: hay que recorrer toda la lista para repartirla. Cada fila es una llamada. Mire cómo los elementos
+  se reparten en tres grupos, qué grupo sigue y cómo cambia k cuando se descartan los más pequeños.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Dos cosas. Primero, <b>cómo se ajusta k</b>: si la
+  búsqueda sigue por los mayores, a k se le restan los elementos descartados, que eran todos más pequeños. Segundo,
+  <b>cuánto importa el pivote</b>: pruebe «Peor caso» con pivote a[0] y después con «mediana», y compare el número
+  de filas y de elementos recorridos. Con la mediana es T(n) = T(n/2) + Θ(n) = Θ(n); con el peor pivote,
+  T(n − 1) + Θ(n) = Θ(n²).</p></div>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="qs">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <button data-act="play">▶ Reproducir</button>
+      <label>velocidad <input type="range" data-role="speed" min="300" max="1400" step="50" value="850" aria-label="Velocidad"></label>
+      <label>k = <input type="range" id="qsK" min="1" max="8" step="1" value="4"><b class="mono" id="qsKv">4</b></label>
+      <div class="seg" id="qsMode"><button data-m="primero" class="on">pivote a[0]</button><button data-m="azar">al azar</button><button data-m="mediana">mediana (ideal)</button></div>
+      <button id="qsGuide">Ejemplo de la guía</button>
+      <button id="qsRand">Lista al azar</button>
+      <button id="qsWorst">Peor caso</button>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <div class="qs-rows" id="qsRows" role="img" aria-label="Llamadas de Quickselect: cada fila reparte la lista alrededor del pivote y sigue en un solo grupo"></div>
+        <div class="pills">
+          <span class="pill memo">pivote</span>
+          <span class="pill sube">grupo donde sigue la búsqueda</span>
+          <span class="pill">grupo descartado</span>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="qsNarr"></p></div>
+        <div class="rail-block"><h4>Cuenta en vivo</h4>
+          <div class="stat-row">
+            <div class="stat"><b id="qsCalls">0</b><span>llamadas</span></div>
+            <div class="stat"><b id="qsWork">0</b><span>recorridos</span></div>
+            <div class="stat"><b id="qsN" style="color:var(--muted)">8</b><span>n</span></div>
+          </div>
+          <p class="hint">«Recorridos» suma el tamaño de cada lista que se reparte: es el trabajo total.</p></div>
+        <div class="rail-block"><h4>El código</h4>
+<pre id="qsCode"><span>def quickselect(a, k):</span><span>  p = pivote(a)</span><span>  me = [x for x in a if x &lt; p]</span><span>  ig = [x for x in a if x == p]</span><span>  ma = [x for x in a if x &gt; p]</span><span>  if k &lt;= len(me):</span><span>    return quickselect(me, k)</span><span>  if k &lt;= len(me) + len(ig):</span><span>    return p</span><span>  j = k - len(me) - len(ig)</span><span>  return quickselect(ma, j)</span></pre>
+          <p class="hint">me = menores · ig = iguales · ma = mayores</p></div>
+      </div>
+    </div>
+  </div>
+
+  <figure class="qsbars-fig">
+    <div class="figrow"><h4 class="mini" style="margin:0">¿Cuánto importa el pivote? · buscar el máximo en una lista ya ordenada</h4>
+      <div class="seg" id="qsBarN"><button data-n="16">n = 16</button><button data-n="64" class="on">n = 64</button><button data-n="256">n = 256</button></div></div>
+    <div class="qsbars" id="qsBars"></div>
+    <figcaption>Con la lista ya ordenada, usar siempre el primer elemento como pivote es el peor caso: cada llamada
+    descarta un solo elemento y el trabajo crece como n²/2. Con la mediana, cada llamada descarta la mitad y el total
+    no llega a 2n. Con un pivote al azar, en promedio, se comporta casi como el ideal: por eso en la práctica el
+    pivote se escoge al azar.</figcaption>
+  </figure>
+</section>
+
+<!-- ============ 7 ============ -->
+<section class="lab" id="lab-07">
+  <div class="lab-head"><span class="lab-num">07</span>
+    <h2>¿Qué caso es?</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>Aquí no hay un algoritmo nuevo: es <b>práctica</b>. Cada tarjeta es la recurrencia de costo de algún algoritmo (varios ya aparecieron en esta página, y la explicación dice cuál es) y usted decide qué caso del teorema maestro aplica, o si no aplica.<span class="src">Guía, secciones 7.3 a 7.5</span></p></div>
+  <p class="lede">Para cada recurrencia: identifique a, b y f(n), compare exponentes y decida. Ojo: algunas
+  <b>no</b> tienen la forma a·T(n/b) + f(n) con a ≥ 1 y b &gt; 1 constantes, y reconocerlas es tan importante
+  como resolver las que sí.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Aplicar la receta completa sin atajos: antes de elegir, escriba a, b, f(n) y n<sup>log<sub>b</sub> a</sup>. Seis tarjetas <b>no</b> admiten el teorema; reconocerlas, y decir por qué, es tan importante como resolver las demás.</p></div>
+  <div class="quiz-bar">
+    <button id="qzShuffle">Barajar</button>
+    <button id="qzReset">Empezar de nuevo</button>
+    <span class="score" id="qzScore"></span>
+  </div>
+  <div class="quiz" id="quiz"></div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section class="lab" id="lab-08">
+  <div class="lab-head"><span class="lab-num">08</span>
+    <h2>Cuatro formas de romper divide y conquista</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>Errores de programación reales que no siempre hacen fallar el programa: a veces la respuesta sigue siendo correcta, pero el algoritmo se vuelve mucho más lento; otras veces la recursión nunca termina. Todos se reconocen escribiendo la recurrencia de costo del código.<span class="src">Guía, sección 12</span></p></div>
+  <p class="lede">Cada una tiene un síntoma reconocible, y casi todas se ven en la recurrencia de costo antes de
+  correr el código.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Relacionar cada error de <b>código</b> con el cambio que produce en <b>a, b o f(n)</b>, y por lo tanto en el resultado. Si puede escribir la recurrencia de costo de su propio código, puede detectar estos errores antes de ejecutarlo.</p></div>
+  <div class="errgrid" id="errGrid"></div>
+</section>
+
+<!-- ============ cierre ============ -->
+<section class="lab" id="lab-cierre" style="border-bottom:0">
+  <div class="lab-head"><span class="lab-num">◆</span>
+    <h2>Divide y conquista no memoiza</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>Conecta con la unidad anterior. <b>Memoizar</b> es anotar las respuestas que ya se calcularon para no calcularlas otra vez; es lo que volvió rápido a Fibonacci, cuyo árbol de llamadas repite los mismos subproblemas muchas veces. Esta sección muestra por qué en divide y conquista esa libreta no hace falta.<span class="src">Guía, sección 1.2</span></p></div>
+  <p class="lede">En la unidad anterior la libreta salvó a Fibonacci porque su árbol repetía estados. En divide y
+  conquista los subproblemas son <b>disjuntos</b>: cada rango del arreglo aparece una sola vez. No hay nada que
+  anotar.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Que en divide y conquista <b>ningún subproblema se repite</b>, mientras que en Fibonacci sí. Esa es la razón de que la memoización no ayude aquí y sí en programación dinámica.</p></div>
+  <figure style="margin-top:26px">
+    <div class="scroller"><svg id="closeSvg" role="img" aria-label="Comparación: el árbol de Merge Sort no repite subproblemas; el de fib(5) sí"></svg></div>
+    <figcaption>Los dos árboles tienen 15 llamadas. A la izquierda, <code>merge_sort</code> sobre 8 elementos: 15
+    rangos distintos, ninguno repetido. A la derecha, <code>fib(5)</code>: 15 llamadas para apenas 6 estados
+    distintos; los nodos morados son trabajo que ya se había hecho.</figcaption>
+  </figure>
+  <p class="note"><b>La pregunta que decide la técnica.</b> Dibuje el árbol. Si los subproblemas no se repiten, es
+  divide y conquista y su costo sale del teorema maestro. Si se repiten, memoizar deja de ser opcional: eso es
+  programación dinámica.</p>
+
+  <footer>
+    <p>Complemento visual de <em>Divide y conquista y teorema maestro: guía para el estudiante</em>. Sugerencia de
+    uso en clase: proyecte el laboratorio 03 con el preset Merge Sort, pregunte qué le pasa a la forma de las barras
+    si a sube a 3, y solo entonces cambie a Karatsuba.</p>
+  </footer>
+</section>
+</div>
+
+<script>
+/* ===== utilidades comunes ===== */
+const $ = (s, r) => (r || document).querySelector(s);
+const SVGNS = 'http://www.w3.org/2000/svg';
+const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* Los atributos de presentación SVG no aceptan var() de forma fiable en todos los
+   motores; cualquier valor con var() se enruta al atributo style, donde sí resuelve. */
+function el(tag, attrs, text){
+  const n = document.createElementNS(SVGNS, tag);
+  let style = '';
+  for (const k in attrs){
+    const v = String(attrs[k]);
+    if (v.indexOf('var(') !== -1) style += k + ':' + v + ';';
+    else n.setAttribute(k, v);
+  }
+  if (style) n.setAttribute('style', style);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+/* Un solo patrón de control para todos los laboratorios, ahora con reproducción. */
+function stepper(name, opts){
+  const bar = document.querySelector('[data-ctl="' + name + '"]');
+  const st = { i: 0, total: 0, timer: null };
+  const count = $('[data-role="count"]', bar);
+  const playBtn = $('[data-act="play"]', bar);
+  const speed = $('[data-role="speed"]', bar);
+  function clamp(){ st.i = Math.max(0, Math.min(st.total, st.i)); }
+  function paint(){
+    clamp();
+    opts.render(st.i);
+    count.textContent = 'paso ' + st.i + ' / ' + st.total;
+    $('[data-act="prev"]', bar).disabled = st.i === 0;
+    $('[data-act="next"]', bar).disabled = st.i === st.total;
+  }
+  const delay = () => speed ? 1700 - (+speed.value) : 800;
+  function stop(){
+    if (st.timer){ clearTimeout(st.timer); st.timer = null; }
+    if (playBtn){ playBtn.textContent = '▶ Reproducir'; playBtn.classList.remove('on'); }
+  }
+  function tick(){
+    st.timer = null;
+    if (st.i >= st.total){ stop(); return; }
+    st.i++; paint();
+    if (st.i >= st.total){ stop(); return; }
+    st.timer = setTimeout(tick, delay());
+  }
+  function play(){
+    if (st.i >= st.total){ st.i = 0; paint(); }
+    if (playBtn){ playBtn.textContent = '❙❙ Pausa'; playBtn.classList.add('on'); }
+    st.timer = setTimeout(tick, st.i === 0 ? 450 : delay());
+  }
+  bar.addEventListener('click', e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const a = b.dataset.act;
+    if (a === 'play'){ if (st.timer) stop(); else play(); return; }
+    stop();
+    if (a === 'next') st.i++;
+    else if (a === 'prev') st.i--;
+    else if (a === 'reset') st.i = 0;
+    paint();
+  });
+  st.reload = (total, start) => { stop(); st.total = total; st.i = start === undefined ? total : start; paint(); };
+  st.paint = paint; st.play = play; st.stop = stop;
+  return st;
+}
+/* formato */
+const SUP = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻' };
+const supTxt = s => String(s).split('').map(ch => SUP[ch] || ch).join('');
+const isInt = x => Math.abs(x - Math.round(x)) < 1e-9;
+const dec = x => String(Math.round(x * 1000) / 1000);
+const sgn = v => v < 0 ? '−' + (-v) : String(v);
+function fmtInt(x){ return String(Math.round(x)).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+function fmtBig(x){
+  if (x < 1e7) return fmtInt(x);
+  const e = Math.floor(Math.log10(x)), m = x / Math.pow(10, e);
+  return m.toFixed(1) + '·10' + supTxt(e);
+}
+function nPow(e){ return isInt(e) && Math.round(e) === 0 ? '' : (isInt(e) && Math.round(e) === 1 ? 'n' : 'n<sup>' + dec(e) + '</sup>'); }
+function logPow(j){ return j === 0 ? '' : (j === 1 ? 'log n' : 'log<sup>' + j + '</sup> n'); }
+function joinP(){ const p = [].slice.call(arguments).filter(Boolean); return p.length ? p.join(' ') : '1'; }
+function cOf(a, b){ return Math.log(a) / Math.log(b); }
+/* n^(log_b a), exacto cuando se puede */
+function nCrit(a, b){
+  const c = cOf(a, b);
+  if (isInt(c)) return { main: joinP(nPow(Math.round(c))), approx: '' };
+  const sym = 'n<sup>log<sub>' + b + '</sub>' + a + '</sup>';
+  const exact = Math.abs(c * 1000 - Math.round(c * 1000)) < 1e-6;
+  return { main: sym, approx: (exact ? ' = ' : ' ≈ ') + 'Θ(n<sup>' + dec(c) + '</sup>)' };
+}
+function caseOf(a, b, d){ const c = cOf(a, b); return Math.abs(d - c) < 1e-9 ? 2 : (d < c ? 1 : 3); }
+function thetaHTML(a, b, d, k){
+  k = k || 0;
+  const cs = caseOf(a, b, d), nc = nCrit(a, b);
+  if (cs === 1) return 'Θ(' + nc.main + ')' + nc.approx;
+  if (cs === 2){
+    const c = cOf(a, b);
+    if (isInt(c)) return 'Θ(' + joinP(nPow(Math.round(c)), logPow(k + 1)) + ')';
+    return 'Θ(' + joinP(nPow(d), logPow(k + 1)) + ')';
+  }
+  return 'Θ(' + joinP(nPow(d), logPow(k)) + ')';
+}
+function fHTML(d, k){ return 'Θ(' + joinP(nPow(d), logPow(k || 0)) + ')'; }
+function recHTML(a, b, d, k){ return 'T(n) = ' + (a === 1 ? '' : a) + 'T(n/' + b + ') + ' + fHTML(d, k); }
+/* aparición al hacer scroll */
+function onVisible(node, fn, threshold){
+  if (!('IntersectionObserver' in window)){ fn(); return; }
+  const io = new IntersectionObserver(es => { es.forEach(e => { if (e.isIntersecting){ fn(); io.disconnect(); } }); },
+    { threshold: threshold || 0.2 });
+  io.observe(node);
+}
+const onResize = (() => { const fns = []; let t = null;
+  window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => fns.forEach(f => f()), 120); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fns.forEach(f => f()));
+  return f => fns.push(f); })();
+
+/* ===== 01 · merge sort ===== */
+(function(){
+  const box = $('#msStage'), narr = $('#msNarr'), slider = $('#msN'), nv = $('#msNv');
+  const compEl = $('#msComp'), refEl = $('#msRef'), lvlEl = $('#msLvl');
+  const codeLines = $('#msCode').querySelectorAll('span');
+  let vals = [], snaps = [], bars = [], guides = [], maxD = 0;
+  const MAXH = 150, DROP = 30, TOP = 22;
+
+  function shuffle(n){
+    const v = []; for (let i = 1; i <= n; i++) v.push(i);
+    for (let i = n - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); const t = v[i]; v[i] = v[j]; v[j] = t; }
+    return v;
+  }
+  function model(){
+    const n = vals.length, nodes = [];
+    (function sp(lo, hi, d){
+      const nd = { lo, hi, d, leaf: hi - lo <= 1 }; nodes.push(nd);
+      if (!nd.leaf){ const m = (lo + hi) >> 1; sp(lo, m, d + 1); sp(m, hi, d + 1); }
+    })(0, n, 0);
+    maxD = Math.max.apply(null, nodes.map(x => x.d));
+    snaps = [];
+    let arr = []; for (let i = 0; i < n; i++) arr.push(i);
+    snaps.push({ kind: 'init', arr: arr.slice(), segs: [{ lo: 0, hi: n, d: 0, st: 'init' }], act: null, comps: 0, lvl: 0 });
+    for (let k = 1; k <= maxD; k++){
+      const segs = nodes.filter(x => x.d === k || (x.leaf && x.d < k)).sort((p, q) => p.lo - q.lo)
+        .map(x => ({ lo: x.lo, hi: x.hi, d: x.d, st: 'div' }));
+      snaps.push({ kind: 'div', arr: arr.slice(), segs, act: null, comps: 0, lvl: k });
+    }
+    let segs = nodes.filter(x => x.leaf).sort((p, q) => p.lo - q.lo).map(x => ({ lo: x.lo, hi: x.hi, d: x.d, st: 'base' }));
+    snaps.push({ kind: 'base', arr: arr.slice(), segs, act: null, comps: 0, lvl: maxD });
+    let comps = 0;
+    nodes.filter(x => !x.leaf).sort((p, q) => q.d - p.d || p.lo - q.lo).forEach(nd => {
+      const m = (nd.lo + nd.hi) >> 1;
+      const L = arr.slice(nd.lo, m), R = arr.slice(m, nd.hi), out = [];
+      let i = 0, j = 0, c = 0;
+      while (i < L.length && j < R.length){ c++; if (vals[L[i]] <= vals[R[j]]) out.push(L[i++]); else out.push(R[j++]); }
+      while (i < L.length) out.push(L[i++]);
+      while (j < R.length) out.push(R[j++]);
+      comps += c;
+      arr = arr.slice(); out.forEach((id, p) => { arr[nd.lo + p] = id; });
+      segs = segs.filter(sg => sg.hi <= nd.lo || sg.lo >= nd.hi)
+        .concat([{ lo: nd.lo, hi: nd.hi, d: nd.d, st: 'merged' }]).sort((p, q) => p.lo - q.lo);
+      snaps.push({ kind: 'merge', arr: arr.slice(), segs, act: { lo: nd.lo, hi: nd.hi }, comps, lvl: nd.d, here: c,
+        L: L.map(id => vals[id]), R: R.map(id => vals[id]), size: nd.hi - nd.lo });
+    });
+  }
+  function build(reshuffle){
+    const n = +slider.value; nv.textContent = n;
+    if (reshuffle || vals.length !== n) vals = shuffle(n);
+    model();
+    box.innerHTML = ''; guides = []; bars = [];
+    for (let d = 0; d <= maxD; d++){
+      const g = document.createElement('div'); g.className = 'ms-guide';
+      g.innerHTML = '<span>nivel ' + d + '</span>';
+      g.style.top = (TOP + d * DROP + MAXH) + 'px';
+      box.appendChild(g); guides.push(g);
+    }
+    vals.forEach(v => {
+      const b = document.createElement('div'); b.className = 'ms-bar init';
+      b.innerHTML = '<span>' + v + '</span>'; box.appendChild(b); bars.push(b);
+    });
+    box.style.height = (TOP + MAXH + maxD * DROP + 8) + 'px';
+    box.classList.add('noanim');
+    S.reload(snaps.length - 1, 0);
+    void box.offsetWidth;
+    box.classList.remove('noanim');
+  }
+  function render(s){
+    const sn = snaps[s]; if (!sn) return;
+    const n = vals.length, W = box.clientWidth || 600;
+    const LBL = 50, gap = W < 520 ? 2 : 4;
+    const bounds = n - 1;
+    const gg = Math.max(3, Math.min(16, (W - LBL) * 0.22 / bounds));
+    const bw = Math.max(4, (W - LBL - bounds * gap - bounds * gg) / n);
+    const slotSeg = [];
+    sn.segs.forEach((sg, gi) => { for (let p = sg.lo; p < sg.hi; p++) slotSeg[p] = gi; });
+    sn.arr.forEach((id, slot) => {
+      const gi = slotSeg[slot], sg = sn.segs[gi], b = bars[id];
+      const h = 18 + (MAXH - 18) * vals[id] / n;
+      b.style.left = (LBL + slot * (bw + gap) + gi * gg + (bounds - (sn.segs.length - 1)) * gg / 2) + 'px';
+      b.style.top = (TOP + sg.d * DROP + MAXH - h) + 'px';
+      b.style.width = bw + 'px'; b.style.height = h + 'px';
+      const dim = sn.kind === 'merge' && !(slot >= sn.act.lo && slot < sn.act.hi);
+      b.className = 'ms-bar ' + sg.st + (dim ? ' dim' : '') + (bw < 17 ? ' tiny' : '');
+    });
+    guides.forEach((g, d) => g.classList.toggle('cur', s > 0 && d === sn.lvl));
+    compEl.textContent = sn.comps;
+    refEl.textContent = Math.round(n * Math.log2(n));
+    lvlEl.textContent = s === 0 ? '—' : sn.lvl;
+    const hi = { init: [], div: [2, 3, 4], base: [1], merge: [5] }[sn.kind];
+    codeLines.forEach((ln, j) => ln.classList.toggle('hi', hi.indexOf(j) !== -1));
+    if (sn.kind === 'init') narr.innerHTML = 'Arreglo desordenado de <b>n = ' + n + '</b>. Nadie ha hecho nada. ' +
+      'Toda la estrategia cabe en tres verbos: <b>dividir</b>, <b>conquistar</b>, <b>combinar</b>.';
+    else if (sn.kind === 'div') narr.innerHTML = '<b>Dividir, nivel ' + sn.lvl + '</b>: cada segmento se parte por ' +
+      'la mitad. Ya hay <b>' + sn.segs.length + '</b> pedazos. Partir cuesta Θ(1) por pedazo: todavía no se ha ' +
+      'comparado ni un par.';
+    else if (sn.kind === 'base') narr.innerHTML = '<b>Casos base</b>: ' + sn.segs.length + ' segmentos de tamaño 1. ' +
+      'Un solo elemento ya está ordenado, así que responden sin trabajo. Son las <b>hojas</b> del árbol.';
+    else {
+      const last = s === snaps.length - 1;
+      narr.innerHTML = '<b>Combinar, nivel ' + sn.lvl + '</b>: se mezclan [' + sn.L.join(', ') + '] y [' +
+        sn.R.join(', ') + '] tomando siempre el menor de los dos frentes. <b>' + sn.here + '</b> ' + (sn.here === 1 ? 'comparación' : 'comparaciones') + ' ' +
+        'para ' + sn.size + ' elementos (nunca más de ' + (sn.size - 1) + ').' +
+        (last ? ' <b>Listo</b>: ' + sn.comps + ' comparaciones en total, por debajo de n·log₂n ≈ ' +
+          Math.round(n * Math.log2(n)) + '.' : '');
+    }
+  }
+  const S = stepper('ms', { render });
+  slider.addEventListener('input', () => build(true));
+  $('#msShuffle').addEventListener('click', () => build(true));
+  onResize(() => S.paint());
+  build(true);
+})();
+
+/* ===== 01 · zoom a mezclar ===== */
+(function(){
+  const Lb = $('#mzL'), Rb = $('#mzR'), Ob = $('#mzRes'), cmp = $('#mzCmp'), narr = $('#mzNarr');
+  const putEl = $('#mzPut'), compEl = $('#mzComp'), inv = $('#mzInv');
+  const lines = $('#mzCode').querySelectorAll('span');
+  const GUIA = [[3, 27, 38, 43], [5, 9, 10, 82]];
+  let L = [], R = [], ev = [], cells = null, prev = 0;
+
+  /* un evento por elemento colocado, en el orden exacto de mezclar() */
+  function events(){
+    const out = [];
+    let i = 0, j = 0;
+    while (i < L.length && j < R.length){
+      if (L[i] <= R[j]){ out.push({ side: 'L', idx: i, val: L[i], a: L[i], b: R[j], cmp: true }); i++; }
+      else { out.push({ side: 'R', idx: j, val: R[j], a: L[i], b: R[j], cmp: true }); j++; }
+    }
+    while (i < L.length){ out.push({ side: 'L', idx: i, val: L[i], cmp: false }); i++; }
+    while (j < R.length){ out.push({ side: 'R', idx: j, val: R[j], cmp: false }); j++; }
+    return out;
+  }
+  function mk(parent, vals, slot){
+    parent.innerHTML = '';
+    return vals.map(v => {
+      const c = document.createElement('div');
+      c.className = 'mz-cell' + (slot ? ' slot' : '');
+      c.innerHTML = '<b>' + (slot ? '' : v) + '</b><i class="mz-ptr"></i>';
+      parent.appendChild(c);
+      return c;
+    });
+  }
+  function build(pair){
+    L = pair[0].slice(); R = pair[1].slice(); ev = events();
+    cells = { L: mk(Lb, L), R: mk(Rb, R), O: mk(Ob, ev.map(e => e.val), true) };
+    prev = 0;
+    S.reload(ev.length, 0);
+  }
+  function render(s){
+    const n = ev.length, done = ev.slice(0, s);
+    const i = done.filter(e => e.side === 'L').length, j = s - i;
+    const last = s > 0 ? ev[s - 1] : null;
+    const paintSide = (arr, k, side) => arr.forEach((c, idx) => {
+      const front = idx === k;
+      const won = last && last.side === side && last.idx === idx;
+      c.className = 'mz-cell' + (idx < k ? (won ? ' won' : ' used') : '') + (front ? ' front' : '');
+      c.querySelector('.mz-ptr').textContent = front ? (side === 'L' ? 'i' : 'j') : '';
+    });
+    paintSide(cells.L, i, 'L');
+    paintSide(cells.R, j, 'R');
+    cells.O.forEach((c, idx) => {
+      const on = idx < s;
+      c.className = 'mz-cell slot' + (on ? ' fill' : '') + (idx === s - 1 ? ' new' : '');
+      c.querySelector('b').textContent = on ? ev[idx].val : '';
+    });
+    /* el elemento colocado viaja desde su lista hasta su casilla en res */
+    if (last && s === prev + 1 && !REDUCED){
+      const src = cells[last.side][last.idx], dst = cells.O[s - 1];
+      const a = src.getBoundingClientRect(), b = dst.getBoundingClientRect();
+      dst.style.transition = 'none';
+      dst.style.transform = 'translate(' + (a.left - b.left) + 'px,' + (a.top - b.top) + 'px)';
+      void dst.offsetWidth;
+      dst.style.transition = '';
+      dst.style.transform = '';
+    }
+    prev = s;
+
+    const comps = done.filter(e => e.cmp).length;
+    putEl.textContent = s + ' / ' + n;
+    compEl.textContent = comps;
+    inv.innerHTML = s === 0 ? 'res está vacío.' :
+      'res tiene los <b>' + s + '</b> menores de las dos listas, ya en orden.';
+
+    if (!last){
+      cmp.innerHTML = '<span class="mz-k">inicio</span> frentes: <b>' + L[0] + '</b> y <b>' + R[0] + '</b>';
+    } else if (last.cmp){
+      const wl = last.side === 'L';
+      cmp.innerHTML = '<span class="mz-k">paso ' + s + '</span> <b class="' + (wl ? 'w' : 'l') + '">' + last.a +
+        '</b> vs <b class="' + (wl ? 'l' : 'w') + '">' + last.b + '</b> → pone <b class="w">' + last.val + '</b>';
+    } else {
+      cmp.innerHTML = '<span class="mz-k">paso ' + s + '</span> ' + (last.side === 'L' ? 'der' : 'izq') +
+        ' vacía → copia <b class="w">' + last.val + '</b> <span class="mz-k">sin comparar</span>';
+    }
+
+    let hl = [1];
+    if (last) hl = !last.cmp ? [last.side === 'L' ? 7 : 8] : (last.side === 'L' ? [2, 3, 4] : [2, 3, 5, 6]);
+    if (s === n) hl = hl.concat([9]);
+    lines.forEach((ln, k) => ln.classList.toggle('hi', hl.includes(k)));
+
+    let t;
+    if (!last){
+      t = 'Las dos mitades ya vienen <b>ordenadas</b>: eso lo garantizan los clones. Entonces el menor de todo lo ' +
+        'que falta está en uno de los dos <b>frentes</b>, <code>izq[i]</code> o <code>der[j]</code>. No hay que ' +
+        'buscar en el resto de las listas.';
+    } else if (last.cmp){
+      t = 'Frentes: <b>' + last.a + '</b> y <b>' + last.b + '</b>. El menor es <b>' + last.val + '</b>: va al ' +
+        'final de <code>res</code> y <b>' + (last.side === 'L' ? 'i' : 'j') + '</b> avanza. El otro frente se queda ' +
+        'esperando; lo ya colocado no se vuelve a mirar.';
+    } else {
+      t = 'La lista <b>' + (last.side === 'L' ? 'der' : 'izq') + '</b> se acabó. Lo que queda en ' +
+        (last.side === 'L' ? 'izq' : 'der') + ' ya está ordenado y es mayor que todo lo colocado: <b>' + last.val +
+        '</b> se copia sin comparar, pero igual es un paso.';
+    }
+    if (s === n) t += ' <b>Listo</b>: ' + n + ' elementos, ' + n + ' pasos, ' + comps + ' comparaciones. Cada ' +
+      'paso coloca exactamente uno, así que mezclar n elementos cuesta <b>Θ(n)</b>.';
+    narr.innerHTML = t;
+  }
+  const S = stepper('mz', { render });
+
+  function randomPair(){
+    const na = 3 + Math.floor(Math.random() * 4), nb = 3 + Math.floor(Math.random() * 4);
+    const pool = [];
+    for (let v = 1; v < 100; v++) pool.push(v);
+    for (let k = pool.length - 1; k > 0; k--){ const r = Math.floor(Math.random() * (k + 1)); [pool[k], pool[r]] = [pool[r], pool[k]]; }
+    const up = (x, y) => x - y;
+    return [pool.slice(0, na).sort(up), pool.slice(na, na + nb).sort(up)];
+  }
+  $('#mzGuide').addEventListener('click', () => build(GUIA));
+  $('#mzRand').addEventListener('click', () => build(randomPair()));
+  build(GUIA);
+
+  /* --- nivel por nivel, con el arreglo de la guía --- */
+  const A = [38, 27, 43, 3, 9, 82, 10, 5];
+  const lv = $('#mzLv'), sum = $('#mzLvSum');
+  const levels = [];
+  for (let size = A.length, d = 0; size >= 1; size /= 2, d++){
+    const blocks = [];
+    for (let p = 0; p < A.length; p += size) blocks.push(A.slice(p, p + size).sort((x, y) => x - y));
+    levels.push({ d, size, blocks });
+  }
+  const mixing = levels.filter(l => l.size > 1);
+  levels.forEach(l => {
+    const leaf = l.size === 1;
+    const row = document.createElement('div');
+    row.className = 'mzlv-row' + (leaf ? ' leaf' : '');
+    const k = l.blocks.length;
+    const lbl = leaf ? 'nivel ' + l.d + ' · ' + k + ' hojas'
+      : 'nivel ' + l.d + ' · ' + k + (k === 1 ? ' mezcla' : ' mezclas') + ' de ' + l.size;
+    const tot = leaf ? 'no mezclan'
+      : (k === 1 ? '' : l.blocks.map(() => l.size).join('+') + ' = ') + A.length + ' pasos';
+    row.innerHTML = '<span class="mzlv-lbl">' + lbl + '</span><div class="mzlv-track"></div><span class="mzlv-tot">' + tot + '</span>';
+    const track = row.querySelector('.mzlv-track');
+    l.blocks.forEach((blk, bi) => {
+      const b = document.createElement('div');
+      b.className = 'mzlv-blk';
+      b.textContent = blk.join(' ');
+      b.title = blk.join(' ');
+      b.style.transitionDelay = (l.d * 0.45 + bi * 0.07) + 's';
+      track.appendChild(b);
+    });
+    row.querySelector('.mzlv-tot').style.transitionDelay = (l.d * 0.45 + 0.4) + 's';
+    lv.appendChild(row);
+  });
+  sum.innerHTML = 'Σ = ' + mixing.map(() => A.length).join(' + ') + ' = <b>' + A.length * mixing.length +
+    '</b> pasos = n · log₂ n  (n = ' + A.length + ', ' + mixing.length + ' niveles que mezclan)';
+  sum.style.transitionDelay = (levels.length * 0.45) + 's';
+  const go = () => {
+    lv.classList.add('noanim'); sum.classList.add('noanim');
+    lv.classList.remove('in'); sum.classList.remove('in');
+    void lv.offsetWidth;
+    lv.classList.remove('noanim'); sum.classList.remove('noanim');
+    requestAnimationFrame(() => requestAnimationFrame(() => { lv.classList.add('in'); sum.classList.add('in'); }));
+  };
+  $('#mzLvBtn').addEventListener('click', go);
+  onVisible(lv, go, 0.3);
+})();
+
+/* ===== 02 · búsqueda binaria vs lineal ===== */
+(function(){
+  const gB = $('#bsBin'), gL = $('#bsLin'), narr = $('#bsNarr'), slider = $('#bsN'), nv = $('#bsNv');
+  const xEl = $('#bsX'), cB = $('#bsCB'), cL = $('#bsCL'), mx = $('#bsMax');
+  let n = 48, arr = [], x = 0, bin = [], lin = [], binFound = false, linFound = false;
+  let cellsB = [], cellsL = [], tags = {};
+  const rnd = k => Math.floor(Math.random() * k);
+
+  function gen(){
+    n = +slider.value; nv.textContent = n;
+    arr = []; let v = 1 + rnd(3);
+    for (let i = 0; i < n; i++){ arr.push(v); v += 1 + rnd(3); }
+    gB.innerHTML = ''; gL.innerHTML = ''; cellsB = []; cellsL = [];
+    arr.forEach((val, i) => {
+      [[gB, cellsB], [gL, cellsL]].forEach(([g, list]) => {
+        const c = document.createElement('div'); c.className = 'bs-cell'; c.textContent = val;
+        c.title = 'a[' + i + '] = ' + val;
+        c.addEventListener('click', () => setTarget(val));
+        g.appendChild(c); list.push(c);
+      });
+    });
+    tags = {};
+    [['lo', gB], ['hi', gB], ['mid', gB], ['i', gL]].forEach(([t, g]) => {
+      const s = document.createElement('span'); s.className = 'bs-tag ' + t + ' gone'; s.textContent = t;
+      g.appendChild(s); tags[t] = s;
+    });
+    mx.textContent = Math.floor(Math.log2(n)) + 1;
+  }
+  function setTarget(v){
+    x = v; xEl.textContent = v;
+    bin = []; let lo = 0, hi = n - 1;
+    while (lo <= hi){
+      const mid = (lo + hi) >> 1, c = arr[mid] === x ? '=' : (arr[mid] < x ? '<' : '>');
+      bin.push({ lo, hi, mid, c });
+      if (c === '=') break;
+      if (c === '<') lo = mid + 1; else hi = mid - 1;
+    }
+    binFound = bin.length > 0 && bin[bin.length - 1].c === '=';
+    lin = [];
+    for (let i = 0; i < n; i++){ lin.push(i); if (arr[i] === x) break; }
+    linFound = arr[lin[lin.length - 1]] === x;
+    [cellsB, cellsL].forEach(list => list.forEach((c, i) => c.classList.toggle('target', arr[i] === x)));
+    [gB, gL].forEach(g => g.classList.add('noanim'));
+    S.reload(Math.max(bin.length, lin.length) + 1, 0);
+    void gB.offsetWidth;
+    [gB, gL].forEach(g => g.classList.remove('noanim'));
+  }
+  function place(tag, cell, where){
+    if (!cell){ tag.classList.add('gone'); return; }
+    tag.classList.remove('gone');
+    let left, top, tf;
+    if (where === 'lo'){ left = cell.offsetLeft; top = cell.offsetTop - 14; tf = 'none'; }
+    else if (where === 'hi'){ left = cell.offsetLeft + cell.offsetWidth; top = cell.offsetTop - 14; tf = 'translateX(-100%)'; }
+    else if (where === 'mid'){ left = cell.offsetLeft + cell.offsetWidth / 2; top = cell.offsetTop + cell.offsetHeight + 4; tf = 'translateX(-50%)'; }
+    else { left = cell.offsetLeft + cell.offsetWidth / 2; top = cell.offsetTop - 14; tf = 'translateX(-50%)'; }
+    tag.style.left = left + 'px'; tag.style.top = top + 'px'; tag.style.transform = tf;
+  }
+  const S = stepper('bs', { render(s){
+    const total = Math.max(bin.length, lin.length) + 1;
+    /* binaria */
+    const sb = Math.min(s, bin.length), doneB = s > bin.length;
+    let lo = 0, hi = n - 1, mid = -1, cmp = null;
+    if (sb > 0){ const t = bin[sb - 1]; lo = t.lo; hi = t.hi; mid = t.mid; cmp = t.c; }
+    cellsB.forEach((c, i) => {
+      let off = i < lo || i > hi, probe = i === mid && cmp !== '=', hit = i === mid && cmp === '=';
+      if (doneB && !binFound){ off = true; probe = false; }
+      if (doneB && binFound){ off = i !== mid; probe = false; }
+      c.classList.toggle('off', off); c.classList.toggle('probe', probe); c.classList.toggle('hit', hit);
+    });
+    if ((doneB && !binFound) || (sb > 0 && cmp === '=')){ place(tags.lo, null); place(tags.hi, null); }
+    else { place(tags.lo, cellsB[lo], 'lo'); place(tags.hi, cellsB[hi], 'hi'); }
+    place(tags.mid, mid >= 0 && !(doneB && !binFound) ? cellsB[mid] : null, 'mid');
+    /* lineal */
+    const sl = Math.min(s, lin.length), doneL = s > lin.length;
+    const cur = sl > 0 ? lin[sl - 1] : -1;
+    cellsL.forEach((c, i) => {
+      const hit = i === cur && arr[i] === x;
+      let off = i < cur || (doneL && !linFound);
+      c.classList.toggle('off', off);
+      c.classList.toggle('probe', i === cur && !hit && !(doneL && !linFound));
+      c.classList.toggle('hit', hit);
+    });
+    place(tags.i, cur >= 0 && !(doneL && !linFound) ? cellsL[cur] : null, 'i');
+    cB.textContent = sb; cL.textContent = sl;
+    /* narración */
+    if (s === 0){
+      narr.innerHTML = 'Arreglo <b>ordenado</b> de ' + n + ' celdas; se busca <b>x = ' + x + '</b>. La binaria empieza con ' +
+        '<b>lo = 0</b> y <b>hi = ' + (n - 1) + '</b>; la lineal, en la primera celda.';
+      return;
+    }
+    if (s === total){
+      narr.innerHTML = 'Binaria: <b>' + bin.length + '</b> sondeos. Lineal: <b>' + lin.length + '</b>. ' +
+        (binFound ? '' : 'x no está: la binaria lo supo cuando el rango quedó vacío (lo &gt; hi). ') +
+        'Cada sondeo binario deja un solo subproblema de la mitad y no combina nada: <b>T(n) = T(n/2) + Θ(1)</b>, ' +
+        'caso 2 con a = 1, b = 2, d = 0, así que <b>Θ(log n)</b>. La lineal solo quita un elemento: T(n) = T(n−1) + Θ(1) = Θ(n).';
+      return;
+    }
+    let tb;
+    if (s <= bin.length){
+      const t = bin[s - 1];
+      tb = '<b>Binaria</b>: mid = ' + t.mid + ', a[mid] = ' + arr[t.mid] + '. ';
+      if (t.c === '=') tb += '¡Es x! Encontrado en <b>' + s + '</b> sondeos.';
+      else if (t.c === '<') tb += 'Es menor que ' + x + ': se descartan de golpe las <b>' + (t.mid - t.lo + 1) + '</b> celdas de lo a mid.';
+      else tb += 'Es mayor que ' + x + ': se descartan de golpe las <b>' + (t.hi - t.mid + 1) + '</b> celdas de mid a hi.';
+    } else tb = '<b>Binaria</b>: ' + (binFound ? 'ya terminó, en ' + bin.length + ' sondeos.' : 'lo &gt; hi, el rango quedó vacío: x no está.');
+    let tl;
+    if (s <= lin.length){
+      const i = lin[s - 1];
+      tl = ' <b>Lineal</b>: a[' + i + '] = ' + arr[i] + (arr[i] === x ? ', encontrado.' : ', sigue.');
+    } else tl = ' <b>Lineal</b>: ' + (linFound ? 'ya terminó.' : 'recorrió todo y x no está.');
+    narr.innerHTML = tb + tl;
+  }});
+  function randomTarget(){ setTarget(arr[Math.floor(n * 0.55) + rnd(Math.floor(n * 0.4))]); }
+  $('#bsRand').addEventListener('click', randomTarget);
+  $('#bsMiss').addEventListener('click', () => {
+    const set = new Set(arr), cands = [];
+    for (let v = arr[0] + 1; v < arr[n - 1]; v++) if (!set.has(v)) cands.push(v);
+    setTarget(cands.length ? cands[rnd(cands.length)] : arr[n - 1] + 1);
+  });
+  slider.addEventListener('input', () => { gen(); randomTarget(); });
+  onResize(() => S.paint());
+  gen(); setTarget(arr[Math.floor(n * 0.7)]);
+})();
+
+/* ===== 03 · árbol de recursión ===== */
+(function(){
+  const svg = $('#t3Svg'), narr = $('#t3Narr');
+  const sA = $('#t3A'), sB = $('#t3B'), sD = $('#t3D');
+  const H = 6;
+  let P = { a: 2, b: 2, d: 1 }, lvls = [], works = [];
+  const PRESETS = [
+    ['búsqueda binaria', 1, 2, 0], ['Merge Sort', 2, 2, 1], ['Karatsuba', 3, 2, 1],
+    ['escolar 4T(n/2)+n', 4, 2, 1], ['Strassen', 7, 2, 2], ['2T(n/2)+n²', 2, 2, 2]
+  ];
+  const seg = $('#t3Presets');
+  PRESETS.forEach(p => {
+    const b = document.createElement('button'); b.textContent = p[0];
+    b.addEventListener('click', () => { sA.value = p[1]; sB.value = p[2]; sD.value = p[3]; build(0); S.play(); });
+    seg.appendChild(b);
+  });
+  function markPreset(){
+    [...seg.children].forEach((b, i) => b.classList.toggle('on',
+      PRESETS[i][1] === P.a && PRESETS[i][2] === P.b && PRESETS[i][3] === P.d));
+  }
+  function draw(){
+    const { a, b, d } = P, n = Math.pow(b, H);
+    svg.innerHTML = ''; lvls = [];
+    const W = 760, TOP = 44, RH = 40, TX = 84, TW = 372, BX = 486, BW = 176;
+    const HH = TOP + (H + 1) * RH + 4;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + HH);
+    const head = (x, t) => svg.appendChild(el('text', { x, y: 16, 'font-size': 10.5, 'font-family': 'var(--fm)',
+      fill: 'var(--muted)', 'letter-spacing': '.06em' }, t));
+    head(6, 'NIVEL'); head(TX, 'ÁRBOL · TAMAÑO DE CADA SUBPROBLEMA'); head(BX, 'TRABAJO DEL NIVEL');
+    svg.appendChild(el('text', { x: TX, y: 32, 'font-size': 11.5, 'font-family': 'var(--fm)', fill: 'var(--ink-2)' },
+      'n = ' + b + '⁶ = ' + fmtInt(n)));
+    svg.appendChild(el('text', { x: BX, y: 32, 'font-size': 11.5, 'font-family': 'var(--fm)', fill: 'var(--ink-2)' },
+      'a' + 'ⁱ · f(n/b' + 'ⁱ) = n' + supTxt(d) + ' · r' + 'ⁱ'));
+    works = [];
+    for (let i = 0; i <= H; i++) works.push(Math.pow(a, i) * Math.pow(b, (H - i) * d));
+    const maxW = Math.max.apply(null, works);
+    let prev = null;
+    for (let i = 0; i <= H; i++){
+      const y = TOP + i * RH, cnt = Math.pow(a, i), leaf = i === H, size = Math.pow(b, H - i);
+      const g = el('g', { class: 't3-lvl' });
+      const stroke = leaf ? 'var(--memo)' : 'var(--baja)', soft = leaf ? 'var(--memo-soft)' : 'var(--baja-soft)';
+      g.appendChild(el('text', { x: 6, y: y + 16, 'font-size': 12, 'font-family': 'var(--fm)', 'font-weight': 700,
+        fill: leaf ? 'var(--memo)' : 'var(--ink)' }, 'i = ' + i));
+      g.appendChild(el('text', { x: 6, y: y + 29, 'font-size': 10, 'font-family': 'var(--fm)', fill: 'var(--muted)' },
+        '×' + fmtInt(cnt)));
+      const slot = TW / cnt;
+      let centers = null;
+      if (slot >= 3){
+        centers = [];
+        const w = Math.min(66, slot * (slot > 12 ? 0.82 : 0.68));
+        if (prev && cnt <= 32){
+          for (let j = 0; j < cnt; j++){
+            const cx = TX + slot * (j + 0.5), pc = prev[Math.floor(j / a)];
+            g.appendChild(el('line', { x1: pc, y1: y - RH + 26, x2: cx, y2: y + 4, stroke: 'var(--line-2)', 'stroke-width': 1 }));
+          }
+        }
+        for (let j = 0; j < cnt; j++){
+          const cx = TX + slot * (j + 0.5); centers.push(cx);
+          const big = w > 8;
+          g.appendChild(el('rect', { x: cx - w / 2, y: y + 4, width: w, height: 22, rx: big ? 3 : 0.5,
+            fill: big ? soft : stroke, stroke: big ? stroke : 'none', 'stroke-width': 1.2 }));
+          if (w >= 34) g.appendChild(el('text', { x: cx, y: y + 19, 'text-anchor': 'middle', 'font-size': 11,
+            'font-family': 'var(--fm)', fill: 'var(--ink)' }, fmtInt(size)));
+        }
+      } else {
+        g.appendChild(el('rect', { x: TX, y: y + 4, width: TW, height: 22, rx: 3, fill: soft, stroke: stroke,
+          'stroke-width': 1.2, 'stroke-dasharray': '4 3' }));
+        g.appendChild(el('text', { x: TX + TW / 2, y: y + 19, 'text-anchor': 'middle', 'font-size': 11,
+          'font-family': 'var(--fm)', fill: stroke }, fmtInt(cnt) + ' subproblemas de tamaño ' + fmtInt(size)));
+      }
+      prev = centers;
+      g.appendChild(el('rect', { x: BX, y: y + 6, width: BW, height: 18, rx: 2, fill: 'var(--sunk)' }));
+      const bar = el('rect', { class: 't3-bar', x: BX, y: y + 6, width: Math.max(2, works[i] / maxW * BW), height: 18, rx: 2,
+        fill: leaf ? 'var(--memo)' : 'var(--sube)' });
+      g.appendChild(bar);
+      g.appendChild(el('text', { x: BX + BW + 8, y: y + 19, 'font-size': 11, 'font-family': 'var(--fm)',
+        fill: 'var(--ink-2)' }, fmtBig(works[i])));
+      svg.appendChild(g);
+      lvls.push({ g, bar });
+    }
+  }
+  function rail(){
+    const { a, b, d } = P, bd = Math.pow(b, d), r = a / bd, cs = caseOf(a, b, d);
+    $('#t3Rec').innerHTML = recHTML(a, b, d);
+    $('#t3R').innerHTML = 'r = a/b<sup>d</sup> = ' + a + '/' + bd + ' = ' + (isInt(r) ? r : dec(r)) +
+      (a === bd ? '' : (a < bd ? ' &lt; 1' : ' &gt; 1'));
+    $('#t3Dom').innerHTML = cs === 3 ? 'la raíz (serie decreciente)' : (cs === 2 ? 'nadie: todos los niveles igual' : 'las hojas (serie creciente)');
+    const nc = nCrit(a, b);
+    $('#t3Leaves').innerHTML = 'n<sup>log<sub>b</sub> a</sup> = ' + (nc.main === '1' ? '1' : nc.main) +
+      (nc.approx ? ' ≈ n<sup>' + dec(cOf(a, b)) + '</sup>' : '') + '<br><span class="mono" style="font-size:12px;color:var(--muted)">aquí ' +
+      a + '⁶ = ' + fmtInt(Math.pow(a, H)) + '</span>';
+    $('#t3Res').innerHTML = 'T(n) = ' + thetaHTML(a, b, d);
+    $('#t3Case').textContent = 'Caso ' + cs + ' del teorema maestro.';
+  }
+  function build(start){
+    P = { a: +sA.value, b: +sB.value, d: +sD.value };
+    $('#t3Av').textContent = P.a; $('#t3Bv').textContent = P.b; $('#t3Dv').textContent = P.d;
+    markPreset(); draw(); rail();
+    S.reload(H + 2, start);
+  }
+  const S = stepper('t3', { render(s){
+    const { a, b, d } = P, bd = Math.pow(b, d), cs = caseOf(a, b, d);
+    lvls.forEach((L, i) => {
+      L.g.classList.toggle('on', i < s);
+      const hot = cs === 2 || (cs === 3 && i === 0) || (cs === 1 && i === H);
+      L.bar.classList.toggle('hot', hot);
+    });
+    svg.classList.toggle('dom', s === H + 2);
+    const rTxt = a + '/' + bd;
+    if (s === 0) narr.innerHTML = 'El árbol empieza vacío. Con n = ' + b + '⁶ hay exactamente <b>7 niveles</b>: del 0 ' +
+      '(la raíz) al 6 (las hojas, de tamaño 1).';
+    else if (s === 1) narr.innerHTML = '<b>Nivel 0</b>: la raíz sola, de tamaño n = ' + fmtInt(Math.pow(b, H)) + '. Paga ' +
+      'f(n) = n' + supTxt(d) + ' = <b>' + fmtBig(works[0]) + '</b> por repartir y juntar.';
+    else if (s <= H){
+      const i = s - 1;
+      narr.innerHTML = '<b>Nivel ' + i + '</b>: ' + fmtInt(Math.pow(a, i)) + ' subproblemas de tamaño ' +
+        fmtInt(Math.pow(b, H - i)) + '. Juntos pagan <b>' + fmtBig(works[i]) + '</b>: el nivel anterior multiplicado ' +
+        'por r = ' + rTxt + '.';
+    } else if (s === H + 1) narr.innerHTML = '<b>Nivel 6, las hojas</b>: a⁶ = ' + fmtInt(Math.pow(a, H)) +
+      ' casos base de tamaño 1, cada uno Θ(1). Ese número es n<sup>log<sub>b</sub> a</sup>.';
+    else if (cs === 3) narr.innerHTML = 'Serie <b>decreciente</b>: cada nivel cuesta ' + rTxt + ' del anterior. La suma ' +
+      'la domina el primer término, la raíz: <b>' + thetaHTML(a, b, d) + '</b>. Caso 3.';
+    else if (cs === 2) narr.innerHTML = 'Serie <b>plana</b>: todos los niveles cuestan lo mismo, n' + supTxt(d) +
+      ' cada uno, y hay log<sub>b</sub> n + 1 niveles. Total: <b>' + thetaHTML(a, b, d) + '</b>. Caso 2.';
+    else narr.innerHTML = 'Serie <b>creciente</b>: domina el último término, las hojas. Hay n<sup>log<sub>b</sub> a</sup> ' +
+      'de ellas: <b>' + thetaHTML(a, b, d) + '</b>. Caso 1.';
+  }});
+  [sA, sB, sD].forEach(s => s.addEventListener('input', () => build()));
+  build();
+})();
+
+/* ===== 04 · balanza ===== */
+(function(){
+  const svg = $('#balSvg');
+  const sA = $('#balA'), sB = $('#balB'), sD = $('#balD'), sK = $('#balK');
+  const CX = 200, CY = 58, L = 140, STR = 80;
+  const S = { th: 0, v: 0, hl: 1, hr: 1 }, T = { th: 0, hl: 1, hr: 1 };
+  let raf = null;
+  /* estructura fija */
+  svg.appendChild(el('rect', { x: 150, y: 246, width: 100, height: 10, rx: 2, fill: 'var(--line-2)' }));
+  svg.appendChild(el('path', { d: 'M' + CX + ' ' + CY + ' L' + (CX - 16) + ' 248 L' + (CX + 16) + ' 248 Z', fill: 'var(--sunk)',
+    stroke: 'var(--line-2)', 'stroke-width': 1.2 }));
+  const tilt = el('text', { x: CX, y: 18, 'text-anchor': 'middle', 'font-size': 13, 'font-family': 'var(--fd)',
+    'font-weight': 600, fill: 'var(--ink-2)' }, '');
+  svg.appendChild(tilt);
+  const beam = el('g', {});
+  beam.appendChild(el('rect', { x: -L - 6, y: -4, width: 2 * L + 12, height: 8, rx: 4, fill: 'var(--ink-2)' }));
+  beam.appendChild(el('line', { x1: 0, y1: -14, x2: 0, y2: 0, stroke: 'var(--ink-2)', 'stroke-width': 2 }));
+  svg.appendChild(beam);
+  svg.appendChild(el('circle', { cx: CX, cy: CY, r: 6, fill: 'var(--surface)', stroke: 'var(--ink-2)', 'stroke-width': 2 }));
+  function pan(color, soft, title, sub){
+    const g = el('g', {});
+    g.appendChild(el('line', { x1: 0, y1: 0, x2: -50, y2: STR, stroke: 'var(--line-2)', 'stroke-width': 1.3 }));
+    g.appendChild(el('line', { x1: 0, y1: 0, x2: 50, y2: STR, stroke: 'var(--line-2)', 'stroke-width': 1.3 }));
+    g.appendChild(el('circle', { cx: 0, cy: 0, r: 3, fill: 'var(--ink-2)' }));
+    const block = el('rect', { x: -42, y: STR - 30, width: 84, height: 30, rx: 3, fill: soft, stroke: color, 'stroke-width': 1.6 });
+    g.appendChild(block);
+    const lbl = el('text', { x: 0, y: STR - 11, 'text-anchor': 'middle', 'font-size': 12, 'font-family': 'var(--fm)',
+      'font-weight': 700, fill: color }, '');
+    g.appendChild(lbl);
+    g.appendChild(el('path', { d: 'M-56 ' + STR + ' Q0 ' + (STR + 20) + ' 56 ' + STR + ' Z', fill: color }));
+    const t1 = el('text', { x: 0, y: STR + 38, 'text-anchor': 'middle', 'font-size': 12.5, 'font-family': 'var(--fm)',
+      'font-weight': 700, fill: color }, title);
+    const t2 = el('text', { x: 0, y: STR + 53, 'text-anchor': 'middle', 'font-size': 11, 'font-family': 'var(--fm)',
+      fill: 'var(--muted)' }, sub);
+    g.appendChild(t1); g.appendChild(t2);
+    svg.appendChild(g);
+    return { g, block, lbl, t1 };
+  }
+  const PL = pan('var(--sube)', 'var(--sube-soft)', 'f(n)', 'raíz · combinar');
+  const PR = pan('var(--memo)', 'var(--memo-soft)', 'n^(log_b a)', 'hojas');
+  const bh = e => 18 + e * 15;
+  function drawBal(){
+    const rad = S.th * Math.PI / 180;
+    beam.setAttribute('transform', 'translate(' + CX + ' ' + CY + ') rotate(' + (-S.th) + ')');
+    PL.g.setAttribute('transform', 'translate(' + (CX - L * Math.cos(rad)) + ' ' + (CY + L * Math.sin(rad)) + ')');
+    PR.g.setAttribute('transform', 'translate(' + (CX + L * Math.cos(rad)) + ' ' + (CY - L * Math.sin(rad)) + ')');
+    [[PL, S.hl], [PR, S.hr]].forEach(([p, e]) => {
+      const h = bh(e);
+      p.block.setAttribute('y', STR - h); p.block.setAttribute('height', h);
+      p.lbl.setAttribute('y', STR - h / 2 + 4);
+    });
+  }
+  function frame(){
+    S.v += (T.th - S.th) * 0.08; S.v *= 0.8; S.th += S.v;
+    S.hl += (T.hl - S.hl) * 0.15; S.hr += (T.hr - S.hr) * 0.15;
+    drawBal();
+    if (Math.abs(T.th - S.th) < 0.02 && Math.abs(S.v) < 0.02 && Math.abs(T.hl - S.hl) < 0.004 && Math.abs(T.hr - S.hr) < 0.004){
+      S.th = T.th; S.v = 0; S.hl = T.hl; S.hr = T.hr; drawBal(); raf = null; return;
+    }
+    raf = requestAnimationFrame(frame);
+  }
+  function kick(){
+    if (REDUCED){ S.th = T.th; S.hl = T.hl; S.hr = T.hr; drawBal(); return; }
+    if (!raf) raf = requestAnimationFrame(frame);
+  }
+  function update(){
+    const a = +sA.value, b = +sB.value, d = +sD.value, k = +sK.value;
+    $('#balAv').textContent = a; $('#balBv').textContent = b; $('#balDv').textContent = d; $('#balKv').textContent = k;
+    const c = cOf(a, b), cs = caseOf(a, b, d), diff = d - c;
+    T.th = cs === 2 ? 0 : Math.sign(diff) * Math.max(5, Math.min(16, Math.abs(diff) * 11));
+    T.hl = d; T.hr = c;
+    PL.lbl.textContent = 'd = ' + dec(d);
+    PR.lbl.textContent = 'c = ' + c.toFixed(3);
+    PL.t1.textContent = 'f(n) = ' + (d === 0 ? '1' : 'n' + (d === 1 ? '' : supTxt(dec(d)).replace('.', '·'))) + (k ? ' log' + (k > 1 ? supTxt(k) : '') + ' n' : '');
+    PR.t1.textContent = 'n^(log' + '₀₁₂₃₄'[b] + ' ' + a + ')';
+    tilt.textContent = cs === 1 ? 'se inclina hacia las hojas' : (cs === 3 ? 'se inclina hacia la raíz' : 'en equilibrio');
+    tilt.setAttribute('style', 'fill:' + (cs === 1 ? 'var(--memo)' : (cs === 3 ? 'var(--sube)' : 'var(--ink-2)')));
+    $('#balRec').innerHTML = recHTML(a, b, d, k);
+    $('#balC').innerHTML = 'c = log<sub>' + b + '</sub> ' + a + ' = ' + c.toFixed(3);
+    const rel = cs === 2 ? '=' : (cs === 1 ? '&lt;' : '&gt;');
+    $('#balCmp').innerHTML = 'd = ' + dec(d) + ' ' + rel + ' ' + c.toFixed(3);
+    const bd = Math.pow(b, d), relA = cs === 2 ? '=' : (cs === 1 ? '&gt;' : '&lt;');
+    $('#balEq').innerHTML = 'a = ' + a + ' ' + relA + ' b<sup>d</sup> = ' + (isInt(bd) ? Math.round(bd) : dec(bd));
+    $('#balCase').innerHTML = '<b>Caso ' + cs + '</b>' + (k && cs === 2 ? ' (general, k = ' + k + ')' : '');
+    $('#balRes').innerHTML = 'T(n) = ' + thetaHTML(a, b, d, k);
+    [...$('#balCases').children].forEach((cd, i) => cd.classList.toggle('on', i + 1 === cs));
+    let t;
+    if (cs === 1) t = 'Las hojas tienen el exponente mayor: el trabajo crece hacia abajo y se lo llevan los casos base.' +
+      (k ? ' El log<sup>' + k + '</sup> de f no cambia nada: n<sup>' + dec(d) + '</sup> log<sup>' + k + '</sup> n sigue siendo polinomialmente menor que n<sup>' + dec(c) + '</sup>.' : '');
+    else if (cs === 2) t = 'Empate de exponentes: cada nivel paga lo mismo y hay log n niveles, así que aparece un log más' +
+      (k ? ' (de log<sup>' + k + '</sup> a log<sup>' + (k + 1) + '</sup>).' : '.');
+    else t = 'f(n) tiene el exponente mayor: el trabajo decrece hacia abajo y la raíz se lleva casi todo. La regularidad ' +
+      'se cumple sola porque a/b<sup>d</sup> &lt; 1.' + (k ? ' El resultado es Θ(f(n)), con su log<sup>' + k + '</sup> incluido.' : '');
+    $('#balNarr').innerHTML = t;
+    [...$('#balPresets').children].forEach((bt, i) => {
+      const p = BPRE[i]; bt.classList.toggle('on', p[1] === a && p[2] === b && p[3] === d && p[4] === k);
+    });
+    kick();
+  }
+  const BPRE = [['búsqueda binaria', 1, 2, 0, 0], ['Merge Sort', 2, 2, 1, 0], ['Karatsuba', 3, 2, 1, 0],
+    ['Strassen', 7, 2, 2, 0], ['2T(n/2)+n²', 2, 2, 2, 0], ['2T(n/2)+n log n', 2, 2, 1, 1]];
+  BPRE.forEach(p => {
+    const b = document.createElement('button'); b.textContent = p[0];
+    b.addEventListener('click', () => { sA.value = p[1]; sB.value = p[2]; sD.value = p[3]; sK.value = p[4]; update(); });
+    $('#balPresets').appendChild(b);
+  });
+  [sA, sB, sD, sK].forEach(s => s.addEventListener('input', update));
+  drawBal(); update();
+
+  /* --- curvas de crecimiento --- */
+  const G = $('#growSvg');
+  const W = 470, HH = 260, PL0 = 46, PR0 = 330, PT = 14, PB = 222, NMAX = 32, YMAX = 1024;
+  const sx = v => PL0 + (v / NMAX) * (PR0 - PL0), sy = v => PB - (v / YMAX) * (PB - PT);
+  [0, 256, 512, 768, 1024].forEach(v => {
+    G.appendChild(el('line', { x1: PL0, y1: sy(v), x2: PR0, y2: sy(v), stroke: 'var(--line)', 'stroke-width': 1 }));
+    G.appendChild(el('text', { x: PL0 - 7, y: sy(v) + 4, 'text-anchor': 'end', 'font-size': 10.5, 'font-family': 'var(--fm)',
+      fill: 'var(--muted)' }, fmtInt(v)));
+  });
+  [0, 8, 16, 24, 32].forEach(v => {
+    G.appendChild(el('text', { x: sx(v), y: PB + 17, 'text-anchor': 'middle', 'font-size': 10.5, 'font-family': 'var(--fm)',
+      fill: 'var(--muted)' }, String(v)));
+  });
+  G.appendChild(el('line', { x1: PL0, y1: PB, x2: PR0, y2: PB, stroke: 'var(--line-2)', 'stroke-width': 1 }));
+  G.appendChild(el('text', { x: PR0, y: PB + 34, 'text-anchor': 'end', 'font-size': 10.5, 'font-family': 'var(--fm)',
+    fill: 'var(--muted)' }, 'n →'));
+  const FN = [
+    ['n²', 'escolar · a = 4', v => v * v, 'var(--baja)'],
+    ['n^1.585', 'Karatsuba · a = 3', v => Math.pow(v, Math.log2(3)), 'var(--memo)'],
+    ['n log n', 'Merge Sort · a = 2', v => v <= 1 ? 0 : v * Math.log2(v), 'var(--sube)']
+  ];
+  const ys = FN.map(f => sy(f[2](NMAX)));
+  for (let i = 1; i < ys.length; i++) if (ys[i] - ys[i - 1] < 34) ys[i] = ys[i - 1] + 34;
+  FN.forEach((f, idx) => {
+    let d = '';
+    for (let s = 0; s <= 64; s++){ const v = 1 + (NMAX - 1) * s / 64; d += (s ? ' L' : 'M') + sx(v).toFixed(1) + ' ' + sy(f[2](v)).toFixed(1); }
+    G.appendChild(el('path', { class: 'curve', d, pathLength: 1, fill: 'none', stroke: f[3], 'stroke-width': 2.6,
+      'stroke-linecap': 'round' }));
+  });
+  FN.forEach((f, idx) => {
+    const g = el('g', { class: 'clbl d' + (idx + 1) });
+    g.appendChild(el('circle', { cx: sx(NMAX), cy: sy(f[2](NMAX)), r: 3.5, fill: f[3] }));
+    g.appendChild(el('text', { x: PR0 + 10, y: ys[idx] + 1, 'font-size': 12.5, 'font-family': 'var(--fm)', 'font-weight': 700,
+      fill: f[3] }, f[0] + ' = ' + fmtInt(f[2](NMAX))));
+    g.appendChild(el('text', { x: PR0 + 10, y: ys[idx] + 15, 'font-size': 10.5, 'font-family': 'var(--fm)', fill: 'var(--muted)' }, f[1]));
+    G.appendChild(g);
+  });
+  const go = () => { G.classList.remove('go'); void G.getBoundingClientRect(); requestAnimationFrame(() => G.classList.add('go')); };
+  $('#growBtn').addEventListener('click', go);
+  onVisible(G, go, 0.35);
+})();
+
+/* ===== 05 · suma máxima partiendo por la mitad ===== */
+function msaEvents(a){
+  const ev = [];
+  function rec(i, j, d){
+    if (i === j){ ev.push({ t: 'base', i, j, d, val: a[i] }); return { val: a[i], p: i, q: i }; }
+    const m = (i + j) >> 1;
+    ev.push({ t: 'enter', i, j, d, m });
+    const L = rec(i, m, d + 1), R = rec(m + 1, j, d + 1);
+    let s = 0, bestL = -Infinity, bp = m; const sumsL = {};
+    for (let p = m; p >= i; p--){
+      s += a[p]; sumsL[p] = s; if (s > bestL){ bestL = s; bp = p; }
+      ev.push({ t: 'crossL', i, j, d, m, p, sums: Object.assign({}, sumsL), best: bestL, bp });
+    }
+    const CL = { best: bestL, bp, sums: sumsL };
+    s = 0; let bestR = -Infinity, bq = m + 1; const sumsR = {};
+    for (let q = m + 1; q <= j; q++){
+      s += a[q]; sumsR[q] = s; if (s > bestR){ bestR = s; bq = q; }
+      ev.push({ t: 'crossR', i, j, d, m, q, CL, sums: Object.assign({}, sumsR), best: bestR, bq });
+    }
+    const CR = { best: bestR, bq, sums: sumsR };
+    const cross = { val: bestL + bestR, p: bp, q: bq };
+    let res = L, which = 'izquierda';
+    if (R.val > res.val){ res = R; which = 'derecha'; }
+    if (cross.val > res.val){ res = cross; which = 'cruce'; }
+    ev.push({ t: 'combine', i, j, d, m, L, R, CL, CR, cross, res, which });
+    return res;
+  }
+  const res = rec(0, a.length - 1, 0);
+  ev.push({ t: 'final', res });
+  return { ev, res };
+}
+(function(){
+  const A = [-2, 1, -3, 4, -1, 2, 1, -5, 4];
+  const cellsBox = $('#msaCells'), box = $('#msaBox'), split = $('#msaSplit'), bandL = $('#msaBandL'), bandR = $('#msaBandR');
+  const tree = $('#msaTree'), narr = $('#msaNarr');
+  const chips = { L: $('#chipL'), C: $('#chipC'), R: $('#chipR') };
+  const { ev, res } = msaEvents(A);
+  const cells = [], nodes = {};
+  A.forEach((v, i) => {
+    const c = document.createElement('div'); c.className = 'msa-cell';
+    c.innerHTML = '<div class="msa-idx">' + i + '</div><div class="msa-val">' + sgn(v) + '</div><div class="msa-sum"></div>';
+    cellsBox.appendChild(c); cells.push(c);
+  });
+  let maxDepth = 0;
+  (function mk(i, j, d){
+    maxDepth = Math.max(maxDepth, d);
+    const nd = document.createElement('div'); nd.className = 'msa-node'; nd.dataset.d = d;
+    nd.textContent = i === j ? '[' + i + ']' : i + '..' + j;
+    tree.appendChild(nd); nodes[i + '-' + j] = { el: nd, i, j, d };
+    if (i < j){ const m = (i + j) >> 1; mk(i, m, d + 1); mk(m + 1, j, d + 1); }
+  })(0, A.length - 1, 0);
+  tree.style.height = ((maxDepth + 1) * 34) + 'px';
+  function layout(){
+    const vb = cells.map(c => c.querySelector('.msa-val'));
+    Object.keys(nodes).forEach(k => {
+      const nd = nodes[k], l = vb[nd.i].offsetLeft, r = vb[nd.j].offsetLeft + vb[nd.j].offsetWidth;
+      nd.el.style.left = l + 'px'; nd.el.style.width = (r - l) + 'px'; nd.el.style.top = (nd.d * 34) + 'px';
+    });
+  }
+  function band(elm, p, q, on){
+    if (!on){ elm.classList.remove('show'); return; }
+    const vb = cells.map(c => c.querySelector('.msa-val'));
+    const l = vb[p].offsetLeft, r = vb[q].offsetLeft + vb[q].offsetWidth;
+    elm.style.left = l + 'px'; elm.style.width = (r - l) + 'px';
+    elm.style.top = (vb[p].offsetTop + vb[p].offsetHeight + 4) + 'px';
+    elm.classList.add('show');
+  }
+  function chip(c, val, sub, state){
+    c.querySelector('b').textContent = val === null ? '—' : sgn(val);
+    if (sub !== undefined) c.querySelector('i').textContent = sub;
+    c.classList.toggle('idle', state === 'idle'); c.classList.toggle('win', state === 'win');
+  }
+  const S = stepper('msa', { render(s){
+    layout();
+    const state = {};
+    for (let k = 0; k < s; k++){
+      const e = ev[k];
+      if (e.t === 'enter') state[e.i + '-' + e.j] = { open: true };
+      else if (e.t === 'base') state[e.i + '-' + e.j] = { ret: e.val, leaf: true };
+      else if (e.t === 'combine') state[e.i + '-' + e.j] = { ret: e.res.val };
+    }
+    const e = s > 0 ? ev[s - 1] : null;
+    const curKey = e && e.t !== 'final' ? e.i + '-' + e.j : null;
+    Object.keys(nodes).forEach(k => {
+      const nd = nodes[k], st = state[k];
+      nd.el.className = 'msa-node' + (st ? ' show' : '') + (st && st.open && k !== curKey ? ' open' : '') +
+        (k === curKey && e.t !== 'combine' && e.t !== 'base' ? ' act' : '') +
+        (st && st.ret !== undefined ? (st.leaf ? ' leafn' : ' ret') : '');
+      nd.el.textContent = st && st.ret !== undefined
+        ? (nd.i === nd.j ? sgn(st.ret) : '= ' + sgn(st.ret))
+        : (nd.i === nd.j ? '[' + nd.i + ']' : nd.i + '..' + nd.j);
+    });
+    /* celdas */
+    let lo = 0, hi = A.length - 1, sums = {}, top = {}, scan = -1, best = null, leaf = -1;
+    if (e && e.t !== 'final'){ lo = e.i; hi = e.j; }
+    if (e && e.t === 'base') leaf = e.i;
+    if (e && e.t === 'crossL'){ sums = e.sums; top[e.bp] = 1; scan = e.p; }
+    if (e && e.t === 'crossR'){ sums = Object.assign({}, e.CL.sums, e.sums); top[e.CL.bp] = 1; top[e.bq] = 1; scan = e.q; }
+    if (e && e.t === 'combine'){ sums = Object.assign({}, e.CL.sums, e.CR.sums); top[e.CL.bp] = 1; top[e.CR.bq] = 1; best = e.res; }
+    if (e && e.t === 'final') best = e.res;
+    cells.forEach((c, i) => {
+      c.className = 'msa-cell' + (i < lo || i > hi ? ' out' : (e ? ' in' : '')) + (i === leaf ? ' leaf' : '') +
+        (i === scan ? ' scan' : '') + (best && i >= best.p && i <= best.q ? ' best' : '');
+      const sm = c.querySelector('.msa-sum');
+      const has = Object.prototype.hasOwnProperty.call(sums, i);
+      if (has) sm.textContent = 'Σ ' + sgn(sums[i]);
+      sm.className = 'msa-sum' + (has ? ' show' : '') + (has && top[i] ? ' top' : '');
+    });
+    /* separador y bandas */
+    const vb = cells.map(c => c.querySelector('.msa-val'));
+    const showSplit = e && e.t !== 'final' && e.t !== 'base';
+    if (showSplit){
+      const m = e.m;
+      split.style.left = ((vb[m].offsetLeft + vb[m].offsetWidth + vb[m + 1].offsetLeft) / 2 - 1) + 'px';
+      split.style.top = (vb[m].offsetTop - 6) + 'px'; split.style.height = (vb[m].offsetHeight + 12) + 'px';
+    }
+    split.classList.toggle('show', !!showSplit);
+    bandL.classList.remove('final');
+    if (e && e.t === 'crossL'){ band(bandL, e.bp, e.m, true); band(bandR, 0, 0, false); }
+    else if (e && e.t === 'crossR'){ band(bandL, e.CL.bp, e.m, true); band(bandR, e.m + 1, e.bq, true); }
+    else if (e && e.t === 'combine'){ band(bandL, e.CL.bp, e.m, true); band(bandR, e.m + 1, e.CR.bq, true); }
+    else if (e && e.t === 'final'){ band(bandL, e.res.p, e.res.q, true); bandL.classList.add('final'); band(bandR, 0, 0, false); }
+    else { band(bandL, 0, 0, false); band(bandR, 0, 0, false); }
+    /* fichas de combinar */
+    if (e && e.t === 'combine'){
+      chip(chips.L, e.L.val, 'f(' + e.i + ', ' + e.m + ')', e.which === 'izquierda' ? 'win' : '');
+      chip(chips.R, e.R.val, 'f(' + (e.m + 1) + ', ' + e.j + ')', e.which === 'derecha' ? 'win' : '');
+      chip(chips.C, e.cross.val, sgn(e.CL.best) + ' + ' + sgn(e.CR.best), e.which === 'cruce' ? 'win' : '');
+    } else if (e && (e.t === 'crossL' || e.t === 'crossR')){
+      const lv = state[e.i + '-' + e.m], rv = state[(e.m + 1) + '-' + e.j];
+      chip(chips.L, lv ? lv.ret : null, 'f(' + e.i + ', ' + e.m + ')', 'idle');
+      chip(chips.R, rv ? rv.ret : null, 'f(' + (e.m + 1) + ', ' + e.j + ')', 'idle');
+      chip(chips.C, null, e.t === 'crossL' ? 'sufijo: ' + sgn(e.best) : sgn(e.CL.best) + ' + ' + sgn(e.best), '');
+    } else if (e && e.t === 'final'){
+      const rc = ev[ev.length - 2];
+      chip(chips.L, rc.L.val, 'f(' + rc.i + ', ' + rc.m + ')', rc.which === 'izquierda' ? 'win' : '');
+      chip(chips.R, rc.R.val, 'f(' + (rc.m + 1) + ', ' + rc.j + ')', rc.which === 'derecha' ? 'win' : '');
+      chip(chips.C, rc.cross.val, sgn(rc.CL.best) + ' + ' + sgn(rc.CR.best), rc.which === 'cruce' ? 'win' : '');
+    } else {
+      chip(chips.L, null, 'f(i, m)', 'idle'); chip(chips.C, null, 'sufijo + prefijo', 'idle'); chip(chips.R, null, 'f(m+1, j)', 'idle');
+    }
+    /* narración */
+    if (!e) narr.innerHTML = 'El arreglo de la guía anterior. La pregunta: ¿cuál es la mayor suma de un subarreglo ' +
+      'contiguo? Parta por la mitad y confíe en los clones.';
+    else if (e.t === 'enter') narr.innerHTML = 'Se abre <b>f(' + e.i + ', ' + e.j + ')</b>. Se parte en m = ' + e.m +
+      ': izquierda a[' + e.i + '..' + e.m + '], derecha a[' + (e.m + 1) + '..' + e.j + ']. Primero responden los clones.';
+    else if (e.t === 'base') narr.innerHTML = 'Caso base <b>f(' + e.i + ', ' + e.i + ')</b>: un solo elemento, así que ' +
+      'la mejor suma es él mismo, <b>' + sgn(e.val) + '</b>. Es una hoja.';
+    else if (e.t === 'crossL') narr.innerHTML = '<b>Cruce, lado izquierdo</b>: se suma desde a[' + e.m + '] hacia la ' +
+      'izquierda. Va en a[' + e.p + '..' + e.m + '] = ' + sgn(e.sums[e.p]) + '. Mejor sufijo hasta ahora: <b>' + sgn(e.best) +
+      '</b>, desde a[' + e.bp + '].';
+    else if (e.t === 'crossR') narr.innerHTML = '<b>Cruce, lado derecho</b>: se suma desde a[' + (e.m + 1) + '] hacia la ' +
+      'derecha. Va en a[' + (e.m + 1) + '..' + e.q + '] = ' + sgn(e.sums[e.q]) + '. Mejor prefijo hasta ahora: <b>' +
+      sgn(e.best) + '</b>, hasta a[' + e.bq + '].';
+    else if (e.t === 'combine') narr.innerHTML = '<b>Combinar f(' + e.i + ', ' + e.j + ')</b> = max(' + sgn(e.L.val) + ', ' +
+      sgn(e.R.val) + ', ' + sgn(e.CL.best) + ' + ' + sgn(e.CR.best) + ') = <b>' + sgn(e.res.val) + '</b>. Gana ' +
+      (e.which === 'cruce' ? 'el <b>cruce</b>' : 'la <b>' + e.which + '</b>') + '.';
+    else narr.innerHTML = 'Respuesta: <b>' + res.val + '</b>, el subarreglo a[' + res.p + '..' + res.q + '] = [' +
+      A.slice(res.p, res.q + 1).map(sgn).join(', ') + ']. Lo encontró el <b>cruce</b> de la raíz: ninguna de las dos ' +
+      'mitades lo contiene completo.';
+  }});
+  box.classList.add('noanim'); tree.classList.add('noanim');
+  S.reload(ev.length, 0);
+  void box.offsetWidth;
+  box.classList.remove('noanim'); tree.classList.remove('noanim');
+  onResize(() => S.paint());
+})();
+
+/* ===== 06 · quickselect ===== */
+(function(){
+  const rowsEl = $('#qsRows'), narr = $('#qsNarr'), kS = $('#qsK'), kV = $('#qsKv');
+  const callsEl = $('#qsCalls'), workEl = $('#qsWork'), nEl = $('#qsN');
+  const lines = $('#qsCode').querySelectorAll('span');
+  const modeBtns = $('#qsMode').querySelectorAll('button');
+  const GUIA = [38, 27, 43, 3, 9, 82, 10, 5];
+  let base = GUIA.slice(), mode = 'primero', calls = [], frames = [], prev = 0;
+
+  const lowerMedian = vals => vals.slice().sort((x, y) => x - y)[(vals.length - 1) >> 1];
+  /* simula quickselect completo; cada elemento lleva un id para poder animarlo entre filas */
+  function simulate(){
+    let list = base.map((v, i) => ({ v, u: i })), k = +kS.value;
+    calls = [];
+    for (let guard = 0; guard < 200; guard++){
+      let pIdx;
+      if (mode === 'primero') pIdx = 0;
+      else if (mode === 'azar') pIdx = Math.floor(Math.random() * list.length);
+      else { const m = lowerMedian(list.map(e => e.v)); pIdx = list.findIndex(e => e.v === m); }
+      const p = list[pIdx].v;
+      const me = list.filter(e => e.v < p), ig = list.filter(e => e.v === p), ma = list.filter(e => e.v > p);
+      let go = 'ig', nk = k;
+      if (k <= me.length) go = 'me';
+      else if (k > me.length + ig.length){ go = 'ma'; nk = k - me.length - ig.length; }
+      calls.push({ list, k, pIdx, p, me, ig, ma, go, nk });
+      if (go === 'ig') break;
+      list = go === 'me' ? me : ma;
+      k = nk;
+    }
+    frames = [{ c: 0, ph: 'start' }];
+    calls.forEach((_, c) => frames.push({ c, ph: 'pick' }, { c, ph: 'split' }, { c, ph: 'decide' }));
+    prev = 0;
+    nEl.textContent = base.length;
+    S.reload(frames.length - 1, 0);
+  }
+  const ord = k => k + '.º';
+  const modeTxt = () => mode === 'primero' ? 'el primer elemento de la lista' :
+    mode === 'azar' ? 'un elemento al azar' : 'la mediana de la lista';
+
+  function render(s){
+    const fr = frames[s];
+    const before = {};
+    rowsEl.querySelectorAll('.qs-cell').forEach(el => { before[el.dataset.key] = el.getBoundingClientRect(); });
+    rowsEl.innerHTML = '';
+    let work = 0, nCalls = 0;
+    for (let c = 0; c <= fr.c; c++){
+      const cl = calls[c];
+      const ph = c < fr.c ? 'decide' : fr.ph;
+      if (ph !== 'start') nCalls++;
+      if (ph === 'split' || ph === 'decide') work += cl.list.length;
+      const row = document.createElement('div');
+      row.className = 'qs-row ' + (c === fr.c ? 'cur' : 'past');
+      const paid = ph === 'split' || ph === 'decide';
+      row.innerHTML = '<div class="qs-head"><span>llamada ' + (c + 1) + '</span><b>buscar el ' + ord(cl.k) +
+        ' menor</b><span class="qs-len">' + (paid ? 'recorre ' + cl.list.length : 'lista de ' + cl.list.length) + '</span></div>';
+      const body = document.createElement('div');
+      body.className = 'qs-body';
+      const cell = (e, piv) => {
+        const d = document.createElement('div');
+        d.className = 'qs-cell' + (piv ? ' piv' : '');
+        d.dataset.key = c + ':' + e.u;
+        d.textContent = e.v;
+        return d;
+      };
+      if (ph === 'start' || ph === 'pick'){
+        const g = document.createElement('div'); g.className = 'qs-group';
+        const cs = document.createElement('div'); cs.className = 'qs-cells';
+        cl.list.forEach((e, i) => cs.appendChild(cell(e, ph === 'pick' && i === cl.pIdx)));
+        g.appendChild(cs); body.appendChild(g);
+      } else {
+        let pos = 1;
+        [['me', 'menores'], ['ig', 'iguales'], ['ma', 'mayores']].forEach(([key, name]) => {
+          const arr = cl[key], lo = pos, hi = pos + arr.length - 1;
+          pos += arr.length;
+          const hit = ph === 'decide' && cl.go === key, off = ph === 'decide' && cl.go !== key;
+          const g = document.createElement('div');
+          g.className = 'qs-group grp' + (hit ? ' hit' : '') + (off ? ' off' : '');
+          const cs = document.createElement('div'); cs.className = 'qs-cells';
+          arr.forEach(e => cs.appendChild(cell(e, key === 'ig')));
+          if (!arr.length) cs.innerHTML = '<span class="qs-empty">vacío</span>';
+          const lbl = document.createElement('div'); lbl.className = 'qs-lbl';
+          lbl.innerHTML = name + ' · ' + (arr.length === 0 ? 'ninguno' : (lo === hi ? 'pos. ' + lo : 'pos. ' + lo + '–' + hi)) +
+            (hit ? '<br><b>← aquí está el ' + ord(cl.k) + '</b>' : '');
+          g.appendChild(cs); g.appendChild(lbl); body.appendChild(g);
+        });
+      }
+      row.appendChild(body);
+      if (ph === 'decide'){
+        const note = document.createElement('div'); note.className = 'qs-next';
+        if (cl.go === 'me') note.innerHTML = '↓ sigue en menores con la misma posición: <b>' + ord(cl.k) + '</b>';
+        else if (cl.go === 'ma') note.innerHTML = '↓ sigue en mayores: ' + cl.k + ' − ' + cl.me.length + ' − ' + cl.ig.length +
+          ' = <b>' + ord(cl.nk) + '</b> dentro de mayores';
+        else note.innerHTML = '✓ la posición cae en iguales: la respuesta es <b>' + cl.p + '</b>';
+        row.appendChild(note);
+      }
+      rowsEl.appendChild(row);
+    }
+    /* los elementos viajan: al repartirse dentro de su fila y hacia la fila de la llamada siguiente */
+    if (s === prev + 1 && !REDUCED){
+      rowsEl.querySelectorAll('.qs-cell').forEach(el => {
+        const [c, u] = el.dataset.key.split(':');
+        const r = before[el.dataset.key] || before[(c - 1) + ':' + u];
+        if (!r) return;
+        const nr = el.getBoundingClientRect(), dx = r.left - nr.left, dy = r.top - nr.top;
+        if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+        el.style.transition = 'none';
+        el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+        void el.offsetWidth;
+        el.style.transition = '';
+        el.style.transform = '';
+      });
+    }
+    prev = s;
+    callsEl.textContent = nCalls;
+    workEl.textContent = work;
+
+    const cl = calls[fr.c];
+    let hl = [0];
+    if (fr.ph === 'pick') hl = [1];
+    else if (fr.ph === 'split') hl = [2, 3, 4];
+    else if (fr.ph === 'decide') hl = cl.go === 'me' ? [5, 6] : cl.go === 'ig' ? [5, 7, 8] : [5, 7, 9, 10];
+    lines.forEach((ln, i) => ln.classList.toggle('hi', hl.includes(i)));
+
+    let t;
+    if (fr.ph === 'start'){
+      t = 'Se busca el <b>' + ord(cl.k) + ' menor</b> de una lista de ' + base.length + ' elementos, sin ordenarla. ' +
+        'Como pivote se usará <b>' + modeTxt() + '</b>.';
+    } else if (fr.ph === 'pick'){
+      t = 'Llamada ' + (fr.c + 1) + ': el pivote es <b>' + cl.p + '</b> (' + modeTxt() + ').' +
+        (mode === 'mediana' ? ' Ojo: usar la mediana es trampa, porque para conocerla habría que resolver el problema; ' +
+          'sirve para ver el mejor caso.' : '');
+    } else if (fr.ph === 'split'){
+      t = 'Se recorre toda la lista (<b>' + cl.list.length + '</b> elementos) para repartirla: ' + cl.me.length +
+        ' menores, ' + cl.ig.length + ' igual' + (cl.ig.length === 1 ? '' : 'es') + ' y ' + cl.ma.length + ' mayores que ' +
+        cl.p + '. Ese recorrido es el Θ(n) de dividir. Si la lista se ordenara, los menores ocuparían las primeras posiciones, ' +
+        'luego los iguales y al final los mayores.';
+    } else if (cl.go === 'me'){
+      t = 'La posición ' + cl.k + ' está entre la 1 y la ' + cl.me.length + ': el ' + ord(cl.k) + ' menor está en los ' +
+        '<b>menores</b>. Los demás se descartan sin volver a mirarlos, y la posición buscada no cambia.';
+    } else if (cl.go === 'ma'){
+      t = 'La posición ' + cl.k + ' es mayor que ' + (cl.me.length + cl.ig.length) + ': el ' + ord(cl.k) + ' menor está en ' +
+        'los <b>mayores</b>. ' + ((cl.me.length + cl.ig.length) === 1 ? 'Se descartó 1 elemento más pequeño' : 'Se descartaron ' + (cl.me.length + cl.ig.length) + ' elementos más pequeños') + ', así que dentro ' +
+        'de los mayores hay que buscar el <b>' + ord(cl.nk) + '</b>.';
+    } else {
+      const sorted = base.slice().sort((x, y) => x - y);
+      const oneByOne = calls.length > 2 && calls.every(x => x.go === 'ig' || x.me.length + x.ig.length === 1 || x.ma.length + x.ig.length === 1);
+      t = 'La posición ' + cl.k + ' cae en los <b>iguales</b>: la respuesta es <b>' + cl.p + '</b>. Terminó con ' +
+        calls.length + (calls.length === 1 ? ' llamada' : ' llamadas') + ' y ' + work + ' elementos recorridos. ' +
+        'Comprobación: ordenada, la lista sería ' + sorted.join(' ') + ', y en la posición ' + (+kS.value) + ' está ' +
+        sorted[+kS.value - 1] + '.' +
+        (oneByOne ? ' Cada llamada descartó un solo elemento: esto es T(n) = T(n − 1) + Θ(n), el peor caso.' : '');
+    }
+    narr.innerHTML = t;
+  }
+  const S = stepper('qs', { render });
+
+  function setK(max, val){
+    kS.max = max;
+    kS.value = Math.max(1, Math.min(max, val));
+    kV.textContent = kS.value;
+  }
+  function setMode(m){
+    mode = m;
+    modeBtns.forEach(b => b.classList.toggle('on', b.dataset.m === m));
+  }
+  kS.addEventListener('input', () => { kV.textContent = kS.value; simulate(); });
+  modeBtns.forEach(b => b.addEventListener('click', () => { setMode(b.dataset.m); simulate(); }));
+  $('#qsGuide').addEventListener('click', () => { base = GUIA.slice(); setK(base.length, 4); simulate(); });
+  $('#qsRand').addEventListener('click', () => {
+    const pool = [];
+    for (let v = 1; v < 100; v++) pool.push(v);
+    for (let i = pool.length - 1; i > 0; i--){ const r = Math.floor(Math.random() * (i + 1)); [pool[i], pool[r]] = [pool[r], pool[i]]; }
+    base = pool.slice(0, 10);
+    setK(base.length, +kS.value);
+    simulate();
+  });
+  $('#qsWorst').addEventListener('click', () => {
+    base = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    setK(base.length, base.length);
+    simulate();
+  });
+  setK(base.length, 4);
+  simulate();
+
+  /* --- barras: trabajo total según el pivote --- */
+  function workFor(n, how){
+    let list = [], k = n, w = 0;
+    for (let v = 1; v <= n; v++) list.push(v);
+    for (let guard = 0; guard < 10 * n; guard++){
+      w += list.length;
+      const p = how === 'primero' ? list[0] : how === 'azar' ? list[Math.floor(Math.random() * list.length)] : lowerMedian(list);
+      const me = list.filter(x => x < p), ig = list.filter(x => x === p), ma = list.filter(x => x > p);
+      if (k <= me.length) list = me;
+      else if (k <= me.length + ig.length) return w;
+      else { k -= me.length + ig.length; list = ma; }
+    }
+    return w;
+  }
+  const bars = $('#qsBars');
+  const KINDS = [
+    ['mediana', 'mediana (ideal)', 'var(--sube)'],
+    ['azar', 'al azar (promedio de 200)', 'var(--memo)'],
+    ['primero', 'a[0], lista ordenada', 'var(--baja)']
+  ];
+  function drawBars(n){
+    const vals = KINDS.map(([how]) => {
+      if (how !== 'azar') return workFor(n, how);
+      let s = 0;
+      for (let i = 0; i < 200; i++) s += workFor(n, how);
+      return s / 200;
+    });
+    const max = Math.max.apply(null, vals);
+    bars.innerHTML = '';
+    const fills = [];
+    KINDS.forEach(([how, label, color], i) => {
+      const v = vals[i];
+      const row = document.createElement('div'); row.className = 'qsbar';
+      row.innerHTML = '<span class="qsbar-lbl">' + label + '</span><div class="qsbar-track"><div class="qsbar-fill"></div></div>' +
+        '<span class="qsbar-val"><b>' + fmtInt(v) + '</b> elementos recorridos ≈ ' + (v / n).toFixed(1) + '·n' +
+        (how === 'primero' ? ' = n(n+1)/2' : '') + '</span>';
+      const f = row.querySelector('.qsbar-fill');
+      f.style.background = color;
+      fills.push([f, (100 * v / max).toFixed(2) + '%']);
+      bars.appendChild(row);
+    });
+    void bars.offsetWidth;
+    requestAnimationFrame(() => requestAnimationFrame(() => fills.forEach(([f, w]) => { f.style.width = w; })));
+  }
+  const nBtns = $('#qsBarN').querySelectorAll('button');
+  let barN = 64;
+  nBtns.forEach(b => b.addEventListener('click', () => {
+    barN = +b.dataset.n;
+    nBtns.forEach(x => x.classList.toggle('on', x === b));
+    drawBars(barN);
+  }));
+  onVisible(bars, () => drawBars(barN), 0.3);
+})();
+
+/* ===== 07 · ¿qué caso es? ===== */
+(function(){
+  const Q = [
+    { r: 'T(n) = T(n/2) + Θ(1)', ans: 2, res: 'Θ(log n)',
+      e: 'a = 1, b = 2, d = 0. log<sub>2</sub>1 = 0 = d: empate. Todos los niveles cuestan Θ(1) y hay log n. Búsqueda binaria, o la potencia rápida.' },
+    { r: 'T(n) = 2T(n/2) + Θ(1)', ans: 1, res: 'Θ(n)',
+      e: 'log<sub>2</sub>2 = 1 &gt; d = 0: dominan las hojas, que son n. Máximo por mitades, o la potencia con dos llamadas.' },
+    { r: 'T(n) = 2T(n/2) + Θ(n)', ans: 2, res: 'Θ(n log n)',
+      e: 'log<sub>2</sub>2 = 1 = d: cada nivel cuesta n, durante log n niveles. Merge Sort.' },
+    { r: 'T(n) = 4T(n/2) + Θ(n)', ans: 1, res: 'Θ(n<sup>2</sup>)',
+      e: 'log<sub>2</sub>4 = 2 &gt; 1: dominan las n² hojas. Multiplicación escolar recursiva.' },
+    { r: 'T(n) = 3T(n/2) + Θ(n)', ans: 1, res: 'Θ(n<sup>log<sub>2</sub>3</sup>) ≈ Θ(n<sup>1.585</sup>)',
+      e: 'log<sub>2</sub>3 ≈ 1.585 &gt; 1: dominan las hojas. Karatsuba: una llamada menos baja el exponente.' },
+    { r: 'T(n) = 7T(n/2) + Θ(n<sup>2</sup>)', ans: 1, res: 'Θ(n<sup>log<sub>2</sub>7</sup>) ≈ Θ(n<sup>2.807</sup>)',
+      e: 'log<sub>2</sub>7 ≈ 2.807 &gt; d = 2: dominan las hojas. Strassen.' },
+    { r: 'T(n) = 2T(n/2) + Θ(n<sup>2</sup>)', ans: 3, res: 'Θ(n<sup>2</sup>)',
+      e: 'log<sub>2</sub>2 = 1 &lt; d = 2: domina la raíz. Regularidad: 2·(n/2)² = n²/2 ≤ ½·n².' },
+    { r: 'T(n) = T(n/2) + Θ(n)', ans: 3, res: 'Θ(n)',
+      e: 'log<sub>2</sub>1 = 0 &lt; d = 1: la raíz ya paga n, y el resto suma n/2 + n/4 + … &lt; n. Es Quickselect ' +
+         'en el caso ideal: reparte todo el arreglo alrededor del pivote y sigue buscando en una sola mitad (laboratorio 06 y guía, ejercicio 5).' },
+    { r: 'T(n) = 2T(n/2) + Θ(n log n)', ans: 2, res: 'Θ(n log<sup>2</sup> n)',
+      e: 'Versión general: c = 1 y f = Θ(n<sup>1</sup> log<sup>1</sup> n), así que k = 1 y el resultado sube a log<sup>2</sup>.' },
+    { r: 'T(n) = T(n − 1) + n', ans: 0, res: 'Θ(n<sup>2</sup>) por árbol',
+      e: 'Resta, no divide: no hay b &gt; 1. El árbol es una cadena n + (n−1) + … + 1.' },
+    { r: 'T(n) = 2T(n/2) + n/log n', ans: 0, res: 'Θ(n log log n) por árbol',
+      e: 'n/log n es menor que n<sup>c</sup> = n, pero no polinomialmente: no hay ε &gt; 0 con n/log n = O(n<sup>1−ε</sup>). Cae en el hueco entre los casos 1 y 2.' },
+    { r: 'T(n) = T(n/3) + T(2n/3) + n', ans: 0, res: 'Θ(n log n) por árbol',
+      e: 'Subproblemas de tamaños distintos. Árbol: cada nivel cuesta a lo sumo n, y la altura es log<sub>3/2</sub> n.' },
+    { r: 'T(n) = 0.5·T(n/2) + n', ans: 0, res: 'no aplica',
+      e: 'a = 0.5 &lt; 1: no tiene sentido hacer media llamada recursiva. El teorema exige a ≥ 1.' },
+    { r: 'T(n) = 2<sup>n</sup>·T(n/2) + n<sup>n</sup>', ans: 0, res: 'no aplica',
+      e: 'a = 2<sup>n</sup> no es constante: el número de llamadas crece con n.' },
+    { r: 'T(n) = 2T(√n) + log n', ans: 0, res: 'Θ(log n · log log n)',
+      e: 'No divide por una constante. Con m = log n y S(m) = T(2<sup>m</sup>) queda S(m) = 2S(m/2) + m: ese sí es caso 2.' }
+  ];
+  const LBL = ['No aplica', 'Caso 1', 'Caso 2', 'Caso 3'];
+  const grid = $('#quiz'), score = $('#qzScore');
+  let order = Q.map((_, i) => i), answers = {};
+  function paintScore(){
+    const done = Object.keys(answers).length, ok = Object.keys(answers).filter(k => answers[k] === Q[k].ans).length;
+    score.innerHTML = 'aciertos <b>' + ok + '</b> de ' + done + ' respondidas · ' + Q.length + ' tarjetas';
+  }
+  function render(){
+    grid.innerHTML = '';
+    order.forEach(qi => {
+      const q = Q[qi];
+      const card = document.createElement('div'); card.className = 'qcard';
+      const inner = document.createElement('div'); inner.className = 'qinner';
+      const front = document.createElement('div'); front.className = 'qface qfront';
+      front.innerHTML = '<p class="eyebrow">¿Qué caso es?</p><p class="qrec"><span>' + q.r + '</span></p>';
+      const opts = document.createElement('div'); opts.className = 'qopts';
+      [1, 2, 3, 0].forEach(v => {
+        const b = document.createElement('button'); b.textContent = LBL[v];
+        b.addEventListener('click', () => answer(qi, v, card, back));
+        opts.appendChild(b);
+      });
+      front.appendChild(opts);
+      const back = document.createElement('div'); back.className = 'qface qback';
+      back.setAttribute('aria-hidden', 'true'); back.inert = true;
+      inner.appendChild(front); inner.appendChild(back); card.appendChild(inner);
+      grid.appendChild(card);
+      if (answers[qi] !== undefined) fill(qi, answers[qi], card, back, false);
+    });
+    paintScore();
+  }
+  function fill(qi, v, card, back, animate){
+    const q = Q[qi], ok = v === q.ans;
+    back.className = 'qface qback ' + (ok ? 'ok' : 'bad');
+    back.innerHTML = '<p class="qverdict">' + (ok ? '✓ Correcto: ' + LBL[q.ans] : '✗ Usted dijo ' + LBL[v] + '; es ' + LBL[q.ans]) + '</p>' +
+      '<p class="mono" style="font-size:12.5px;color:var(--muted)">' + q.r + '</p>' +
+      '<p class="qexp">' + q.e + '</p><p class="qres">' + q.res + '</p>';
+    const bt = document.createElement('button'); bt.textContent = '↺ Ver la pregunta';
+    bt.addEventListener('click', () => flip(card, back, !card.classList.contains('flip')));
+    back.appendChild(bt);
+    flip(card, back, true);
+  }
+  function flip(card, back, on){
+    card.classList.toggle('flip', on);
+    const front = card.querySelector('.qfront');
+    back.inert = !on; back.setAttribute('aria-hidden', on ? 'false' : 'true');
+    front.inert = on; front.setAttribute('aria-hidden', on ? 'true' : 'false');
+    if (on){
+      front.querySelectorAll('button').forEach(b => { b.disabled = true; });
+      const bb = back.querySelector('button'); if (bb) bb.textContent = '↺ Ver la pregunta';
+    }
+  }
+  function answer(qi, v, card, back){
+    if (answers[qi] !== undefined) return;
+    answers[qi] = v; fill(qi, v, card, back, true); paintScore();
+  }
+  $('#qzShuffle').addEventListener('click', () => {
+    for (let i = order.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); const t = order[i]; order[i] = order[j]; order[j] = t; }
+    answers = {}; render();
+  });
+  $('#qzReset').addEventListener('click', () => { answers = {}; render(); });
+  render();
+})();
+
+/* ===== 08 · errores ===== */
+(function(){
+  function box(c, x, y, t, col, w, h){
+    w = w || 56; h = h || 24;
+    c.appendChild(el('rect', { x, y, width: w, height: h, rx: 3, fill: col ? col[1] : 'var(--surface)',
+      stroke: col ? col[0] : 'var(--line-2)', 'stroke-width': col ? 1.5 : 1 }));
+    c.appendChild(el('text', { x: x + w / 2, y: y + h / 2 + 4, 'text-anchor': 'middle', 'font-size': 10.5,
+      'font-family': 'var(--fm)', fill: col ? col[0] : 'var(--ink)' }, t));
+  }
+  function line(c, x1, y1, x2, y2, col, cls){
+    const l = el('line', { x1, y1, x2, y2, stroke: col || 'var(--line-2)', 'stroke-width': 1.4 });
+    if (cls) l.setAttribute('class', cls);
+    c.appendChild(l);
+  }
+  function arrow(c, x1, y, x2, col, cls){
+    line(c, x1, y, x2 - 5, y, col || 'var(--baja)', cls);
+    c.appendChild(el('polygon', { points: (x2 - 6) + ',' + (y - 3.5) + ' ' + x2 + ',' + y + ' ' + (x2 - 6) + ',' + (y + 3.5),
+      fill: col || 'var(--baja)' }));
+  }
+  function txt(c, x, y, t, fill, size, w, anchor){
+    const n = el('text', { x, y, 'font-size': size || 11, 'font-family': 'var(--fm)', fill: fill || 'var(--ink)' }, t);
+    if (w) n.setAttribute('font-weight', w);
+    if (anchor) n.setAttribute('text-anchor', anchor);
+    c.appendChild(n); return n;
+  }
+  const BAJA = ['var(--baja)', 'var(--baja-soft)'], SUBE = ['var(--sube)', 'var(--sube-soft)'], MEMO = ['var(--memo)', 'var(--memo-soft)'];
+  const errs = [
+    { t: 'Dos llamadas iguales',
+      s: 'pot(b, n/2) * pot(b, n/2)',
+      p: 'La función devuelve lo mismo, pero la recurrencia de costo pasa de T(n) = T(n/2) + Θ(1) = <b>Θ(log n)</b> a ' +
+         'T(n) = 2T(n/2) + Θ(1) = <b>Θ(n)</b>: caso 1, dominan las hojas. Todo lo que se ganó al partir se pierde. ' +
+         'Guarde el resultado: <code>h := pot(b, n/2)</code> y devuelva <code>h·h</code>.',
+      draw: c => {
+        box(c, 50, 4, 'pot(n)', null, 62);
+        line(c, 81, 28, 38, 42); line(c, 81, 28, 124, 42);
+        box(c, 14, 42, 'n/2', null, 48); box(c, 100, 42, 'n/2', MEMO, 48);
+        [8, 40].forEach(x => { line(c, 38, 66, x + 14, 78); box(c, x, 78, 'n/4', null, 28, 18); });
+        [94, 126].forEach(x => { line(c, 124, 66, x + 14, 78); box(c, x, 78, 'n/4', MEMO, 28, 18); });
+        [...c.querySelectorAll('rect')].filter(r => (r.getAttribute('style') || '').indexOf('--memo') !== -1)
+          .forEach(r => r.setAttribute('class', 'pulse'));
+        txt(c, 151, 58, 'repite', 'var(--memo)', 8.5, 700, 'start');
+        txt(c, 84, 114, '2T(n/2)+1 → Θ(n)', 'var(--baja)', 9.5, 700, 'middle');
+        line(c, 186, 6, 186, 118, 'var(--line)');
+        box(c, 214, 4, 'pot(n)', SUBE, 62); line(c, 245, 28, 245, 42, 'var(--sube)');
+        box(c, 221, 42, 'n/2', SUBE, 48); line(c, 245, 66, 245, 78, 'var(--sube)');
+        box(c, 231, 78, 'n/4', SUBE, 28, 18);
+        txt(c, 252, 114, 'T(n/2)+1 → Θ(log n)', 'var(--sube)', 9.5, 700, 'middle');
+      } },
+    { t: 'Dividir que no reduce',
+      s: 'síntoma: RecursionError con n = 1',
+      p: 'Con caso base solo para n = 0, un arreglo de tamaño 1 se parte en <code>mitad = 1 div 2 = 0</code>: la ' +
+         'izquierda queda vacía y la derecha es <b>el mismo problema</b> de tamaño 1. Cada subproblema debe ser ' +
+         'estrictamente más pequeño: el caso base tiene que cubrir n ≤ 1.',
+      draw: c => {
+        [0, 1, 2].forEach(k => {
+          const x = 8 + k * 92;
+          box(c, x, 58, 'n = 1', BAJA, 60);
+          line(c, x + 30, 58, x + 30, 34, 'var(--line-2)');
+          txt(c, x + 30, 28, 'izq: vacía', 'var(--muted)', 9.5, 400, 'middle');
+          arrow(c, x + 62, 70, x + 90, 'var(--baja)', 'flow');
+        });
+        txt(c, 296, 76, '∞', 'var(--baja)', 20, 700, 'middle');
+        txt(c, 160, 110, 'der = a[0..1): otra vez n = 1', 'var(--baja)', 10.5, 700, 'middle');
+      } },
+    { t: 'Combinar demasiado caro',
+      s: 'síntoma: partió a la mitad y no ganó nada',
+      p: 'Si combinar cuesta Θ(n²) —&nbsp;por ejemplo, comparar todos los pares en lugar de mezclar&nbsp;—, ' +
+         '2T(n/2) + Θ(n) = <b>Θ(n log n)</b> se vuelve 2T(n/2) + Θ(n²) = <b>Θ(n²)</b>: caso 3, domina la raíz, y la ' +
+         'raíz sola ya cuesta lo mismo que la fuerza bruta.',
+      draw: c => {
+        txt(c, 6, 12, 'combinar Θ(n)', 'var(--sube)', 10.5, 700);
+        [0, 1, 2, 3].forEach(i => { const r = el('rect', { class: 'grow', x: 6, y: 20 + i * 18, width: 120, height: 12, rx: 2, fill: 'var(--sube)' });
+          r.style.transitionDelay = (i * 0.12) + 's'; c.appendChild(r); });
+        txt(c, 6, 112, 'iguales → Θ(n log n)', 'var(--sube)', 9.5, 400);
+        line(c, 160, 6, 160, 118, 'var(--line)');
+        txt(c, 172, 12, 'combinar Θ(n²)', 'var(--baja)', 10.5, 700);
+        [120, 60, 30, 15].forEach((w, i) => { const r = el('rect', { class: 'grow', x: 172, y: 20 + i * 18, width: w, height: 12, rx: 2, fill: 'var(--baja)' });
+          r.style.transitionDelay = (i * 0.12) + 's'; c.appendChild(r); });
+        txt(c, 172, 112, 'raíz → Θ(n²)', 'var(--baja)', 9.5, 400);
+      } },
+    { t: 'Teorema maestro sobre T(n) = T(n−1) + n',
+      s: 'síntoma: «a = 1, b = … ¿1?»',
+      p: 'El teorema exige dividir el tamaño por una constante b &gt; 1. Restar 1 no es dividir: el árbol es una ' +
+         'cadena de <b>n</b> niveles (no log n) con trabajo n, n−1, …, 1, que suma n(n+1)/2 = <b>Θ(n²)</b>. Para eso ' +
+         'está el árbol de recursión.',
+      draw: c => {
+        const labels = ['n', 'n−1', 'n−2', 'n−3', '…', '2', '1'];
+        labels.forEach((t, i) => {
+          const w = 150 - i * 20;
+          const r = el('rect', { class: 'grow', x: 34, y: 4 + i * 16, width: w, height: 11, rx: 2,
+            fill: t === '…' ? 'var(--line-2)' : 'var(--baja)' });
+          r.style.transitionDelay = (i * 0.1) + 's'; c.appendChild(r);
+          txt(c, 28, 13 + i * 16, t, 'var(--muted)', 9.5, 400, 'end');
+        });
+        txt(c, 200, 40, 'n niveles, no log n', 'var(--ink-2)', 10.5, 700);
+        txt(c, 200, 58, 'Σ = n(n+1)/2', 'var(--baja)', 10.5, 700);
+        txt(c, 200, 76, '= Θ(n²)', 'var(--baja)', 10.5, 700);
+        txt(c, 200, 100, 'no hay b > 1', 'var(--muted)', 10);
+      } }
+  ];
+  const grid = $('#errGrid');
+  errs.forEach(e => {
+    const card = document.createElement('div');
+    card.className = 'errcard';
+    card.innerHTML = '<h4>' + e.t + '</h4><p class="sym">' + e.s + '</p>';
+    const c = el('svg', { viewBox: '0 0 320 120', role: 'img', 'aria-label': e.t });
+    e.draw(c);
+    card.appendChild(c);
+    const p = document.createElement('p'); p.innerHTML = e.p;
+    card.appendChild(p);
+    grid.appendChild(card);
+    onVisible(card, () => card.classList.add('in'), 0.3);
+  });
+})();
+
+/* ===== cierre · árbol disjunto vs árbol con estados repetidos ===== */
+(function(){
+  const svg = $('#closeSvg');
+  const W = 1060, H = 360;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  svg.style.maxWidth = 'none'; svg.style.height = 'auto';
+  function node(x, y, label, kind, depth){
+    const w = 50, h = 30;
+    const g = el('g', { class: 'cn' });
+    g.style.transitionDelay = (depth * 0.28) + 's';
+    const col = kind === 'rep' ? ['var(--memo)', 'var(--memo-soft)'] : (kind === 'leaf' ? ['var(--sube)', 'var(--sube-soft)'] : ['var(--line-2)', 'var(--surface)']);
+    g.appendChild(el('rect', { x: x - w / 2, y, width: w, height: h, rx: 3, fill: col[1], stroke: col[0],
+      'stroke-width': kind === 'rep' ? 2 : 1.2 }));
+    g.appendChild(el('text', { x, y: y + 19, 'text-anchor': 'middle', 'font-size': 11.5, 'font-family': 'var(--fm)',
+      fill: kind === 'rep' ? 'var(--memo)' : 'var(--ink)' }, label));
+    svg.appendChild(g);
+  }
+  function link(x1, y1, x2, y2, depth){
+    const p = el('path', { class: 'cn', d: 'M' + x1 + ' ' + y1 + ' C ' + x1 + ' ' + (y1 + 18) + ', ' + x2 + ' ' + (y2 - 18) + ', ' + x2 + ' ' + y2,
+      fill: 'none', stroke: 'var(--line-2)', 'stroke-width': 1.4 });
+    p.style.transitionDelay = (depth * 0.28) + 's';
+    svg.appendChild(p);
+  }
+  function title(x, t, sub){
+    svg.appendChild(el('text', { x, y: 18, 'font-size': 13.5, 'font-family': 'var(--fd)', 'font-weight': 600, fill: 'var(--ink)' }, t));
+    svg.appendChild(el('text', { x, y: 36, 'font-size': 11.5, 'font-family': 'var(--fm)', fill: 'var(--muted)' }, sub));
+  }
+  const RY = d => 58 + d * 60;
+  /* izquierda: merge_sort sobre 8 elementos */
+  title(24, 'merge_sort con 8 elementos — rangos disjuntos', '15 llamadas · 15 estados distintos · 0 repetidos');
+  const LX = j => 50 + j * 54;
+  (function ms(lo, hi, d){
+    const cx = (LX(lo) + LX(hi - 1)) / 2;
+    if (hi - lo > 1){
+      const m = (lo + hi) >> 1;
+      [[lo, m], [m, hi]].forEach(([l, h]) => link(cx, RY(d) + 30, (LX(l) + LX(h - 1)) / 2, RY(d + 1), d + 1));
+      ms(lo, m, d + 1); ms(m, hi, d + 1);
+    }
+    node(cx, RY(d), hi - lo === 1 ? '[' + lo + ']' : lo + '..' + (hi - 1), hi - lo === 1 ? 'leaf' : 'plain', d);
+  })(0, 8, 0);
+  svg.appendChild(el('text', { x: 24, y: 348, 'font-size': 11.5, 'font-family': 'var(--fm)', fill: 'var(--muted)' },
+    'ninguna libreta acertaría nunca: no hay nada que memoizar'));
+  svg.appendChild(el('line', { x1: 470, y1: 8, x2: 470, y2: H - 8, stroke: 'var(--line)', 'stroke-width': 1, 'stroke-dasharray': '3 4' }));
+  /* derecha: fib(5) */
+  title(496, 'fib(5) — subproblemas que se solapan', '15 llamadas · 6 estados distintos · 9 repetidos');
+  const tree = [
+    { k: 5, d: 0, gx: 10.5, hot: false }, { k: 4, d: 1, gx: 5.5, hot: false }, { k: 3, d: 1, gx: 15.5, hot: true },
+    { k: 3, d: 2, gx: 2.5, hot: false }, { k: 2, d: 2, gx: 8.5, hot: true }, { k: 2, d: 2, gx: 13.5, hot: true },
+    { k: 1, d: 2, gx: 17.5, hot: true },
+    { k: 2, d: 3, gx: 1, hot: false }, { k: 1, d: 3, gx: 4, hot: true },
+    { k: 1, d: 3, gx: 7.5, hot: true }, { k: 0, d: 3, gx: 9.5, hot: true },
+    { k: 1, d: 3, gx: 12.5, hot: true }, { k: 0, d: 3, gx: 14.5, hot: true },
+    { k: 1, d: 4, gx: 0, hot: false }, { k: 0, d: 4, gx: 2, hot: false }
+  ];
+  const edges = [[0,1],[0,2],[1,3],[1,4],[2,5],[2,6],[3,7],[3,8],[4,9],[4,10],[5,11],[5,12],[7,13],[7,14]];
+  const X = g => 510 + g * 30, Y = d => 58 + d * 56;
+  edges.forEach(([a, b]) => link(X(tree[a].gx), Y(tree[a].d) + 30, X(tree[b].gx), Y(tree[b].d), tree[b].d));
+  tree.forEach(t => node(X(t.gx), Y(t.d), 'fib(' + t.k + ')', t.hot ? 'rep' : 'plain', t.d));
+  svg.appendChild(el('text', { x: 496, y: 348, 'font-size': 11.5, 'font-family': 'var(--fm)', fill: 'var(--memo)' },
+    'morado = este estado ya se calculó antes'));
+  onVisible(svg, () => svg.classList.add('in'), 0.25);
+})();
+</script>
+</body>
+</html>

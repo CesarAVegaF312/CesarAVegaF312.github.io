@@ -1,0 +1,1836 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Clase: de la recurrencia a la tabla. Memoizacion y tabulacion sobre los dos problemas del taller.">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>De la recurrencia a la tabla</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --ground:#F1F0F5; --surface:#FDFCFF; --sunk:#E9E7F0;
+  --ink:#191826; --ink-2:#3D3A50; --muted:#6B687E; --line:#DFDCE8; --line-2:#CBC7DA;
+  --td:#BE5A0E; --bu:#00897B; --hit:#6D46E0;
+  --td-soft:#F8E9DB; --bu-soft:#DBEFEC; --hit-soft:#E8E2FB;
+  --fd:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --fb:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --fm:'JetBrains Mono','Cascadia Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E0D18; --surface:#1C1B25; --sunk:#232232;
+    --ink:#E9E7F2; --ink-2:#C3BFD3; --muted:#948FA8; --line:#2F2D3E; --line-2:#413E54;
+    --td:#CE7526; --bu:#0BA187; --hit:#8E76EC;
+    --td-soft:#372516; --bu-soft:#0D2C29; --hit-soft:#231D40;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E0D18; --surface:#1C1B25; --sunk:#232232;
+  --ink:#E9E7F2; --ink-2:#C3BFD3; --muted:#948FA8; --line:#2F2D3E; --line-2:#413E54;
+  --td:#CE7526; --bu:#0BA187; --hit:#8E76EC;
+  --td-soft:#372516; --bu-soft:#0D2C29; --hit-soft:#231D40;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--ground);color:var(--ink);font-family:var(--fb);overflow:hidden;
+  -webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--fd);margin:0;line-height:1.08;letter-spacing:-.02em;text-wrap:balance}
+p{margin:0}
+code{font-family:var(--fm)}
+
+/* ====== escenario fijo 1280x720, escalado al viewport ====== */
+#viewport{position:fixed;inset:0;display:grid;place-items:center;overflow:hidden}
+#stage{width:1280px;height:720px;position:relative;transform-origin:center center;flex:none}
+.slide{position:absolute;inset:0;padding:62px 72px 78px;display:none;flex-direction:column;
+  background:var(--ground)}
+.slide.on{display:flex}
+.slide.pad-tight{padding:44px 56px 74px}
+
+/* ====== tipografia de proyeccion ====== */
+.kicker{font-family:var(--fm);font-size:17px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+  font-weight:500}
+.slide h2{font-size:46px;font-weight:600;margin-top:10px}
+.slide h2 em{font-style:normal;color:var(--td)}
+.slide .sub{font-size:25px;color:var(--ink-2);margin-top:16px;max-width:56ch;line-height:1.42}
+.body{font-size:24px;line-height:1.5;color:var(--ink-2)}
+.small{font-size:19px;line-height:1.45;color:var(--muted)}
+b,strong{font-weight:600;color:var(--ink)}
+ul.big{margin:0;padding-left:30px;font-size:25px;line-height:1.48;color:var(--ink-2)}
+ul.big li{margin-bottom:18px}
+ul.big li::marker{color:var(--td)}
+.fill{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
+.center{display:flex;flex-direction:column;justify-content:center;height:100%}
+
+/* portada */
+.cover{justify-content:center}
+.cover h1{font-size:82px;font-weight:800;max-width:17ch}
+.cover h1 em{font-style:normal;color:var(--td)}
+.cover .meta{margin-top:34px;font-family:var(--fm);font-size:19px;color:var(--muted);line-height:1.9}
+.cover .hint{position:absolute;right:72px;bottom:78px;text-align:right;font-family:var(--fm);font-size:15px;
+  color:var(--muted);line-height:1.8}
+kbd{font-family:var(--fm);font-size:13px;border:1px solid var(--line-2);border-radius:3px;padding:1px 6px;
+  background:var(--surface);color:var(--ink-2)}
+
+/* divisor de acto */
+.act{justify-content:center;background:var(--surface)}
+.act .n{font-family:var(--fd);font-size:150px;font-weight:800;line-height:.85;letter-spacing:-.05em}
+.act h2{font-size:56px;margin-top:18px}
+.act .rule{width:180px;height:5px;margin-top:30px;border-radius:3px}
+.act .sub{font-size:23px;margin-top:26px;max-width:50ch}
+
+/* frase-tesis */
+.thesis-slide{justify-content:center;background:var(--surface)}
+.thesis-slide p{font-size:44px;line-height:1.28;font-style:italic;max-width:22ch;font-family:var(--fb)}
+.thesis-slide .attrib{font-family:var(--fm);font-size:17px;color:var(--muted);margin-top:34px;font-style:normal}
+
+/* dos columnas */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:start;flex:1;min-height:0}
+.cols.tight{gap:30px}
+.cols.a3{grid-template-columns:1fr 1fr 1fr;gap:22px}
+.colhead{font-family:var(--fm);font-size:16px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  font-weight:500;margin-bottom:14px}
+
+/* codigo */
+pre{font-family:var(--fm);font-size:20px;line-height:1.55;background:var(--sunk);border:1px solid var(--line);
+  border-radius:4px;padding:20px 22px;margin:0;overflow:hidden;color:var(--ink-2)}
+pre.sm{font-size:17px;line-height:1.5;padding:16px 18px}
+pre .same{background:var(--bu-soft);color:var(--ink);display:inline-block;width:100%;box-shadow:inset 3px 0 0 var(--bu)}
+pre .add{background:var(--hit-soft);color:var(--ink);display:inline-block;width:100%;box-shadow:inset 3px 0 0 var(--hit)}
+pre .hl{background:var(--td-soft);color:var(--ink);display:inline-block;width:100%;box-shadow:inset 3px 0 0 var(--td)}
+
+/* tarjetas / cajas */
+.box{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:24px 26px}
+.box.td-b{border-top:4px solid var(--td)}
+.box.bu-b{border-top:4px solid var(--bu)}
+.box.hit-b{border-top:4px solid var(--hit)}
+.box h3{font-size:27px;font-weight:600;margin-bottom:6px}
+.box .tag{font-family:var(--fm);font-size:15px;color:var(--muted);margin-bottom:16px}
+.box ul{margin:0;padding-left:22px;font-size:20px;line-height:1.45;color:var(--ink-2)}
+.box li{margin-bottom:11px}
+.callout{border-left:5px solid var(--hit);background:var(--hit-soft);padding:20px 26px;border-radius:0 4px 4px 0;
+  font-size:24px;line-height:1.45}
+.callout.warn{border-color:var(--td);background:var(--td-soft)}
+.pill{display:inline-flex;align-items:center;gap:8px;font-family:var(--fm);font-size:16px;font-weight:500;
+  padding:5px 12px;border-radius:3px;border:1px solid var(--line-2);color:var(--muted);background:var(--surface)}
+.pill.td{color:var(--td);border-color:var(--td);background:var(--td-soft)}
+.pill.bu{color:var(--bu);border-color:var(--bu);background:var(--bu-soft)}
+.pill.hit{color:var(--hit);border-color:var(--hit);background:var(--hit-soft)}
+.dotrow{display:flex;gap:26px;flex-wrap:wrap;margin-top:8px}
+.stat b{display:block;font-family:var(--fd);font-size:42px;font-weight:700;line-height:1;
+  font-variant-numeric:tabular-nums}
+.stat span{font-family:var(--fm);font-size:14px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.scroller{overflow-x:auto}
+table.t{border-collapse:collapse;width:100%;font-size:20px}
+table.t th{text-align:left;font-family:var(--fm);font-size:14px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);font-weight:500;padding:10px 14px;border-bottom:2px solid var(--line-2)}
+table.t td{padding:13px 14px;border-bottom:1px solid var(--line);color:var(--ink-2);vertical-align:top}
+table.t td:first-child{color:var(--ink);font-weight:600;font-family:var(--fd)}
+table.t td.num{font-family:var(--fm);font-variant-numeric:tabular-nums;text-align:right}
+table.t tr.hot td{background:var(--td-soft);color:var(--ink)}
+
+/* ====== controles de demo dentro de la diapositiva ====== */
+.demobar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.demobar button{font-family:var(--fd);font-size:16px;font-weight:600;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:3px;padding:7px 14px;cursor:pointer;line-height:1.2}
+.demobar button:hover:not(:disabled){border-color:var(--ink-2)}
+.demobar button:disabled{opacity:.32;cursor:default}
+.demobar button.primary{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.demobar button.on{background:var(--hit);border-color:var(--hit);color:#fff}
+.demobar .seg{display:inline-flex;border:1px solid var(--line-2);border-radius:3px;overflow:hidden}
+.demobar .seg button{border:0;border-radius:0;border-right:1px solid var(--line-2)}
+.demobar .seg button:last-child{border-right:0}
+.demobar .count{font-family:var(--fm);font-size:15px;color:var(--muted);margin-left:auto;
+  font-variant-numeric:tabular-nums}
+.narr{font-size:21px;line-height:1.4;color:var(--ink-2);min-height:2.9em}
+.narr b{color:var(--ink);font-weight:600}
+:focus-visible{outline:3px solid var(--hit);outline-offset:2px}
+
+/* cadena de gerentes */
+.mgr-row{display:grid;grid-template-columns:130px 1fr 190px;align-items:center;gap:18px;
+  border:1px solid var(--line);border-radius:4px;padding:11px 18px;background:var(--surface);opacity:.28}
+.mgr-row.seen{opacity:1}
+.mgr-row.active{border-color:var(--td);background:var(--td-soft)}
+.mgr-row.done{border-color:var(--bu);background:var(--bu-soft)}
+.mgr-row .who{font-family:var(--fm);font-size:21px;font-weight:700}
+.mgr-row .say{font-size:20px;color:var(--ink-2)}
+.mgr-row .ret{font-family:var(--fm);font-size:18px;text-align:right;color:var(--muted)}
+.mgr-row.done .ret{color:var(--bu);font-weight:700}
+.mgr-link{height:22px;margin-left:56px;border-left:3px solid var(--line-2);position:relative}
+.mgr-link.down{border-color:var(--td)}
+.mgr-link.up{border-color:var(--bu)}
+.mgr-link .lbl{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-family:var(--fm);
+  font-size:15px;white-space:nowrap;color:var(--muted)}
+.mgr-link.down .lbl{color:var(--td)}
+.mgr-link.up .lbl{color:var(--bu);font-weight:700}
+
+/* celdas de tabla dp */
+.cells{display:flex;gap:5px}
+.cell{width:48px;flex:none;border:1px solid var(--line-2);border-radius:3px;background:var(--surface);
+  padding:4px 0 6px;text-align:center;position:relative}
+.cell .idx{display:block;font-family:var(--fm);font-size:12px;color:var(--muted);line-height:1.3}
+.cell .val{display:block;font-family:var(--fm);font-size:19px;font-weight:700;line-height:1.45;color:var(--line-2)}
+.cell .ord{position:absolute;top:-9px;right:-7px;width:21px;height:21px;border-radius:11px;display:grid;
+  place-items:center;font-family:var(--fm);font-size:11.5px;font-weight:700;color:#fff;background:var(--muted)}
+/* ---- matriz 2D transpuesta: filas = valor c, columnas = denominaciones ---- */
+.matrix{display:flex;gap:34px;align-items:flex-start;flex:none}
+.mblock{display:flex;flex-direction:column;gap:3px}
+.mrow{display:flex;gap:3px;align-items:stretch}
+.mrow.mhead{align-items:flex-end;margin-bottom:2px}
+.mrlab{width:34px;flex:none;display:grid;place-items:center;font-family:var(--fm);font-size:14px;
+  color:var(--muted);font-variant-numeric:tabular-nums}
+.mrlab-h{font-size:12px;font-weight:700;color:var(--ink);align-self:end;padding-bottom:5px}
+.mhcol{flex:none;text-align:center;font-family:var(--fm);line-height:1.25;padding-bottom:5px}
+.mhcol b{display:block;font-size:13px;color:var(--ink);font-weight:700}
+.mhcol span{display:block;font-size:11.5px;color:var(--muted)}
+.mcell{flex:none;border:1px solid var(--line-2);border-radius:3px;background:var(--surface);
+  display:grid;place-items:center;position:relative;font-family:var(--fm);font-size:17px;font-weight:700;
+  color:var(--line-2)}
+.mcell.filled{color:var(--ink)}
+.mcell.filled.td-c{border-color:var(--td)}
+.mcell.filled.bu-c{border-color:var(--bu)}
+.mcell.cur{box-shadow:0 0 0 3px var(--ink);z-index:2}
+.mcell.cur.td-c{background:var(--td-soft)}
+.mcell.cur.bu-c{background:var(--bu-soft)}
+.mcell.dep,.mcell.filled.dep{background:var(--hit-soft);border-color:var(--hit);z-index:1}
+.mcell.never{border-style:dashed;opacity:.42}
+.mcell .ord{position:absolute;top:-6px;right:-6px;width:17px;height:17px;border-radius:9px;display:grid;
+  place-items:center;font-family:var(--fm);font-size:10px;font-weight:700;color:#fff;background:var(--muted)}
+.mcell.filled.td-c .ord{background:var(--td)}
+.mcell.filled.bu-c .ord{background:var(--bu)}
+/* escalera: la columna de costos es un dato, no una celda que se llene */
+.mcell.ref{background:var(--sunk);color:var(--muted);border-color:var(--line);font-weight:500}
+.mcell.path,.mcell.filled.path{background:var(--bu);color:#fff;border-color:var(--bu)}
+.mcell.path .ord{background:#fff;color:var(--bu)}
+
+/* cuando una sola técnica ocupa la diapositiva, la tabla puede respirar */
+.cells.lg{gap:5px}
+.cells.lg .cell{width:50px;padding:6px 0 9px}
+.cells.lg .cell .idx{font-size:13px}
+.cells.lg .cell .val{font-size:22px}
+.cells.lg .cell .ord{width:23px;height:23px;border-radius:12px;font-size:12.5px;top:-10px;right:-8px}
+.cell.filled .val{color:var(--ink)}
+.cell.filled.td-c{border-color:var(--td)} .cell.filled.td-c .ord{background:var(--td)}
+.cell.filled.bu-c{border-color:var(--bu)} .cell.filled.bu-c .ord{background:var(--bu)}
+.cell.cur{box-shadow:0 0 0 3px var(--ink)}
+.cell.cur.td-c{background:var(--td-soft)} .cell.cur.bu-c{background:var(--bu-soft)}
+.cell.dep,.cell.filled.dep{background:var(--hit-soft);border-color:var(--hit)}
+.cell.never{border-style:dashed;opacity:.5}
+.lane-head{display:flex;gap:14px;align-items:baseline;margin-bottom:12px}
+.lane-head h3{font-size:24px;font-weight:600}
+.lane-head .done{margin-left:auto;font-family:var(--fm);font-size:15px;font-weight:700}
+.stackstrip{display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-height:30px}
+.schip{font-family:var(--fm);font-size:15px;padding:3px 9px;border-radius:3px;border:1px solid var(--td);
+  color:var(--td);background:var(--td-soft)}
+.schip.last{background:var(--td);color:#fff}
+.sarrow{font-family:var(--fm);font-size:14px;color:var(--muted)}
+
+/* escalera */
+.stairgrid{display:flex;gap:9px}
+.stair{width:104px;flex:none;text-align:center}
+.stair .cost{font-family:var(--fm);font-size:16px;color:var(--muted);border:1px solid var(--line);
+  border-radius:4px 4px 0 0;padding:6px 0;background:var(--sunk)}
+.stair .fv{font-family:var(--fm);font-size:26px;font-weight:700;border:1px solid var(--line-2);border-top:0;
+  border-radius:0 0 4px 4px;padding:12px 0;color:var(--line-2);background:var(--surface)}
+.stair.filled .fv{color:var(--ink);border-color:var(--bu)}
+.stair.cur .fv{background:var(--bu-soft);box-shadow:0 0 0 3px var(--bu)}
+.stair.dep .fv{background:var(--hit-soft);border-color:var(--hit)}
+.stair.path .fv{background:var(--bu);color:#fff;border-color:var(--bu)}
+.stair .lbl{font-family:var(--fm);font-size:14px;color:var(--muted);margin-top:6px}
+.wvar{border:1px solid var(--line-2);border-radius:4px;padding:10px 18px;font-family:var(--fm);font-size:16px;
+  background:var(--surface);display:inline-block}
+.wvar b{display:block;font-size:24px;color:var(--bu);font-weight:700}
+
+/* ====== cromo del deck ====== */
+#chrome{position:fixed;left:0;right:0;bottom:0;height:5px;background:var(--line);z-index:20}
+#bar{height:100%;background:var(--td);width:0;transition:width .22s}
+#hud{position:fixed;right:16px;bottom:16px;display:flex;gap:8px;align-items:center;z-index:21;
+  font-family:var(--fm);font-size:14px;color:var(--muted)}
+#hud button{font-family:var(--fm);font-size:15px;background:var(--surface);color:var(--ink-2);
+  border:1px solid var(--line-2);border-radius:3px;width:32px;height:30px;cursor:pointer;line-height:1}
+#hud button:hover{border-color:var(--ink-2)}
+#hud .num{font-variant-numeric:tabular-nums;min-width:64px;text-align:right}
+#actlabel{position:fixed;left:18px;bottom:16px;font-family:var(--fm);font-size:14px;color:var(--muted);z-index:21}
+#notes{position:fixed;left:0;right:0;bottom:5px;max-height:38vh;overflow-y:auto;background:var(--surface);
+  border-top:2px solid var(--hit);padding:20px 26px;font-size:16px;line-height:1.5;color:var(--ink-2);z-index:22}
+#notes h4{font-family:var(--fm);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--hit);
+  margin-bottom:8px;font-weight:600}
+#notes b{color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div id="viewport"><div id="stage">
+
+<!-- ==================== PORTADA ==================== -->
+<section class="slide cover" data-act="" data-notes="Sesión de ~50 minutos. Plan: Acto I recurrencia (15 min), Acto II el trabajo repetido y la memoización (12 min), Acto III memoización contra tabulación (18 min), cierre y taller (5 min). Las diapositivas con fondo blanco son pausas de respiración: úsalas para preguntar antes de avanzar.">
+  <p class="kicker">Estructuras de datos y algoritmos</p>
+  <h1>De la recurrencia a <em>la tabla</em></h1>
+  <p class="sub" style="font-size:27px;max-width:48ch">Cómo una definición de tres líneas se convierte,
+  sin cambiar, en fuerza bruta, en memoización y en programación dinámica.</p>
+  <p class="meta">Taller: Programación Dinámica con Memoización<br>Problemas 1 y 2</p>
+  <p class="hint"><kbd>←</kbd> <kbd>→</kbd> diapositiva · <kbd>↑</kbd> <kbd>↓</kbd> paso del demo<br>
+  <kbd>P</kbd> reproducir · <kbd>F</kbd> pantalla completa · <kbd>N</kbd> notas</p>
+</section>
+
+<!-- ==================== ACTO I ==================== -->
+<section class="slide act" data-act="I · La recurrencia" data-notes="Arranca preguntando: «¿cuántos de ustedes ya escribieron una función recursiva?» Casi todos levantan la mano. Segunda pregunta: «¿cuántos escribieron primero la relación de recurrencia en papel?» Casi nadie. Ese hueco es la clase.">
+  <p class="n" style="color:var(--td)">I</p>
+  <h2>La recurrencia</h2>
+  <div class="rule" style="background:var(--td)"></div>
+  <p class="sub">Antes de escribir código: qué es una relación de recurrencia, por qué se escribe primero,
+  y el método de seis preguntas para llegar a ella.</p>
+</section>
+
+<section class="slide" data-act="I · La recurrencia" data-notes="El punto que hay que dejar clavado: son DOS cosas distintas y una viene antes que la otra. Si intentan escribir el código sin la relación, van a tener problemas. Pregunta al curso: ¿cuál de las dos es una definición matemática y cuál es un programa?">
+  <p class="kicker">Distinción que cuesta cara</p>
+  <h2>Dos cosas distintas, y una va primero</h2>
+  <div class="cols" style="margin-top:36px;align-items:stretch">
+    <div class="box hit-b">
+      <h3>Relación de recurrencia</h3>
+      <p class="tag">una definición matemática</p>
+      <pre style="font-size:21px">fact(n) = {
+  1              si n = 0
+  n · fact(n−1)  si n &gt; 0
+}</pre>
+      <p class="body" style="font-size:20px;margin-top:16px">Dice <b>cómo se relaciona</b> la respuesta con la
+      de un problema más pequeño. No dice cómo calcularla.</p>
+    </div>
+    <div class="box">
+      <h3>Función recursiva</h3>
+      <p class="tag">un programa que se llama a sí mismo</p>
+      <pre style="font-size:21px">def fact(n):
+    if n == 0:
+        return 1
+    return n * fact(n-1)</pre>
+      <p class="body" style="font-size:20px;margin-top:16px">Es la <b>traducción</b> de la relación anterior.
+      Sale sola cuando la relación ya está escrita.</p>
+    </div>
+  </div>
+  <p class="callout" style="margin-top:30px">Primero la relación. Después el código. Siempre en ese orden.</p>
+</section>
+
+<section class="slide" data-act="I · La recurrencia" data-notes="La analogía del gerente perezoso. Insiste en la regla 2: NO se puede preguntar cómo lo hizo el clon. Esa es la fe recursiva y es la habilidad más difícil de adquirir. Si intentan rastrear la cadena completa mentalmente, se pierden.">
+  <p class="kicker">La analogía</p>
+  <h2>Usted es un gerente con <em>una</em> sola habilidad</h2>
+  <div class="cols" style="margin-top:30px">
+    <ul class="big">
+      <li>El clon recibe un problema <b>estrictamente más pequeño</b>.</li>
+      <li>Usted <b>no puede preguntarle cómo lo hizo</b>. Confía en lo que promete su postcondición.</li>
+      <li>Usted <b>combina</b> lo que le devuelve con su propia decisión.</li>
+      <li>Hay problemas tan pequeños que no requieren delegar: los <b>casos base</b>.</li>
+    </ul>
+    <div class="box hit-b" style="align-self:center">
+      <h3 style="font-size:24px">Fe recursiva</h3>
+      <p class="body" style="font-size:21px;margin-top:10px">Usted es <code>fact(5)</code>. Su única decisión:
+      «yo aporto el factor 5». Delega <code>fact(4)</code>.</p>
+      <p class="body" style="font-size:21px;margin-top:14px">No le importa <b>cómo</b> el clon calcula 24.
+      Solo que su postcondición promete devolver 4!.</p>
+      <p class="body" style="font-size:21px;margin-top:14px">Multiplica 5 · 24 = <b>120</b> y entrega.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide pad-tight" data-demo="mgr" data-act="I · La recurrencia" data-notes="DEMO. Avanza con ↓. Lo que tienen que ver: la cadena se estira COMPLETA hasta el caso base antes de que nadie devuelva nada. Pregunta en el paso 5: «¿alguien ya sabe la respuesta?» — nadie, ni siquiera fact(1). Solo cuando fact(0) responde empieza la subida. Sin caso base, esto no termina nunca.">
+  <p class="kicker">Demo en vivo</p>
+  <h2 style="font-size:38px">La cadena baja entera antes de devolver nada</h2>
+  <div class="demobar" style="margin-top:20px">
+    <button data-act="reset">⟲ Reiniciar</button>
+    <button data-act="prev">◀ Atrás</button>
+    <button data-act="next" class="primary">Adelante ▶</button>
+    <span class="pill td">bajada · delegar</span>
+    <span class="pill bu">subida · combinar</span>
+    <span class="count" data-role="count"></span>
+  </div>
+  <div class="fill"><div id="mgrStage"></div></div>
+  <p class="narr" id="mgrNarr"></p>
+</section>
+
+<section class="slide" data-act="I · La recurrencia" data-notes="El método. Insiste en la pregunta 2: es la regla de oro. Si no pueden escribir esa frase, no siguen. La mayoría de los errores en recurrencias vienen de saltarse esta pregunta. Las seis se responden EN PROSA, en este orden, antes de escribir una línea de código.">
+  <p class="kicker">El método</p>
+  <h2>Seis preguntas, en prosa, antes del código</h2>
+  <div class="cols" style="margin-top:32px;gap:34px">
+    <div>
+      <ol style="margin:0;padding-left:30px;font-size:23px;line-height:1.4;color:var(--ink-2)">
+        <li style="margin-bottom:16px"><b>Estado.</b> ¿Qué parámetros describen un subproblema?</li>
+        <li style="margin-bottom:16px"><b>Significado.</b> ¿Qué devuelve f? Una frase precisa.</li>
+        <li style="margin-bottom:16px"><b>Decisión.</b> ¿Qué opciones tengo aquí?</li>
+      </ol>
+    </div>
+    <div>
+      <ol start="4" style="margin:0;padding-left:30px;font-size:23px;line-height:1.4;color:var(--ink-2)">
+        <li style="margin-bottom:16px"><b>Transición.</b> ¿A qué estado más pequeño llego y cómo combino?</li>
+        <li style="margin-bottom:16px"><b>Caso base.</b> ¿Dónde la respuesta es trivial?</li>
+        <li style="margin-bottom:16px"><b>Respuesta.</b> ¿Qué llamada resuelve el original?</li>
+      </ol>
+    </div>
+  </div>
+  <p class="callout warn" style="margin-top:10px"><b>Regla de oro:</b> si no puede escribir la frase de la
+  pregunta 2, no continúe. La pregunta 2 <em>es</em> la postcondición.</p>
+</section>
+
+<section class="slide" data-act="I · La recurrencia" data-notes="Aquí se cierra el círculo: cada pregunta se convierte en una pieza concreta del código. No es un ritual previo que después se bota. Señala en la pantalla: la pregunta 2 es literalmente la línea post; la 5 es la primera guarda; la 3 y la 4 son la segunda.">
+  <p class="kicker">Ejercicio 1 · multiplicación por sumas</p>
+  <h2>Las seis preguntas <em>son</em> el código</h2>
+  <div class="cols" style="margin-top:30px;gap:38px">
+    <div>
+      <p class="colhead">Respuestas en prosa</p>
+      <table class="t">
+        <tr><td style="width:130px">1 Estado</td><td><code>b</code>, cuántas veces falta sumar <code>a</code></td></tr>
+        <tr><td>2 Significado</td><td><code>mult(a,b)</code> es el producto <code>a·b</code></td></tr>
+        <tr><td>3 Decisión</td><td>ninguna: solo se puede sumar <code>a</code> una vez más</td></tr>
+        <tr><td>4 Transición</td><td><code>a + mult(a, b−1)</code></td></tr>
+        <tr><td>5 Caso base</td><td><code>mult(a,0) = 0</code></td></tr>
+        <tr><td>6 Respuesta</td><td><code>mult(a,b)</code></td></tr>
+      </table>
+    </div>
+    <div>
+      <p class="colhead">La especificación en GCL</p>
+<pre>func mult(a, b : int) → int
+  { pre:  a ≥ 0 ∧ b ≥ 0 }
+<span class="hl">  { post: mult = a · b }</span>
+<span class="same">  if b = 0 → mult := 0</span>
+<span class="add">  [] b &gt; 0 → mult := a + mult(a, b−1)</span>
+  fi</pre>
+      <p class="small" style="margin-top:20px"><span style="color:var(--td)">■</span> pregunta 2 ·
+      <span style="color:var(--bu)">■</span> pregunta 5 ·
+      <span style="color:var(--hit)">■</span> preguntas 3 y 4</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== ACTO II ==================== -->
+<section class="slide act" data-act="II · El trabajo repetido" data-notes="Transición: hasta aquí las recurrencias eran cadenas — cada llamada hacía una sola llamada. Ahora viene la que hace dos, y todo cambia.">
+  <p class="n" style="color:var(--hit)">II</p>
+  <h2>El trabajo repetido</h2>
+  <div class="rule" style="background:var(--hit)"></div>
+  <p class="sub">Qué pasa cuando una llamada hace dos llamadas, por qué eso explota, y la observación de una
+  línea que lo arregla.</p>
+</section>
+
+<section class="slide" data-act="II · El trabajo repetido" data-notes="Fibonacci. Dos casos base, no uno: la transición mira DOS estados atrás. Si solo tuvieran fib(0), entonces fib(1) llamaría a fib(-1) y no vuelve. Regla práctica: si la transición mira k estados atrás, se necesitan al menos k casos base.">
+  <p class="kicker">Ejercicio 3 · Fibonacci</p>
+  <h2>Una recurrencia que delega <em>dos</em> veces</h2>
+  <div class="cols" style="margin-top:34px">
+    <div>
+      <pre>fib(n) = {
+  0                        si n = 0
+  1                        si n = 1
+  fib(n−1) + fib(n−2)      si n &gt; 1
+}</pre>
+      <p class="body" style="margin-top:26px">Dos casos base, no uno. La transición mira <b>dos</b> estados
+      hacia atrás, así que necesita dos puntos de apoyo.</p>
+      <p class="body" style="margin-top:16px">Si solo existiera <code>fib(0)</code>, entonces
+      <code>fib(1)</code> llamaría a <code>fib(−1)</code> y la cadena no vuelve.</p>
+    </div>
+    <div>
+      <p class="colhead">La traducción, literal</p>
+      <pre>def fib(n):
+    if n &lt;= 1:
+        return n
+    return fib(n-1) + fib(n-2)</pre>
+      <p class="callout warn" style="margin-top:26px;font-size:21px">Es correcta. Y es inservible para
+      <code>n = 50</code>. La siguiente diapositiva muestra por qué.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide pad-tight" data-demo="fib" data-act="II · El trabajo repetido" data-notes="DEMO CENTRAL DEL ACTO II. Primero en «Sin memo» con n=5: deja que cuenten los nodos (15) y luego los estados distintos (6). Pregunta: ¿cuántas veces aparece fib(2)? Tres. Y las tres veces da 1. Después sube a n=7 para que vean la explosión. SOLO ENTONCES prende «Con memo».">
+  <p class="kicker">Demo en vivo · el árbol de llamadas</p>
+  <h2 style="font-size:38px">Quince llamadas para seis estados distintos</h2>
+  <div class="demobar" style="margin-top:16px">
+    <button data-act="reset">⟲</button>
+    <button data-act="prev">◀</button>
+    <button data-act="next" class="primary">Adelante ▶</button>
+    <button data-act="play" id="fibPlay">▶ Reproducir</button>
+    <label style="font-family:var(--fm);font-size:15px;color:var(--muted);display:flex;align-items:center;gap:8px">
+      n = <input type="range" id="fibN" min="3" max="7" step="1" value="5" style="width:96px;accent-color:var(--hit)"><b id="fibNv" style="font-family:var(--fm)">5</b></label>
+    <span class="seg"><button id="fibOff" class="on">Sin memo</button><button id="fibOn">Con memo</button></span>
+    <span class="count" data-role="count"></span>
+  </div>
+  <div class="fill" style="justify-content:flex-start"><div style="overflow:hidden"><svg id="fibSvg" role="img" aria-label="Árbol de llamadas de fib(n)"></svg></div></div>
+  <div style="display:flex;gap:36px;align-items:flex-end">
+    <div class="stat"><b id="fibCalls">0</b><span>llamadas</span></div>
+    <div class="stat"><b id="fibStates">0</b><span>estados distintos</span></div>
+    <div class="stat"><b id="fibHits" style="color:var(--hit)">0</b><span>atajos por memo</span></div>
+    <p class="narr" id="fibNarr" style="flex:1;min-height:0"></p>
+  </div>
+</section>
+
+<section class="slide" data-act="II · El trabajo repetido" data-notes="Los números concretos. fib(40) tarda alrededor de un minuto en Python; fib(50) tardaría horas. Diles que lo prueben esta noche. La tasa de crecimiento es φ^n con φ≈1.618.">
+  <p class="kicker">Sin memoización</p>
+  <h2>El costo de recalcular</h2>
+  <div class="cols" style="margin-top:34px">
+    <div>
+      <table class="t">
+        <thead><tr><th>n</th><th style="text-align:right">Llamadas</th><th style="text-align:right">Tiempo aprox.</th></tr></thead>
+        <tr><td>10</td><td class="num">177</td><td class="num">instantáneo</td></tr>
+        <tr><td>20</td><td class="num">21 891</td><td class="num">instantáneo</td></tr>
+        <tr><td>30</td><td class="num">2 692 537</td><td class="num">~1 s</td></tr>
+        <tr class="hot"><td>40</td><td class="num">331 160 281</td><td class="num">~1 min</td></tr>
+        <tr class="hot"><td>50</td><td class="num">≈ 4 · 10¹⁰</td><td class="num">horas</td></tr>
+      </table>
+    </div>
+    <div style="align-self:center">
+      <p class="body" style="font-size:26px">Sea <code>T(n)</code> el número de llamadas.</p>
+      <pre style="margin-top:18px">T(0) = T(1) = 1
+T(n) = 1 + T(n−1) + T(n−2)</pre>
+      <p class="body" style="margin-top:22px">Crece como <b>φⁿ</b>, con φ ≈ 1,618. Es
+      <b>exponencial</b>.</p>
+      <p class="callout" style="margin-top:26px;font-size:21px">Y todo ese trabajo es <b>repetido</b>: la
+      función solo depende de su entrada, así que <code>fib(2)</code> devuelve 1 las tres veces.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide thesis-slide" data-act="II · El trabajo repetido" data-notes="PAUSA. Esta es la diapositiva más importante del acto II. Léela en voz alta y deja silencio. La memoización no es un algoritmo nuevo: es un gerente que toma notas.">
+  <p>¿Qué haría un gerente inteligente? <b>Anotar cada respuesta la primera vez</b>, y revisar la libreta antes
+  de delegar.</p>
+  <p class="attrib">memoización · de <em>memo</em>, nota</p>
+</section>
+
+<section class="slide" data-act="II · El trabajo repetido" data-notes="AQUÍ ESTÁ EL PUNTO. Señala las líneas verdes en las dos columnas: son idénticas. La recurrencia no cambió. Solo se agregaron tres líneas de contabilidad. Fuerza bruta y programación dinámica no son dos algoritmos: son dos formas de evaluar la misma definición.">
+  <p class="kicker">El punto más importante del curso</p>
+  <h2>La recurrencia <em>no cambió</em></h2>
+  <div class="cols tight" style="margin-top:26px">
+    <div>
+      <p class="colhead">Fuerza bruta</p>
+<pre class="sm">def fib(n):
+<span class="same">    if n &lt;= 1:</span>
+<span class="same">        return n</span>
+
+
+<span class="same">    return fib(n-1) + fib(n-2)</span>
+</pre>
+    </div>
+    <div>
+      <p class="colhead">Programación dinámica</p>
+<pre class="sm">def fib(n, memo=None):
+<span class="add">    if memo is None: memo = {}</span>
+<span class="same">    if n &lt;= 1:</span>
+<span class="same">        return n</span>
+<span class="add">    if n not in memo:</span>
+<span class="add">        memo[n] = \</span>
+<span class="same">            fib(n-1,memo) + fib(n-2,memo)</span>
+<span class="add">    return memo[n]</span></pre>
+    </div>
+  </div>
+  <p class="callout" style="margin-top:24px">Fuerza bruta es la recurrencia evaluada <b>ingenuamente</b>.
+  Programación dinámica es la misma recurrencia evaluada <b>sin repetir trabajo</b>.</p>
+</section>
+
+<section class="slide" data-act="II · El trabajo repetido" data-notes="Advertencia necesaria: memoizar no siempre sirve. Compara con mult del acto I: su árbol es una cadena, ningún estado se repite, el diccionario nunca acierta. Regla: dibuje el árbol y busque repeticiones ANTES de memoizar.">
+  <p class="kicker">Antes de memoizar</p>
+  <h2>¿Hay algo que repetir?</h2>
+  <div class="fill"><div style="overflow:hidden"><svg id="cmpSvg" role="img" aria-label="El árbol de mult es una cadena sin repeticiones; el de fib repite estados"></svg></div></div>
+  <p class="callout warn" style="font-size:22px">La memoización solo ayuda cuando el árbol de llamadas tiene
+  <b>estados repetidos</b>. En una cadena, el diccionario cuesta memoria y no ahorra nada.</p>
+</section>
+
+<!-- ==================== ACTO III ==================== -->
+<section class="slide act" data-act="III · Memoización y tabulación" data-notes="Transición al taller. Hasta aquí: recurrencia + libreta. Ahora la otra forma de evaluar la misma recurrencia, y por qué existen las dos.">
+  <p class="n" style="color:var(--bu)">III</p>
+  <h2>Memoización y tabulación</h2>
+  <div class="rule" style="background:var(--bu)"></div>
+  <p class="sub">Los dos problemas del taller. La misma recurrencia, dos órdenes de llenado, y las tres razones
+  por las que se elige uno u otro.</p>
+</section>
+
+<section class="slide" data-act="III · Memoización y tabulación" data-notes="Problema 1 del taller. Aplica las seis preguntas EN VIVO con el curso: pregúntales el estado, luego el significado, luego la decisión. No se las des hechas. El estado es c = lo que falta por formar; la decisión es cuál moneda usar.">
+  <p class="kicker">Problema 1 del taller</p>
+  <h2>Sistema de monedas</h2>
+  <div class="cols" style="margin-top:28px">
+    <div>
+      <p class="body">Dadas denominaciones <code>M = [m₁ … mₙ]</code> y un objetivo <code>C</code>, halle el
+      <b>mínimo número de monedas</b> que suman exactamente <code>C</code>.</p>
+      <pre style="margin-top:22px">Entrada:  11
+          1 5 10
+Salida:   2</pre>
+      <p class="small" style="margin-top:18px">Si no existe combinación: <code>NO ES POSIBLE</code>.</p>
+    </div>
+    <div>
+      <p class="colhead">Las seis preguntas · estado de dos dimensiones</p>
+      <table class="t" style="font-size:18px">
+        <tr><td style="width:118px">1 Estado</td><td><code>(i, c)</code>: puedo usar las primeras <code>i</code>
+          denominaciones y me falta formar <code>c</code>. <b>Dos parámetros.</b></td></tr>
+        <tr><td>2 Significado</td><td><code>f(i,c)</code> = mínimo de monedas que forman exactamente
+          <code>c</code> usando solo las primeras <code>i</code> denominaciones</td></tr>
+        <tr><td>3 Decisión</td><td>¿uso la denominación <code>mᵢ</code>, o la descarto?</td></tr>
+        <tr><td>4 Transición</td><td><code>f(i,c) = min( f(i−1,c) , 1 + f(i, c−mᵢ) )</code></td></tr>
+        <tr><td>5 Caso base</td><td><code>f(i,0) = 0</code> · <code>f(0,c) = ∞</code> para <code>c &gt; 0</code></td></tr>
+        <tr><td>6 Respuesta</td><td><code>f(n, C)</code> — la esquina de abajo a la derecha</td></tr>
+      </table>
+      <p class="small" style="margin-top:14px;font-size:17px">En la matriz, las filas son los <b>valores</b> <code>c</code> y las columnas las <b>denominaciones</b>. El segundo término se queda en la <b>misma columna</b>: por eso la moneda se puede <b>repetir</b>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide thesis-slide" data-act="III · Memoización y tabulación" data-notes="PAUSA. La tesis del acto III. Déjala en pantalla mientras la explicas: no son dos técnicas, es una recurrencia y dos maneras de recorrerla.">
+  <p>Memoización y tabulación llenan <b>las mismas celdas</b> de la misma matriz con <b>la misma recurrencia</b>. Lo único que
+  cambia es quién decide el <b>orden</b>.</p>
+  <p class="attrib">arriba→abajo · abajo→arriba</p>
+</section>
+
+<section class="slide pad-tight" data-demo="memo" data-act="III · Memoización y tabulación" data-notes="DEMO 1 DE 2. Solo memoización. Filas = valor c, columnas = denominaciones. Empieza en M=[1,5,10] C=11 (el del taller) y avanza con la flecha abajo. Lo que tienen que ver: (a) la recursión entra por la esquina de ABAJO A LA DERECHA, f(3,11), y sube; (b) el orden de los círculos es caótico y lo fija la recursión, no usted; (c) al final resolvió 28 de 48 celdas y hay 20 que NUNCA miró. Cambia a M=[3,7] C=20 para el caso extremo: se salta 31 de 63. Pregunta: ¿por qué la columna i=0 casi no se toca?">
+  <p class="kicker">Demo 1 de 2 · arriba → abajo</p>
+  <h2 style="font-size:37px">Memoización: entra por <em>una esquina</em> y pide hacia atrás</h2>
+  <div class="demobar" style="margin-top:14px">
+    <button data-act="reset">⟲</button>
+    <button data-act="prev">◀</button>
+    <button data-act="next" class="primary">Adelante ▶</button>
+    <button data-act="play" id="memoPlay">▶ Reproducir</button>
+    <span class="seg" id="memoSets"></span>
+    <span class="count" data-role="count"></span>
+  </div>
+  <div class="fill" style="flex-direction:row;gap:36px;align-items:flex-start;justify-content:flex-start;
+    padding-top:14px">
+    <div class="matrix" id="memoMat"></div>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:22px">
+      <div>
+        <p class="colhead" style="margin-bottom:8px">Pila de llamadas en este instante</p>
+        <div class="stackstrip" id="memoStack"></div>
+      </div>
+      <div style="display:flex;gap:30px;flex-wrap:wrap">
+        <div class="stat"><b id="memoFilled" style="color:var(--td)">0</b><span>celdas resueltas</span></div>
+        <div class="stat"><b id="memoDepth">0</b><span>profundidad</span></div>
+        <div class="stat"><b id="memoNever" style="color:var(--muted)">—</b><span>que ni miró</span></div>
+      </div>
+      <p class="narr" id="memoNarr" style="font-size:19px"></p>
+    </div>
+  </div>
+</section>
+
+<section class="slide pad-tight" data-demo="tab" data-act="III · Memoización y tabulación" data-notes="DEMO 2 DE 2. Misma matriz, misma recurrencia, orden distinto. Usa «▶▶ fila» para completar el valor c actual de un golpe. Contraste con la anterior: los círculos van 1, 2, 3 … en orden de lectura — baja por c y dentro de cada c avanza por i —, la pila no existe, y llena TODO el cuadro, incluidas las celdas que la memoización ni miró. Señala la cuenta de la derecha: t[i][c] mira la celda de la IZQUIERDA (no uso la moneda) y la de ARRIBA en su misma columna (la uso y la repito).">
+  <p class="kicker">Demo 2 de 2 · abajo → arriba</p>
+  <h2 style="font-size:37px">Tabulación: baja por los valores, en orden de <em>lectura</em></h2>
+  <div class="demobar" style="margin-top:14px">
+    <button data-act="reset">⟲</button>
+    <button data-act="prev">◀</button>
+    <button data-act="next" class="primary">Adelante ▶</button>
+    <button id="tabRow">▶▶ fila</button>
+    <button data-act="play" id="tabPlay">▶ Reproducir</button>
+    <span class="seg" id="tabSets"></span>
+    <span class="count" data-role="count"></span>
+  </div>
+  <div class="fill" style="flex-direction:row;gap:36px;align-items:flex-start;justify-content:flex-start;
+    padding-top:14px">
+    <div class="matrix" id="tabMat"></div>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:22px">
+      <div>
+        <p class="colhead" style="margin-bottom:8px">La cuenta de esta celda</p>
+        <p id="tabCalc" style="font-family:var(--fm);font-size:19px;color:var(--ink);line-height:1.5"></p>
+      </div>
+      <div style="display:flex;gap:30px;flex-wrap:wrap">
+        <div class="stat"><b id="tabFilled" style="color:var(--bu)">0</b><span>celdas llenas</span></div>
+        <div class="stat"><b id="tabDepth" style="color:var(--bu)">1</b><span>profundidad</span></div>
+        <div class="stat"><b id="tabUseless" style="color:var(--muted)">—</b><span>que memo ni miró</span></div>
+      </div>
+      <p class="narr" id="tabNarr" style="font-size:19px"></p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-act="III · Memoización y tabulación" data-notes="AQUÍ SE JUNTAN las dos demos anteriores, ya en números y sin animación. El dato que más impresiona: en M=[3,7] C=20 la memoización se salta 31 de 63 celdas — casi la mitad del cuadro — porque desde ellas no se llega a la esquina. La tabulación las llena igual. Pregunta al curso: ¿esa ventaja se paga con algo? Sí: con la pila, que es la diapositiva siguiente. Si alguien quiere ver otra vez el contraste de órdenes, devuélvete dos diapositivas.">
+  <p class="kicker">Las dos demos, en números</p>
+  <h2>La memoización solo toca lo <em>alcanzable</em></h2>
+  <div class="cols a3" style="margin-top:34px">
+    <div class="box td-b">
+      <h3 style="font-size:22px">M = [1, 5, 10] · C = 11</h3>
+      <p class="tag" style="margin:6px 0 0">matriz de 4 × 12 = 48 celdas</p>
+      <div class="dotrow" style="margin-top:16px">
+        <div class="stat"><b style="color:var(--td)">28</b><span>resuelve</span></div>
+        <div class="stat"><b style="color:var(--muted)">20</b><span>ni mira</span></div>
+      </div>
+      <p class="body" style="font-size:19px;margin-top:14px">El ejemplo del taller. Ya con tres denominaciones
+      se salta el <b>42 %</b> del cuadro.</p>
+    </div>
+    <div class="box td-b">
+      <h3 style="font-size:22px">M = [3, 7] · C = 20</h3>
+      <p class="tag" style="margin:6px 0 0">matriz de 3 × 21 = 63 celdas</p>
+      <div class="dotrow" style="margin-top:16px">
+        <div class="stat"><b style="color:var(--td)">32</b><span>resuelve</span></div>
+        <div class="stat"><b style="color:var(--muted)">31</b><span>ni mira</span></div>
+      </div>
+      <p class="body" style="font-size:19px;margin-top:14px">Casi <b>la mitad</b> del cuadro es trabajo que la
+      tabulación hace y nadie usa.</p>
+    </div>
+    <div class="box td-b">
+      <h3 style="font-size:22px">M = [4, 6] · C = 15</h3>
+      <p class="tag" style="margin:6px 0 0">matriz de 3 × 16 = 48 celdas</p>
+      <div class="dotrow" style="margin-top:16px">
+        <div class="stat"><b style="color:var(--td)">17</b><span>resuelve</span></div>
+        <div class="stat"><b style="color:var(--muted)">31</b><span>ni mira</span></div>
+      </div>
+      <p class="body" style="font-size:19px;margin-top:14px">Todo queda en ∞ →
+      <code>NO ES POSIBLE</code>, y le bastó con mirar un tercio.</p>
+    </div>
+  </div>
+  <p class="callout" style="margin-top:26px;font-size:21px">La tabulación llena las <b>48</b> o <b>63</b>
+  celdas siempre. Ese es el precio de no tener que pensar en qué es alcanzable —&nbsp;y a cambio no apila
+  nada y se puede comprimir.</p>
+</section>
+
+<section class="slide" data-act="III · Memoización y tabulación" data-notes="Figura clave del acto III. Izquierda: el vecindario de una celda. Señala las dos flechas verdes (izquierda = no uso la denominación; arriba, misma columna = la uso y la puedo repetir) y después la diagonal punteada: ESE es el error de una letra que convierte el problema en «cada moneda una sola vez». Derecha: cualquier barrido que no vaya hacia atrás sirve; hay varios órdenes válidos, no uno solo. Pregunta al curso: ¿funciona si pongo i por fuera y c por dentro? Sí, también. ¿Y de abajo hacia arriba? No.">
+  <p class="kicker">El requisito de la tabulación</p>
+  <h2>Dos dependencias: la de <em>arriba</em> y la de <em>la izquierda</em></h2>
+  <div class="fill"><div style="overflow:hidden"><svg id="orderSvg" role="img" aria-label="Una celda depende de la de arriba y de la de su misma fila a la izquierda; la diagonal es el error clasico"></svg></div></div>
+  <p class="callout warn" style="font-size:20px"><b>Los dos errores no fallan: mienten.</b> Un orden malo lee
+  celdas vacías; la diagonal resuelve otro problema. En ninguno de los dos casos hay excepción
+  —&nbsp;solo un número equivocado. Con <code>M=[1,5,10]</code> y <code>C=11</code> ambas versiones dan
+  <b>2</b> y el error pasa desapercibido; con <code>C=3</code> dan <b>3</b> contra <b>NO ES POSIBLE</b>.</p>
+</section>
+
+<section class="slide" data-act="III · Memoización y tabulación" data-notes="La pila. Este es el argumento práctico más fuerte a favor de tabulación. Python corta a las 1000 llamadas anidadas. Se puede subir con sys.setrecursionlimit, pero eso mueve el problema al stack del SO, donde ya no es una excepción sino una caída del proceso.">
+  <p class="kicker">El argumento práctico</p>
+  <h2>El muro que solo golpea a la recursión</h2>
+  <div class="fill"><div style="overflow:hidden"><svg id="depthSvg" role="img" aria-label="La profundidad de pila de la memoización crece con C y cruza el límite de Python"></svg></div></div>
+  <p class="small" style="font-size:19px">Peor caso del problema de monedas cuando existe la denominación 1:
+  la cadena <code>C → C−1 → C−2 → …</code>. La tabulación tiene profundidad 1 siempre.</p>
+</section>
+
+<section class="slide" data-act="III · Memoización y tabulación" data-notes="Problema 2 del taller. ANTES de cualquier recurrencia, que entiendan el juego. Lee las tres reglas y señala el dibujo: piso → 1 → 3 → 4 paga 15 + 5 + 10 = 30. Punto importante: el enunciado NO dice si se puede empezar en el escalón 1 ni si la meta es el último escalón o lo que está después. La salida 30 lo decide: si la meta estuviera más allá (como en LeetCode 746) daría 20; si hubiera que empezar en el 0, daría 40. Díganlo explícito, porque los que busquen en internet van a encontrar la otra versión. Hay 8 caminos en total y el de 30 es el único óptimo; el siguiente cuesta 40.">
+  <p class="kicker">Problema 2 del taller</p>
+  <h2>Escalera con costo mínimo</h2>
+  <div class="fill" style="justify-content:flex-start;margin-top:18px">
+    <div style="overflow:hidden"><svg id="stairFig" role="img" aria-label="Una escalera de cinco escalones con sus costos; el camino óptimo sube del piso al escalón 1, luego al 3 y luego al 4, pagando 15 más 5 más 10, que suman 30"></svg></div>
+  </div>
+  <div class="cols" style="grid-template-columns:1.25fr 1fr;gap:30px;flex:none;margin-top:4px">
+    <ul class="big" style="font-size:20px;line-height:1.4">
+      <li style="margin-bottom:8px">Desde el piso, el primer paso cae en el escalón <b>0</b> o en el <b>1</b>.</li>
+      <li style="margin-bottom:8px">Cada movimiento sube <b>1 o 2</b> escalones.</li>
+      <li style="margin-bottom:8px">Se paga el costo de <b>cada escalón que se pisa</b>, incluido el último.</li>
+    </ul>
+    <p class="callout" style="font-size:18px;padding:14px 20px;align-self:start">El enunciado no fija dónde se empieza
+    ni dónde se termina. <b>La salida 30 lo decide</b>: con la meta más allá del último escalón daría 20; obligando
+    a empezar en el 0, daría 40.</p>
+  </div>
+</section>
+
+<section class="slide" data-act="III · Memoización y tabulación" data-notes="Las seis preguntas aplicadas a la escalera. El punto clave es la pregunta 3: la decisión se piensa HACIA ATRÁS. Los estudiantes piensan «¿a dónde salto desde aquí?», y eso no da recurrencia. La pregunta correcta es «¿desde dónde llegué al escalón i?». Solo hay dos respuestas: desde i−1 o desde i−2. Contraste con monedas: allá el estado tenía DOS parámetros (i, c); aquí basta uno. No hay que inventar dimensiones que el problema no necesita.">
+  <p class="kicker">Problema 2 · las seis preguntas</p>
+  <h2>La decisión se piensa <em>hacia atrás</em></h2>
+  <div class="cols" style="margin-top:28px;gap:40px">
+    <table class="t" style="font-size:19px">
+      <tr><td style="width:128px">1 Estado</td><td><code>i</code>, el escalón al que quiero llegar. <b>Un solo
+        parámetro</b> — en monedas eran dos.</td></tr>
+      <tr><td>2 Significado</td><td><code>f(i)</code> = costo mínimo para llegar a pisar el escalón
+        <code>i</code>, incluido su costo</td></tr>
+      <tr><td>3 Decisión</td><td><b>¿Desde dónde llegué?</b> Desde <code>i−1</code> o desde <code>i−2</code></td></tr>
+      <tr><td>4 Transición</td><td><code>f(i) = costo[i] + min( f(i−1), f(i−2) )</code></td></tr>
+      <tr><td>5 Caso base</td><td><code>f(0) = costo[0]</code> · <code>f(1) = costo[1]</code></td></tr>
+      <tr><td>6 Respuesta</td><td><code>f(n−1)</code></td></tr>
+    </table>
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <div class="box td-b">
+        <h3 style="font-size:22px">«¿A dónde salto?»</h3>
+        <p class="body" style="font-size:19px;margin-top:8px">Mira hacia adelante. Cada decisión abre
+        caminos nuevos y no hay forma de escribir la respuesta en términos de algo más pequeño.</p>
+      </div>
+      <div class="box bu-b">
+        <h3 style="font-size:22px">«¿Desde dónde llegué?»</h3>
+        <p class="body" style="font-size:19px;margin-top:8px">Mira hacia atrás. Solo hay dos respuestas, las dos
+        son subproblemas más pequeños, y la recurrencia sale sola.</p>
+      </div>
+      <p class="small" style="font-size:17px">Dos casos base porque la transición mira <b>dos</b> escalones
+      atrás: desde el piso se entra directo al 0 o al 1.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide pad-tight" data-demo="stairMemo" data-act="III · Memoización y tabulación" data-notes="DEMO 1 DE 2 · escalera con memoización. Avanza con la flecha abajo. La recursión entra por f(4) y pregunta «¿desde dónde llegué?»: baja a f(3), a f(2), hasta los casos base. Lo que tienen que ver: (a) la pila llega a profundidad n; (b) f(3) pide f(1) y f(4) pide f(2) — los dos ya estaban en la libreta: 2 aciertos de caché; (c) el orden de llenado es 1, 0, 2, 3, 4: CASI el de lectura. Pregunta al curso: ¿por qué aquí memoizar no se salta ninguna celda, si en monedas se saltaba la mitad? Porque todo escalón es alcanzable. Con el arreglo largo son 17 llamadas y 7 aciertos.">
+  <p class="kicker">Demo 1 de 2 · escalera · arriba → abajo</p>
+  <h2 style="font-size:37px">Memoización: «¿desde dónde llegué?»</h2>
+  <div class="demobar" style="margin-top:14px">
+    <button data-act="reset">⟲</button>
+    <button data-act="prev">◀</button>
+    <button data-act="next" class="primary">Adelante ▶</button>
+    <button data-act="play" id="smPlay">▶ Reproducir</button>
+    <span class="seg" id="smSets"></span>
+    <span class="count" data-role="count"></span>
+  </div>
+  <div class="fill" style="flex-direction:row;gap:40px;align-items:flex-start;justify-content:flex-start;
+    padding-top:14px">
+    <div class="matrix" id="smMat"></div>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:22px">
+      <div>
+        <p class="colhead" style="margin-bottom:8px">Pila de llamadas en este instante</p>
+        <div class="stackstrip" id="smStack"></div>
+      </div>
+      <div style="display:flex;gap:30px;flex-wrap:wrap">
+        <div class="stat"><b id="smFilled" style="color:var(--td)">0</b><span>escalones resueltos</span></div>
+        <div class="stat"><b id="smDepth">0</b><span>profundidad</span></div>
+        <div class="stat"><b id="smHits" style="color:var(--hit)">—</b><span>aciertos de caché</span></div>
+      </div>
+      <p class="narr" id="smNarr" style="font-size:19px"></p>
+    </div>
+  </div>
+</section>
+
+<section class="slide pad-tight" data-demo="stairTab" data-act="III · Memoización y tabulación" data-notes="DEMO 2 DE 2 · escalera con tabulación. Baja de 0 a n−1. Señala la cuenta de la derecha y, sobre todo, las dos variables de abajo: prev2 y prev1. Mientras la tabla crece, esas dos variables son TODO lo que la transición necesita. Al final el camino óptimo queda marcado: 1 → 3 → 4. Aquí está la diferencia real con la memoización en este problema: no es el orden (casi igual) ni la cobertura (todas las celdas), es la pila y el espacio. La diapositiva siguiente lo convierte en código.">
+  <p class="kicker">Demo 2 de 2 · escalera · abajo → arriba</p>
+  <h2 style="font-size:37px">Tabulación: de abajo hacia arriba, <em>sin pila</em></h2>
+  <div class="demobar" style="margin-top:14px">
+    <button data-act="reset">⟲</button>
+    <button data-act="prev">◀</button>
+    <button data-act="next" class="primary">Adelante ▶</button>
+    <button data-act="play" id="stPlay">▶ Reproducir</button>
+    <span class="seg" id="stSets"></span>
+    <span class="count" data-role="count"></span>
+  </div>
+  <div class="fill" style="flex-direction:row;gap:40px;align-items:flex-start;justify-content:flex-start;
+    padding-top:14px">
+    <div class="matrix" id="stMat"></div>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:20px">
+      <div>
+        <p class="colhead" style="margin-bottom:8px">La cuenta de este escalón</p>
+        <p id="stCalc" style="font-family:var(--fm);font-size:19px;color:var(--ink);line-height:1.5"></p>
+      </div>
+      <div>
+        <p class="colhead" style="margin-bottom:8px">Lo único que la transición necesita</p>
+        <div id="stWin" style="display:flex;gap:12px;flex-wrap:wrap"></div>
+      </div>
+      <div style="display:flex;gap:30px;flex-wrap:wrap">
+        <div class="stat"><b id="stFilled" style="color:var(--bu)">0</b><span>escalones llenos</span></div>
+        <div class="stat"><b style="color:var(--bu)">1</b><span>profundidad</span></div>
+      </div>
+      <p class="narr" id="stNarr" style="font-size:19px"></p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-act="III · Memoización y tabulación" data-notes="La ventaja que solo tiene tabulación: controlar el orden permite botar lo que ya nadie va a mirar. Con memoización no se puede afirmar eso, porque el diccionario se llena en orden de descubrimiento y en cualquier momento puede volver a pedirse una casilla vieja.">
+  <p class="kicker">Lo que solo la tabulación puede hacer</p>
+  <h2>La tabla que se encoge</h2>
+  <div class="cols" style="margin-top:30px">
+    <div>
+      <pre class="sm">def escalera(costo):
+    n = len(costo)
+    prev2 = costo[0]
+    prev1 = costo[1]
+    for i in range(2, n):
+        cur = costo[i] + min(prev1, prev2)
+        prev2, prev1 = prev1, cur
+    return prev1</pre>
+      <div class="dotrow" style="margin-top:24px">
+        <div class="stat"><b>O(n)</b><span>tiempo, igual que antes</span></div>
+        <div class="stat"><b style="color:var(--hit)">O(1)</b><span>espacio, en vez de O(n)</span></div>
+      </div>
+    </div>
+    <div style="align-self:center">
+      <p class="body" style="font-size:23px"><code>f(i)</code> solo mira <b>dos casillas hacia atrás</b>. Como
+      el bucle avanza en orden, todo lo anterior ya no lo va a pedir nadie.</p>
+      <p class="callout warn" style="margin-top:26px;font-size:21px">Esto <b>no existe</b> con memoización: el
+      diccionario se llena en orden de descubrimiento, y en cualquier momento puede volver a pedirse una casilla
+      vieja.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-act="III · Memoización y tabulación" data-notes="La decisión. Lo primero que hay que decir: NINGUNA es la buena, y la complejidad asintótica es la MISMA. La decisión se toma por cobertura de estados, profundidad de pila y espacio. Pregunta al curso: para el problema 1 del taller con C=100000, ¿cuál usarían? Tabulación, por la pila.">
+  <p class="kicker">La decisión</p>
+  <h2>Misma complejidad. Tres razones para elegir</h2>
+  <div class="scroller" style="margin-top:26px">
+  <table class="t">
+    <thead><tr><th style="width:230px"></th><th>Memoización</th><th>Tabulación</th></tr></thead>
+    <tr><td>Quién fija el orden</td><td>la recursión, sola</td><td>usted, y tiene que acertar</td></tr>
+    <tr><td>Estados que toca</td><td>solo los alcanzables desde la respuesta</td><td>todos los del rango</td></tr>
+    <tr><td>Profundidad de pila</td><td>la cadena más larga</td><td>1</td></tr>
+    <tr><td>Espacio</td><td>la tabla completa</td><td>completa, o una ventana</td></tr>
+    <tr class="hot"><td>Si el orden está mal</td><td>no aplica: no hay orden que equivocar</td><td>respuesta incorrecta, sin error visible</td></tr>
+  </table></div>
+  <p class="callout" style="margin-top:28px">Complejidad: <b>la misma en las dos</b> — número de estados por
+  costo de cada transición. Lo que cambia es todo lo demás.</p>
+</section>
+
+<section class="slide" data-act="III · Memoización y tabulación" data-notes="Cierre técnico: la misma recurrencia escrita tres veces. Señala que las líneas verdes son idénticas en las tres columnas. Si tienen la recurrencia, las tres versiones son mecánicas.">
+  <p class="kicker">Problema 1 del taller</p>
+  <h2>La misma recurrencia, escrita tres veces</h2>
+  <div class="cols a3" style="margin-top:26px">
+    <div>
+      <p class="colhead">1 · pura</p>
+<pre class="sm" style="font-size:14.5px">def f(i, c, M):
+<span class="same">  if c == 0: return 0</span>
+<span class="same">  if i == 0: return INF</span>
+
+<span class="same">  mejor = f(i-1, c, M)</span>
+<span class="same">  m = M[i-1]</span>
+<span class="same">  if c - m &gt;= 0:</span>
+<span class="same">    mejor = min(mejor,</span>
+<span class="same">      1 + f(i, c-m, M))</span>
+
+  return mejor</pre>
+    </div>
+    <div>
+      <p class="colhead">2 · memoización</p>
+<pre class="sm" style="font-size:14.5px">def f(i, c, M, memo=None):
+<span class="add">  if memo is None: memo = {}</span>
+<span class="same">  if c == 0: return 0</span>
+<span class="same">  if i == 0: return INF</span>
+<span class="add">  if (i,c) in memo:</span>
+<span class="add">    return memo[(i,c)]</span>
+<span class="same">  mejor = f(i-1, c, M, memo)</span>
+<span class="same">  m = M[i-1]</span>
+<span class="same">  if c - m &gt;= 0:</span>
+<span class="same">    mejor = min(mejor,</span>
+<span class="same">      1 + f(i, c-m, M, memo))</span>
+<span class="add">  memo[(i,c)] = mejor</span>
+  return mejor</pre>
+    </div>
+    <div>
+      <p class="colhead">3 · tabulación</p>
+<pre class="sm" style="font-size:14.5px">def f(C, M):
+  n = len(M)
+<span class="add">  t = [[INF]*(C+1)</span>
+<span class="add">       for _ in range(n+1)]</span>
+<span class="same">  for i in range(n+1): t[i][0] = 0</span>
+<span class="add">  for c in range(1, C+1):</span>
+<span class="add">    for i in range(1, n+1):</span>
+<span class="same">      m = M[i-1]</span>
+<span class="same">      t[i][c] = t[i-1][c]</span>
+<span class="same">      if c - m &gt;= 0:</span>
+<span class="same">        t[i][c] = min(t[i][c],</span>
+<span class="same">          1 + t[i][c-m])</span>
+<span class="add">  return t[n][C]</span></pre>
+    </div>
+  </div>
+  <p class="small" style="margin-top:18px;font-size:18px"><span style="color:var(--bu)">■</span> la recurrencia
+  —&nbsp;idéntica en las tres · <span style="color:var(--hit)">■</span> lo que agrega cada técnica</p>
+</section>
+
+<!-- ==================== CIERRE ==================== -->
+<section class="slide" data-act="Cierre" data-notes="Las tres ideas para llevarse. Hazlos repetir la primera en voz alta. Si solo se llevan una, que sea esa.">
+  <p class="kicker">Para llevarse</p>
+  <h2>Tres ideas</h2>
+  <div style="margin-top:38px;display:flex;flex-direction:column;gap:26px">
+    <div class="box hit-b" style="display:flex;gap:26px;align-items:baseline">
+      <span style="font-family:var(--fd);font-size:44px;font-weight:800;color:var(--hit);line-height:1">1</span>
+      <div><h3>Escriba la recurrencia antes que el código</h3>
+      <p class="body" style="font-size:21px;margin-top:6px">Y dentro de la recurrencia, escriba primero la
+      frase de la pregunta 2. Si no puede escribirla, todavía no entendió el problema.</p></div>
+    </div>
+    <div class="box td-b" style="display:flex;gap:26px;align-items:baseline">
+      <span style="font-family:var(--fd);font-size:44px;font-weight:800;color:var(--td);line-height:1">2</span>
+      <div><h3>Fuerza bruta y PD son la misma recurrencia</h3>
+      <p class="body" style="font-size:21px;margin-top:6px">No son dos algoritmos. Son dos formas de evaluar la
+      misma definición. Si tiene la recurrencia, la PD sale sola.</p></div>
+    </div>
+    <div class="box bu-b" style="display:flex;gap:26px;align-items:baseline">
+      <span style="font-family:var(--fd);font-size:44px;font-weight:800;color:var(--bu);line-height:1">3</span>
+      <div><h3>Memoización y tabulación difieren en el orden</h3>
+      <p class="body" style="font-size:21px;margin-top:6px">La recursión lo descubre sola; en la tabla lo elige
+      usted. De ahí salen la pila, la cobertura de estados y la compresión de espacio.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-act="Cierre" data-notes="El taller. Recuérdales que los cuatro puntos de cada problema son exactamente las seis preguntas más la traducción. Y que la recurrencia debe seguir devolviendo números: NO ES POSIBLE se decide en la capa de salida.">
+  <p class="kicker">Ahora ustedes</p>
+  <h2>El taller</h2>
+  <div class="cols" style="margin-top:32px">
+    <div class="box">
+      <h3>Para cada uno de los dos problemas</h3>
+      <ol style="margin:14px 0 0;padding-left:26px;font-size:21px;line-height:1.5;color:var(--ink-2)">
+        <li style="margin-bottom:10px">Defina la función de recurrencia</li>
+        <li style="margin-bottom:10px">Explique los casos base</li>
+        <li style="margin-bottom:10px">Impleméntela con memoización</li>
+        <li>Impleméntela en Python</li>
+      </ol>
+    </div>
+    <div style="align-self:center">
+      <p class="body" style="font-size:22px">Los puntos 1 y 2 son las seis preguntas. El 3 es traducción
+      mecánica. <b>Si el 1 está bien, el resto es rutina.</b></p>
+      <p class="callout warn" style="margin-top:24px;font-size:20px"><code>NO ES POSIBLE</code> se decide en la
+      capa de salida, no dentro de la recurrencia: la recurrencia debe seguir devolviendo números para poder
+      combinarse.</p>
+      <p class="body" style="font-size:20px;margin-top:22px">Reto opcional: reescriba el problema 1 con
+      <b>tabulación</b> y compare cuántas celdas de la matriz llena cada versión.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide cover" data-act="Cierre" data-notes="Última. Las dos páginas interactivas quedan disponibles para que las recorran solos: son las mismas demos de esta clase, con más detalle y con los errores frecuentes.">
+  <p class="kicker">Material de apoyo</p>
+  <h1 style="font-size:58px">Las demos quedan en sus manos</h1>
+  <div style="margin-top:34px;display:flex;flex-direction:column;gap:18px;max-width:60ch">
+    <div class="box td-b"><h3 style="font-size:23px">Ver una recurrencia</h3>
+      <p class="body" style="font-size:20px;margin-top:4px">El gerente, la pila, el árbol de Fibonacci, los dos
+      índices del palíndromo, la suma máxima y cuatro errores frecuentes.</p></div>
+    <div class="box bu-b"><h3 style="font-size:23px">El orden de la tabla</h3>
+      <p class="body" style="font-size:20px;margin-top:4px">Los dos carriles de monedas, el orden válido, el
+      muro de la pila y la escalera con ventana deslizante.</p></div>
+  </div>
+  <p class="meta" style="margin-top:30px">Preguntas.</p>
+</section>
+
+</div></div>
+
+<div id="chrome"><div id="bar"></div></div>
+<div id="actlabel"></div>
+<div id="hud">
+  <span class="num" id="hudNum"></span>
+  <button id="hudPrev" title="Anterior (←)">◀</button>
+  <button id="hudNext" title="Siguiente (→)">▶</button>
+  <button id="hudNotes" title="Notas del expositor (N)">N</button>
+  <button id="hudFull" title="Pantalla completa (F)">⛶</button>
+</div>
+<div id="notes" hidden><h4>Notas del expositor</h4><p id="notesBody"></p></div>
+
+<script>
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
+const SVGNS = 'http://www.w3.org/2000/svg';
+/* var() no resuelve de forma fiable en atributos de presentacion SVG: se enruta a style */
+function el(tag, attrs, text){
+  const n = document.createElementNS(SVGNS, tag);
+  let style = '';
+  for (const k in attrs){
+    const v = String(attrs[k]);
+    if (v.indexOf('var(') !== -1) style += k + ':' + v + ';';
+    else n.setAttribute(k, v);
+  }
+  if (style) n.setAttribute('style', style);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+const fmt = v => (v === Infinity ? '∞' : String(v));
+
+/* ====== escalado del escenario ====== */
+const stage = $('#stage');
+function fit(){
+  const s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+  stage.style.transform = 'scale(' + s + ')';
+}
+window.addEventListener('resize', fit); fit();
+
+/* ====== navegacion ====== */
+const slides = $$('.slide');
+const demos = {};           // nombre -> { step, play }
+let idx = 0;
+function show(i){
+  idx = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((s, k) => s.classList.toggle('on', k === idx));
+  const s = slides[idx];
+  $('#bar').style.width = ((idx) / (slides.length - 1) * 100) + '%';
+  $('#hudNum').textContent = (idx + 1) + ' / ' + slides.length;
+  $('#actlabel').textContent = s.dataset.act || '';
+  $('#notesBody').innerHTML = s.dataset.notes || '<em>Sin notas para esta diapositiva.</em>';
+  $('#hudPrev').disabled = idx === 0;
+  $('#hudNext').disabled = idx === slides.length - 1;
+  /* en un iframe con origen opaco replaceState puede lanzar: el deck no depende de esto */
+  try { if (location.hash !== '#' + (idx + 1)) history.replaceState(null, '', '#' + (idx + 1)); } catch (_){}
+  stopAllPlays();
+}
+function curDemo(){ const d = slides[idx].dataset.demo; return d ? demos[d] : null; }
+function stopAllPlays(){ for (const k in demos) if (demos[k].stop) demos[k].stop(); }
+document.addEventListener('keydown', e => {
+  const t = e.target;
+  const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA');
+  if (typing) return;
+  const onButton = t && t.tagName === 'BUTTON';
+  switch (e.key){
+    case 'ArrowRight': case 'PageDown': show(idx + 1); e.preventDefault(); break;
+    case 'ArrowLeft': case 'PageUp': show(idx - 1); e.preventDefault(); break;
+    case ' ': if (onButton) return; show(idx + 1); e.preventDefault(); break;
+    case 'ArrowDown': case '.': { const d = curDemo(); if (d){ d.step(1); e.preventDefault(); } break; }
+    case 'ArrowUp': case ',': { const d = curDemo(); if (d){ d.step(-1); e.preventDefault(); } break; }
+    case 'Home': show(0); e.preventDefault(); break;
+    case 'End': show(slides.length - 1); e.preventDefault(); break;
+    case 'p': case 'P': { const d = curDemo(); if (d && d.play) d.play(); break; }
+    case 'n': case 'N': $('#notes').hidden = !$('#notes').hidden; break;
+    case 'f': case 'F':
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen().catch(() => {});
+      break;
+  }
+});
+$('#hudPrev').addEventListener('click', () => show(idx - 1));
+$('#hudNext').addEventListener('click', () => show(idx + 1));
+$('#hudNotes').addEventListener('click', () => { $('#notes').hidden = !$('#notes').hidden; });
+$('#hudFull').addEventListener('click', () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(() => {});
+});
+
+/* ====== stepper de demo, atado a su diapositiva ====== */
+function stepper(slideSel, name, opts){
+  const root = $(slideSel);
+  const bar = $('.demobar', root);
+  const count = $('[data-role="count"]', bar);
+  const st = { i: 0, total: 0, timer: null };
+  function paint(){
+    st.i = Math.max(0, Math.min(st.total, st.i));
+    opts.render(st.i);
+    if (count) count.textContent = 'paso ' + st.i + ' / ' + st.total;
+    const p = $('[data-act="prev"]', bar), n = $('[data-act="next"]', bar);
+    if (p) p.disabled = st.i === 0;
+    if (n) n.disabled = st.i === st.total;
+  }
+  bar.addEventListener('click', e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const a = b.dataset.act;
+    if (a === 'next') st.i++; else if (a === 'prev') st.i--; else if (a === 'reset') st.i = 0;
+    if (a !== 'play') paint();
+  });
+  st.reload = (total, start) => { st.total = total; st.i = start === undefined ? total : start; paint(); };
+  st.paint = paint;
+  demos[name] = {
+    step(d){ st.i += d; paint(); },
+    stop(){ if (st.timer){ clearInterval(st.timer); st.timer = null; if (opts.onStop) opts.onStop(); } }
+  };
+  return st;
+}
+function attachPlay(st, btn, name, ms){
+  btn.addEventListener('click', () => toggle());
+  function toggle(){
+    if (st.timer){ clearInterval(st.timer); st.timer = null; btn.textContent = '▶ Reproducir'; btn.classList.remove('on'); return; }
+    if (st.i >= st.total) st.i = 0;
+    btn.textContent = '❙❙ Pausa'; btn.classList.add('on');
+    st.timer = setInterval(() => {
+      if (st.i >= st.total){ clearInterval(st.timer); st.timer = null; btn.textContent = '▶ Reproducir'; btn.classList.remove('on'); return; }
+      st.i++; st.paint();
+    }, ms);
+  }
+  demos[name].play = toggle;
+  demos[name].stop = () => { if (st.timer){ clearInterval(st.timer); st.timer = null; btn.textContent = '▶ Reproducir'; btn.classList.remove('on'); } };
+}
+
+/* ====== DEMO · cadena de gerentes ====== */
+(function(){
+  const host = $('#mgrStage'), narr = $('#mgrNarr'), N = 5;
+  const fact = [1]; for (let k = 1; k <= N; k++) fact[k] = fact[k-1] * k;
+  const S = stepper('[data-demo="mgr"]', 'mgr', { render(s){
+    const reached = Math.min(s, N);
+    const up = s <= N ? -1 : s - N - 1;
+    host.innerHTML = '';
+    for (let d = 0; d <= N; d++){
+      const k = N - d, seen = d <= reached, done = up >= 0 && k <= up;
+      const active = (s <= N && d === reached) || (up >= 0 && k === up);
+      const row = document.createElement('div');
+      row.className = 'mgr-row' + (seen ? ' seen' : '') + (done ? ' done' : (active ? ' active' : ''));
+      row.innerHTML = '<span class="who">fact(' + k + ')</span><span class="say">' +
+        (k === 0 ? 'Caso base: respondo <b>1</b> sin delegar.'
+                 : 'Aporto el factor <b>' + k + '</b>. El resto lo delego.') +
+        '</span><span class="ret">' + (done ? '↑ devuelve ' + fact[k] : (seen ? 'esperando…' : '')) + '</span>';
+      host.appendChild(row);
+      if (d < N){
+        const lk = document.createElement('div');
+        const dn = seen && d + 1 <= reached, u = up >= 0 && k - 1 <= up;
+        lk.className = 'mgr-link' + (u ? ' up' : (dn ? ' down' : ''));
+        lk.innerHTML = '<span class="lbl">' + (u ? '↑ ' + fact[k-1] + ' · yo multiplico por ' + k
+          : (dn ? '↓ delega fact(' + (k-1) + ')' : '')) + '</span>';
+        host.appendChild(lk);
+      }
+    }
+    if (s === 0) narr.innerHTML = 'Usted es <b>fact(5)</b>. Su única decisión: aportar el factor 5.';
+    else if (s < N) narr.innerHTML = '<b>fact(' + (N - s) + ')</b> hace lo mismo y delega. <b>Nadie ha devuelto nada todavía.</b>';
+    else if (s === N) narr.innerHTML = 'Llegamos a <b>fact(0)</b>, el caso base: el primero que puede responder. <b>Aquí se da la vuelta.</b>';
+    else narr.innerHTML = '<b>fact(' + up + ')</b> recibe ' + (up === 0 ? 'su caso base' : fact[up-1] + ' del clon') +
+      ' y devuelve <b>' + fact[up] + '</b>' + (up === N ? '. Nunca hizo falta saber cómo lo calculó nadie más abajo.' : '.');
+  }});
+  S.reload(2 * (N + 1) - 1, 0);
+})();
+
+/* ====== DEMO · arbol de fibonacci ====== */
+(function(){
+  const svg = $('#fibSvg'), narr = $('#fibNarr'), slider = $('#fibN'), nv = $('#fibNv');
+  const cE = $('#fibCalls'), sE = $('#fibStates'), hE = $('#fibHits');
+  const bOff = $('#fibOff'), bOn = $('#fibOn'), bPlay = $('#fibPlay');
+  const COL = 74, ROW = 78, NW = 60, NH = 36;
+  let n = 5, useMemo = false, model = null;
+  function build(){
+    n = +slider.value; nv.textContent = n;
+    const nodes = [], events = [], memo = new Map();
+    let id = 0;
+    (function go(k, parent, depth){
+      const nd = { id: id++, k, parent, depth, children: [], value: null };
+      nodes.push(nd);
+      if (parent !== null) nodes[parent].children.push(nd.id);
+      events.push({ t: 'enter', id: nd.id, k });
+      if (useMemo && k > 1 && memo.has(k)){ nd.value = memo.get(k); events.push({ t: 'memo', id: nd.id, k, value: nd.value }); return nd; }
+      if (k <= 1){ nd.value = k; events.push({ t: 'base', id: nd.id, k, value: k }); return nd; }
+      const a = go(k - 1, nd.id, depth + 1), b = go(k - 2, nd.id, depth + 1);
+      nd.value = a.value + b.value;
+      if (useMemo) memo.set(k, nd.value);
+      events.push({ t: 'return', id: nd.id, k, value: nd.value, note: useMemo });
+      return nd;
+    })(n, null, 0);
+    let leaf = 0;
+    (function lay(i){
+      const nd = nodes[i];
+      if (!nd.children.length) nd.gx = leaf++;
+      else { nd.children.forEach(lay); nd.gx = (nodes[nd.children[0]].gx + nodes[nd.children[nd.children.length-1]].gx) / 2; }
+    })(0);
+    model = { nodes, events, cols: leaf, maxD: Math.max.apply(null, nodes.map(d => d.depth)) };
+    S.reload(events.length);
+  }
+  const S = stepper('[data-demo="fib"]', 'fib', { render(s){
+    const { nodes, events, cols, maxD } = model;
+    const st = nodes.map(() => ({ vis: false, kind: 'pending', value: null }));
+    let calls = 0, hits = 0; const seen = new Set(); const kc = new Map();
+    for (let i = 0; i < s; i++){
+      const e = events[i];
+      if (e.t === 'enter'){ st[e.id].vis = true; st[e.id].kind = 'open'; calls++; seen.add(e.k); kc.set(e.k, (kc.get(e.k) || 0) + 1); }
+      else if (e.t === 'memo'){ st[e.id].kind = 'memo'; st[e.id].value = e.value; hits++; }
+      else if (e.t === 'base'){ st[e.id].kind = 'base'; st[e.id].value = e.value; }
+      else if (e.t === 'return'){ st[e.id].kind = 'done'; st[e.id].value = e.value; }
+    }
+    const cur = s > 0 ? events[s-1].id : -1;
+    const W = 30 + Math.max(1, cols) * COL, H = 34 + maxD * ROW + NH + 16;
+    const scale = Math.min(1, 1130 / W);
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('width', W * scale); svg.setAttribute('height', H * scale);
+    svg.innerHTML = '';
+    const px = nd => 15 + nd.gx * COL + COL / 2, py = nd => 22 + nd.depth * ROW;
+    nodes.forEach(nd => {
+      if (nd.parent === null || !st[nd.id].vis) return;
+      const p = nodes[nd.parent];
+      const x1 = px(p), y1 = py(p) + NH, x2 = px(nd), y2 = py(nd);
+      const done = st[nd.id].value !== null;
+      svg.appendChild(el('path', { d: 'M' + x1 + ' ' + y1 + ' C ' + x1 + ' ' + (y1+24) + ', ' + x2 + ' ' + (y2-24) + ', ' + x2 + ' ' + y2,
+        fill: 'none', stroke: done ? 'var(--bu)' : 'var(--td)', 'stroke-width': done ? 2.4 : 1.8 }));
+      if (done){
+        const mx = (x1 + x2) / 2, my = (y1 + y2) / 2 + 2;
+        svg.appendChild(el('rect', { x: mx - 13, y: my - 11, width: 26, height: 19, rx: 3, fill: 'var(--ground)', stroke: 'var(--bu)', 'stroke-width': 1.2 }));
+        svg.appendChild(el('text', { x: mx, y: my + 3, 'text-anchor': 'middle', 'font-size': 13, 'font-family': 'var(--fm)', 'font-weight': 700, fill: 'var(--bu)' }, String(st[nd.id].value)));
+      }
+    });
+    nodes.forEach(nd => {
+      const s2 = st[nd.id]; if (!s2.vis) return;
+      const x = px(nd) - NW / 2, y = py(nd);
+      let fill = 'var(--surface)', stroke = 'var(--line-2)', tc = 'var(--ink)', dash = null, sw = 1.4;
+      if (s2.kind === 'open'){ fill = 'var(--td-soft)'; stroke = 'var(--td)'; tc = 'var(--td)'; sw = 2.4; }
+      if (s2.kind === 'base'){ fill = 'var(--bu-soft)'; stroke = 'var(--bu)'; tc = 'var(--bu)'; }
+      if (s2.kind === 'done'){ fill = 'var(--bu-soft)'; stroke = 'var(--bu)'; }
+      if (s2.kind === 'memo'){ fill = 'var(--hit-soft)'; stroke = 'var(--hit)'; tc = 'var(--hit)'; dash = '5 4'; sw = 2.4; }
+      const r = el('rect', { x, y, width: NW, height: NH, rx: 4, fill, stroke, 'stroke-width': nd.id === cur ? 3 : sw });
+      if (dash) r.setAttribute('stroke-dasharray', dash);
+      svg.appendChild(r);
+      svg.appendChild(el('text', { x: x + NW / 2, y: y + 24, 'text-anchor': 'middle', 'font-size': 16, 'font-family': 'var(--fm)', 'font-weight': 500, fill: tc }, 'fib(' + nd.k + ')'));
+      if (s2.kind === 'memo')
+        svg.appendChild(el('text', { x: x + NW / 2, y: y + NH + 14, 'text-anchor': 'middle', 'font-size': 11, 'font-family': 'var(--fm)', fill: 'var(--hit)' }, 'ya anotado'));
+    });
+    if (st[0].value !== null)
+      svg.appendChild(el('text', { x: px(nodes[0]), y: 14, 'text-anchor': 'middle', 'font-size': 15, 'font-family': 'var(--fm)', 'font-weight': 700, fill: 'var(--bu)' }, 'fib(' + n + ') = ' + st[0].value));
+    cE.textContent = calls; sE.textContent = seen.size; hE.textContent = hits;
+    const e = s > 0 ? events[s-1] : null;
+    if (!e) narr.innerHTML = 'Cada <b>fib(k)</b> con k &gt; 1 produce <b>dos</b> clones, no uno.';
+    else if (e.t === 'enter') narr.innerHTML = 'Se abre <b>fib(' + e.k + ')</b>' + ((kc.get(e.k) || 0) > 1 ? ' — este estado <b>ya apareció ' + kc.get(e.k) + ' veces</b>.' : ', un estado nuevo.');
+    else if (e.t === 'base') narr.innerHTML = '<b>fib(' + e.k + ')</b> es caso base: responde ' + e.value + ' sin delegar.';
+    else if (e.t === 'memo') narr.innerHTML = 'Atajo: <b>fib(' + e.k + ')</b> ya estaba en la libreta. <b>Todo ese subárbol nunca se dibuja.</b>';
+    else narr.innerHTML = '<b>fib(' + e.k + ')</b> suma lo de sus dos clones y entrega <b>' + e.value + '</b>' + (e.note ? ', y lo anota.' : '.');
+  }});
+  function mode(m){ useMemo = m; bOff.classList.toggle('on', !m); bOn.classList.toggle('on', m); build(); }
+  bOff.addEventListener('click', () => mode(false));
+  bOn.addEventListener('click', () => mode(true));
+  slider.addEventListener('input', build);
+  build();
+  attachPlay(S, bPlay, 'fib', 300);
+})();
+
+/* ====== FIGURA · cadena contra arbol ====== */
+(function(){
+  const svg = $('#cmpSvg'), W = 1080, H = 340;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  function node(x, y, label, hot){
+    const w = 68, h = 32;
+    svg.appendChild(el('rect', { x: x - w/2, y, width: w, height: h, rx: 4,
+      fill: hot ? 'var(--hit-soft)' : 'var(--surface)', stroke: hot ? 'var(--hit)' : 'var(--line-2)', 'stroke-width': hot ? 2 : 1.2 }));
+    svg.appendChild(el('text', { x, y: y + 21, 'text-anchor': 'middle', 'font-size': 14, 'font-family': 'var(--fm)', fill: hot ? 'var(--hit)' : 'var(--ink)' }, label));
+  }
+  function link(x1, y1, x2, y2){
+    svg.appendChild(el('path', { d: 'M' + x1 + ' ' + y1 + ' C ' + x1 + ' ' + (y1+18) + ', ' + x2 + ' ' + (y2-18) + ', ' + x2 + ' ' + y2, fill: 'none', stroke: 'var(--line-2)', 'stroke-width': 1.6 }));
+  }
+  function title(x, t, sub, col){
+    svg.appendChild(el('text', { x, y: 20, 'font-size': 19, 'font-family': 'var(--fd)', 'font-weight': 600, fill: col }, t));
+    svg.appendChild(el('text', { x, y: 42, 'font-size': 14, 'font-family': 'var(--fm)', fill: 'var(--muted)' }, sub));
+  }
+  title(20, 'mult(4,3) — una cadena', '4 llamadas · 4 estados · 0 repetidos', 'var(--bu)');
+  ['mult(4,3)','mult(4,2)','mult(4,1)','mult(4,0)'].forEach((t, i) => {
+    const x = 120, y = 70 + i * 62;
+    if (i) link(x, y - 30, x, y);
+    node(x, y, t, false);
+  });
+  svg.appendChild(el('text', { x: 176, y: 118, 'font-size': 13, 'font-family': 'var(--fm)', fill: 'var(--td)' }, '↓ un solo clon'));
+  svg.appendChild(el('text', { x: 20, y: 328, 'font-size': 14, 'font-family': 'var(--fm)', fill: 'var(--muted)' }, 'memoizar aquí no ahorra nada'));
+  svg.appendChild(el('line', { x1: 330, y1: 8, x2: 330, y2: H - 8, stroke: 'var(--line)', 'stroke-width': 1.4, 'stroke-dasharray': '4 5' }));
+  title(360, 'fib(5) — un árbol', '15 llamadas · 6 estados · 9 repetidos', 'var(--td)');
+  const tree = [
+    { k:5,d:0,gx:10.5,h:0 },{ k:4,d:1,gx:5.5,h:0 },{ k:3,d:1,gx:15.5,h:1 },
+    { k:3,d:2,gx:2.5,h:0 },{ k:2,d:2,gx:8.5,h:1 },{ k:2,d:2,gx:13.5,h:1 },{ k:1,d:2,gx:17.5,h:1 },
+    { k:2,d:3,gx:1,h:0 },{ k:1,d:3,gx:4,h:1 },{ k:1,d:3,gx:7.5,h:1 },{ k:0,d:3,gx:9.5,h:1 },
+    { k:1,d:3,gx:12.5,h:1 },{ k:0,d:3,gx:14.5,h:1 },{ k:1,d:4,gx:0,h:1 },{ k:0,d:4,gx:2,h:1 }
+  ];
+  const edges = [[0,1],[0,2],[1,3],[1,4],[2,5],[2,6],[3,7],[3,8],[4,9],[4,10],[5,11],[5,12],[7,13],[7,14]];
+  const X = g => 376 + g * 38, Y = d => 66 + d * 62;
+  edges.forEach(([a, b]) => link(X(tree[a].gx), Y(tree[a].d) + 32, X(tree[b].gx), Y(tree[b].d)));
+  tree.forEach(t => node(X(t.gx), Y(t.d), 'fib(' + t.k + ')', !!t.h));
+  svg.appendChild(el('text', { x: 360, y: 328, 'font-size': 14, 'font-family': 'var(--fm)', fill: 'var(--hit)' }, 'morado = este estado ya se calculó antes'));
+})();
+
+/* ====== DEMOS · la matriz de monedas, una técnica por diapositiva ======
+   Filas = valor c (0..C) · Columnas = denominaciones (i = 0..n)
+   t[i][c] = min( t[i-1][c] , 1 + t[i][c-mᵢ] )
+              ↑ misma fila,    ↑ misma columna, mᵢ filas más arriba
+                una columna    (por eso la moneda se puede repetir)
+                a la izquierda
+   Las dos diapositivas comparten el juego de monedas y los dos modelos, pero cada una
+   avanza con su propio reloj: nunca se muestran al tiempo. */
+(function(){
+  const SETS = [
+    { label: 'M=[1,5,10] · C=11', M: [1, 5, 10], C: 11 },
+    { label: 'M=[3,7] · C=20', M: [3, 7], C: 20 },
+    { label: 'M=[4,6] · C=15', M: [4, 6], C: 15 }
+  ];
+  let cur = SETS[0], model = null;
+  const key = (i, c) => i + ',' + c;
+
+  function build(M, C){
+    const n = M.length;
+    /* --- memoización: el orden lo descubre la recursión --- */
+    const memo = new Map(), tdFills = [], stack = [];
+    let calls = 0;
+    (function f(i, c){
+      calls++;
+      const k = key(i, c);
+      if (memo.has(k)) return memo.get(k);
+      stack.push([i, c]);
+      let best, deps = [];
+      if (c === 0) best = 0;
+      else if (i === 0) best = Infinity;
+      else {
+        deps.push([i - 1, c]);
+        best = f(i - 1, c);
+        const m = M[i - 1];
+        if (c - m >= 0){ deps.push([i, c - m]); const r = f(i, c - m); if (r + 1 < best) best = r + 1; }
+      }
+      memo.set(k, best);
+      tdFills.push({ i, c, v: best, deps, stack: stack.map(x => x.slice()) });
+      stack.pop();
+      return best;
+    })(n, C);
+    /* --- tabulación: c por fuera, i por dentro = el orden de lectura de esta matriz --- */
+    const t = [];
+    for (let i = 0; i <= n; i++) t.push(new Array(C + 1).fill(Infinity));
+    const buFills = [];
+    for (let c = 0; c <= C; c++) for (let i = 0; i <= n; i++){
+      const deps = [], cands = [];
+      if (c === 0) t[i][c] = 0;
+      else if (i === 0) t[i][c] = Infinity;
+      else {
+        const m = M[i - 1];
+        deps.push([i - 1, c]);
+        cands.push({ txt: 't[' + (i-1) + '][' + c + ']', val: t[i-1][c], from: 'izquierda' });
+        t[i][c] = t[i-1][c];
+        if (c - m >= 0){
+          deps.push([i, c - m]);
+          cands.push({ txt: '1 + t[' + i + '][' + (c-m) + ']', val: t[i][c-m] + 1, from: 'arriba' });
+          if (t[i][c-m] + 1 < t[i][c]) t[i][c] = t[i][c-m] + 1;
+        }
+      }
+      buFills.push({ i, c, v: t[i][c], deps, cands });
+    }
+    const seenTD = new Set(tdFills.map(f => key(f.i, f.c)));
+    return { M, C, n, tdFills, buFills, calls, seenTD, total: (n + 1) * (C + 1), ans: t[n][C] };
+  }
+
+  /* La matriz es alta y angosta: si no cabe a lo alto se parte en bloques
+     lado a lado, como se dibujaría en el tablero. */
+  function renderMatrix(host, fills, k, kind, markNever){
+    const { M, C, n } = model;
+    const done = Math.min(k, fills.length), byK = new Map();
+    for (let x = 0; x < done; x++){ const f = fills[x]; byK.set(key(f.i, f.c), { v: f.v, ord: x + 1 }); }
+    const current = done > 0 && done === k ? fills[done - 1] : null;
+    const deps = new Set(current ? current.deps.map(d => key(d[0], d[1])) : []);
+    const fin = k >= fills.length;
+    const rows = C + 1;
+    const blocks = Math.ceil(rows / 13);
+    const per = Math.ceil(rows / blocks);
+    const cw = n <= 2 ? 80 : 70;
+    const rh = Math.min(30, Math.max(20, Math.floor(392 / per) - 3));
+    host.innerHTML = '';
+    for (let b = 0; b < blocks; b++){
+      const blk = document.createElement('div');
+      blk.className = 'mblock';
+      /* encabezado de columnas: las denominaciones */
+      const head = document.createElement('div');
+      head.className = 'mrow mhead';
+      const hs = document.createElement('div');
+      hs.className = 'mrlab mrlab-h'; hs.textContent = 'c';
+      head.appendChild(hs);
+      for (let i = 0; i <= n; i++){
+        const hc = document.createElement('div');
+        hc.className = 'mhcol'; hc.style.width = cw + 'px';
+        hc.innerHTML = '<b>i = ' + i + '</b><span>' + (i === 0 ? 'ninguna' : 'm = ' + M[i-1]) + '</span>';
+        head.appendChild(hc);
+      }
+      blk.appendChild(head);
+      for (let r = 0; r < per; r++){
+        const c = b * per + r;
+        if (c > C) break;
+        const row = document.createElement('div');
+        row.className = 'mrow';
+        const lab = document.createElement('div');
+        lab.className = 'mrlab'; lab.style.height = rh + 'px'; lab.textContent = c;
+        row.appendChild(lab);
+        for (let i = 0; i <= n; i++){
+          const d = document.createElement('div'), got = byK.get(key(i, c));
+          let cls = 'mcell ' + kind;
+          if (got) cls += ' filled';
+          if (current && current.i === i && current.c === c) cls += ' cur';
+          else if (deps.has(key(i, c))) cls += ' dep';
+          if (!got && fin && markNever) cls += ' never';
+          d.className = cls;
+          d.style.width = cw + 'px';
+          d.style.height = rh + 'px';
+          d.innerHTML = '<span>' + (got ? fmt(got.v) : '·') + '</span>' +
+            (got ? '<span class="ord">' + got.ord + '</span>' : '');
+          row.appendChild(d);
+        }
+        blk.appendChild(row);
+      }
+      host.appendChild(blk);
+    }
+    return { done, fin, current };
+  }
+
+  /* ---------- diapositiva 1 · memoización sola ---------- */
+  const mMat = $('#memoMat'), mStack = $('#memoStack'), mNarr = $('#memoNarr');
+  const mFilled = $('#memoFilled'), mDepth = $('#memoDepth'), mNever = $('#memoNever');
+  const Smemo = stepper('[data-demo="memo"]', 'memo', { render(k){
+    const a = renderMatrix(mMat, model.tdFills, k, 'td-c', true);
+    const stk = a.current ? a.current.stack : null;
+    mStack.innerHTML = '';
+    if (!stk) mStack.innerHTML = '<span class="sarrow">' + (k === 0 ? 'todavía no arranca · la pila está vacía'
+      : 'terminó · la pila volvió a vaciarse') + '</span>';
+    else stk.forEach((p, x) => {
+      if (x){ const s = document.createElement('span'); s.className = 'sarrow'; s.textContent = '↓'; mStack.appendChild(s); }
+      const s2 = document.createElement('span');
+      s2.className = 'schip' + (x === stk.length - 1 ? ' last' : '');
+      s2.textContent = 'f(' + p[0] + ',' + p[1] + ')';
+      mStack.appendChild(s2);
+    });
+    mFilled.textContent = a.done + ' / ' + model.total;
+    mDepth.textContent = stk ? stk.length : 0;
+    mNever.textContent = a.fin ? (model.total - model.tdFills.length) : '—';
+    if (k === 0){
+      mNarr.innerHTML = 'Arranca en <b>f(' + model.n + ', ' + model.C + ')</b> —&nbsp;la esquina de abajo a la ' +
+        'derecha&nbsp;— y pide hacia atrás lo que necesita. <b>Nadie le dijo en qué orden llenar el cuadro.</b>';
+      return;
+    }
+    const at = a.current;
+    if (!at){
+      const nunca = model.total - model.tdFills.length;
+      mNarr.innerHTML = '<b>Terminó.</b> Resolvió <b>' + model.tdFills.length + '</b> de ' + model.total +
+        ' celdas y <b>nunca miró ' + nunca + '</b> —&nbsp;las de borde punteado. Respuesta: <b>' +
+        fmt(model.ans) + '</b>' + (model.ans === Infinity ? ' → NO ES POSIBLE.' : '.');
+      return;
+    }
+    const base = at.c === 0 ? ' <span style="color:var(--bu)">(caso base: formar 0 cuesta 0)</span>'
+               : (at.i === 0 ? ' <span style="color:var(--td)">(caso base: sin monedas, imposible)</span>' : '');
+    mNarr.innerHTML = '<b>Turno ' + k + ':</b> resuelve <b>f(' + at.i + ',' + at.c + ') = ' + fmt(at.v) + '</b>' +
+      base + '. El círculo marca el <b>turno</b> de llenado: no sigue el orden de lectura.';
+  }});
+
+  /* ---------- diapositiva 2 · tabulación sola ---------- */
+  const tMat = $('#tabMat'), tCalc = $('#tabCalc'), tNarr = $('#tabNarr');
+  const tFilled = $('#tabFilled'), tUseless = $('#tabUseless');
+  const Stab = stepper('[data-demo="tab"]', 'tab', { render(k){
+    const b = renderMatrix(tMat, model.buFills, k, 'bu-c', false);
+    tFilled.textContent = b.done + ' / ' + model.total;
+    tUseless.textContent = b.fin ? (model.total - model.tdFills.length) : '—';
+    const at = b.current;
+    if (!at) tCalc.innerHTML = '<span style="color:var(--muted)">' +
+      (k === 0 ? 'los dos bucles todavía no arrancan' : 'los dos bucles terminaron') + '</span>';
+    else if (!at.cands.length) tCalc.innerHTML = 't[' + at.i + '][' + at.c + '] = <b>' + fmt(at.v) + '</b><br>' +
+      (at.c === 0 ? '<span style="color:var(--bu)">caso base: formar 0 no cuesta monedas</span>'
+                  : '<span style="color:var(--td)">caso base: sin monedas no se forma nada</span>');
+    else tCalc.innerHTML = 't[' + at.i + '][' + at.c + '] = min(<br>' +
+      at.cands.map(x => '&nbsp;&nbsp;' + x.txt + ' = ' + fmt(x.val) +
+        ' <span style="color:var(--muted);font-size:15px">← ' + x.from + '</span>').join('<br>') +
+      '<br>) = <b>' + fmt(at.v) + '</b>';
+    if (k === 0){
+      tNarr.innerHTML = 'Dos bucles: <b>c</b> por fuera, <b>i</b> por dentro. Baja por los valores y, dentro ' +
+        'de cada uno, avanza por las denominaciones. Cuando llega a una celda, la de su izquierda y la de ' +
+        'arriba <b>ya tienen que estar escritas</b>.';
+      return;
+    }
+    if (!at){
+      const sobra = model.total - model.tdFills.length;
+      tNarr.innerHTML = '<b>Terminó.</b> Llenó las <b>' + model.total + '</b> celdas en orden de lectura, sin ' +
+        'pila, incluidas <b>' + sobra + '</b> que la memoización ni miró. Respuesta: <b>' + fmt(model.ans) + '</b>' +
+        (model.ans === Infinity ? ' → NO ES POSIBLE.' : '.');
+      return;
+    }
+    const nueva = !model.seenTD.has(key(at.i, at.c));
+    tNarr.innerHTML = '<b>Turno ' + k + ':</b> llena <b>t[' + at.i + '][' + at.c + ']</b>. Los círculos van ' +
+      '1, 2, 3 … en orden de lectura: el orden es una <b>decisión suya</b>, no un descubrimiento' +
+      (nueva ? '. <b>Esta celda la memoización nunca la miró.</b>' : '.');
+  }});
+
+  /* «▶▶ fila» completa el valor c actual: son n+1 celdas, un paso natural en clase */
+  $('#tabRow').addEventListener('click', () => {
+    const w = model.n + 1;
+    Stab.i = Math.min(Stab.total, (Math.floor(Stab.i / w) + 1) * w);
+    Stab.paint();
+  });
+
+  /* ---------- el juego de monedas es compartido por las dos ---------- */
+  function pick(x){
+    cur = SETS[x];
+    model = build(cur.M, cur.C);
+    [$('#memoSets'), $('#tabSets')].forEach(seg =>
+      [...seg.children].forEach((b, j) => b.classList.toggle('on', x === j)));
+    Smemo.reload(model.tdFills.length, 0);
+    Stab.reload(model.buFills.length, 0);
+  }
+  [$('#memoSets'), $('#tabSets')].forEach(seg => SETS.forEach((s, x) => {
+    const b = document.createElement('button'); b.textContent = s.label;
+    b.addEventListener('click', () => pick(x)); seg.appendChild(b);
+  }));
+  pick(0);
+  attachPlay(Smemo, $('#memoPlay'), 'memo', 340);
+  attachPlay(Stab, $('#tabPlay'), 'tab', 150);
+})();
+
+/* ====== FIGURA · las dos dependencias, y la diagonal que no ====== */
+(function(){
+  const svg = $('#orderSvg'), W = 1080, H = 348;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  function cell(x, y, w, h, label, sub, col, soft){
+    svg.appendChild(el('rect', { x, y, width: w, height: h, rx: 4,
+      fill: soft || 'var(--surface)', stroke: col || 'var(--line-2)', 'stroke-width': col ? 2.4 : 1.4 }));
+    svg.appendChild(el('text', { x: x + w/2, y: y + (sub ? h/2 - 1 : h/2 + 6), 'text-anchor': 'middle',
+      'font-size': 16, 'font-family': 'var(--fm)', 'font-weight': 600, fill: col || 'var(--ink)' }, label));
+    if (sub) svg.appendChild(el('text', { x: x + w/2, y: y + h/2 + 19, 'text-anchor': 'middle',
+      'font-size': 12.5, 'font-family': 'var(--fm)', fill: 'var(--muted)' }, sub));
+  }
+  function arrow(x1, y1, x2, y2, col, dashed){
+    const a = el('line', { x1, y1, x2, y2, stroke: col, 'stroke-width': 2.6 });
+    if (dashed) a.setAttribute('stroke-dasharray', '6 4');
+    svg.appendChild(a);
+    const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy), ux = dx/L, uy = dy/L, px = -uy, py = ux;
+    svg.appendChild(el('polygon', { points:
+      x2 + ',' + y2 + ' ' + (x2 - ux*13 + px*6) + ',' + (y2 - uy*13 + py*6) + ' ' +
+      (x2 - ux*13 - px*6) + ',' + (y2 - uy*13 - py*6), fill: col }));
+  }
+  function txt(x, y, t, col, size, w, anchor){
+    const n = el('text', { x, y, 'font-size': size || 14, 'font-family': 'var(--fm)', fill: col || 'var(--ink)' }, t);
+    if (w) n.setAttribute('font-weight', w);
+    if (anchor) n.setAttribute('text-anchor', anchor);
+    svg.appendChild(n);
+  }
+
+  /* ---------- izquierda: el vecindario de una celda ---------- */
+  txt(20, 26, 'De qué depende una celda', 'var(--ink)', 19, 600);
+  txt(112, 52, 'columna i−1', 'var(--muted)', 13, 400, 'middle');
+  txt(352, 52, 'columna i', 'var(--muted)', 13, 400, 'middle');
+  txt(20, 100, 'fila c−mᵢ', 'var(--muted)', 13);
+  txt(20, 250, 'fila c', 'var(--muted)', 13);
+  cell(46, 66, 132, 60, 't[i−1][c−mᵢ]', null, null, null);
+  cell(286, 66, 132, 60, 't[i][c−mᵢ]', null, 'var(--bu)', 'var(--bu-soft)');
+  cell(46, 216, 132, 60, 't[i−1][c]', null, 'var(--bu)', 'var(--bu-soft)');
+  cell(286, 216, 132, 60, 't[i][c]', 'la que llenamos', 'var(--ink)', 'var(--hit-soft)');
+  /* desde arriba, misma columna: uso la moneda y la puedo repetir */
+  arrow(352, 126, 352, 214, 'var(--bu)');
+  txt(364, 166, 'uso mᵢ', 'var(--bu)', 14, 700);
+  txt(364, 184, 'y la repito', 'var(--bu)', 12.5, 400);
+  /* desde la izquierda, misma fila: descarto la denominacion */
+  arrow(178, 247, 284, 247, 'var(--bu)');
+  txt(231, 236, 'no uso mᵢ', 'var(--bu)', 14, 700, 'middle');
+  /* la diagonal: el error de una letra */
+  arrow(178, 126, 284, 212, 'var(--td)', true);
+  txt(208, 190, '✗', 'var(--td)', 21, 700);
+  txt(20, 322, '✗ Si escribe t[i−1][c−mᵢ] cada moneda se usa UNA sola vez: es otro problema.',
+      'var(--td)', 13.5, 700);
+
+  /* ---------- derecha: el barrido que sí funciona ---------- */
+  const CX = 620, CY = 74, CW = 62, CH = 26, GAP = 4, NC = 4, NR = 8;
+  txt(CX, 26, 'Un orden que las encuentra listas', 'var(--ink)', 19, 600);
+  txt(CX, 48, 'las dos dependencias están arriba o a la izquierda', 'var(--muted)', 13);
+  txt(CX - 34, CY - 8, 'c', 'var(--muted)', 12);
+  for (let r = 0; r < NR; r++){
+    const y = CY + r * (CH + GAP);
+    txt(CX - 14, y + 18, String(r), 'var(--muted)', 12, 400, 'end');
+    for (let c = 0; c < NC; c++){
+      const x = CX + c * (CW + GAP);
+      svg.appendChild(el('rect', { x, y, width: CW, height: CH, rx: 3,
+        fill: r === 0 || c === 0 ? 'var(--bu-soft)' : 'var(--surface)',
+        stroke: 'var(--line-2)', 'stroke-width': 1.2 }));
+    }
+    /* dentro de cada valor c, avanza por las denominaciones */
+    arrow(CX + 8, y + CH / 2, CX + (NC - 1) * (CW + GAP) + CW - 6, y + CH / 2, 'var(--bu)');
+  }
+  txt(CX, CY - 26, 'azul = casos base (fila c=0 y columna i=0)', 'var(--bu)', 12);
+  const BY = CY + NR * (CH + GAP);
+  txt(CX, BY + 24, '✓  c de arriba abajo · i de izquierda a derecha', 'var(--bu)', 14.5, 700);
+  txt(CX, BY + 46, '✓  también sirve i por fuera y c por dentro:', 'var(--bu)', 13.5, 400);
+  txt(CX, BY + 64, '    lo que importa es no ir hacia atrás en ninguno', 'var(--muted)', 13.5, 400);
+  txt(CX, BY + 92, '✗  de abajo arriba, o de derecha a izquierda:', 'var(--td)', 14.5, 700);
+  txt(CX, BY + 110, '    lee celdas todavía vacías', 'var(--td)', 13.5, 400);
+})();
+
+/* ====== FIGURA · profundidad de pila ====== */
+(function(){
+  const c = $('#depthSvg');
+  const W = 1080, H = 320, L = 86, R = 168, T = 30, B = 52;
+  const pw = W - L - R, ph = H - T - B, XM = 3000, YM = 3000;
+  c.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  c.setAttribute('width', W); c.setAttribute('height', H);
+  const X = v => L + (v / XM) * pw, Y = v => T + ph - (v / YM) * ph;
+  c.appendChild(el('text', { x: 14, y: 18, 'font-size': 14, 'font-family': 'var(--fm)', fill: 'var(--muted)' }, 'profundidad de pila'));
+  [0, 1000, 2000, 3000].forEach(v => {
+    c.appendChild(el('line', { x1: L, y1: Y(v), x2: L + pw, y2: Y(v), stroke: 'var(--line)', 'stroke-width': 1.2 }));
+    c.appendChild(el('text', { x: L - 12, y: Y(v) + 5, 'text-anchor': 'end', 'font-size': 14, 'font-family': 'var(--fm)', fill: 'var(--muted)' }, v.toLocaleString('es')));
+    c.appendChild(el('text', { x: X(v), y: H - B + 26, 'text-anchor': 'middle', 'font-size': 14, 'font-family': 'var(--fm)', fill: 'var(--muted)' }, v.toLocaleString('es')));
+  });
+  c.appendChild(el('text', { x: L + pw/2, y: H - 6, 'text-anchor': 'middle', 'font-size': 14, 'font-family': 'var(--fm)', fill: 'var(--muted)' }, 'valor objetivo C'));
+  c.appendChild(el('line', { x1: L, y1: Y(1000), x2: L + pw, y2: Y(1000), stroke: 'var(--hit)', 'stroke-width': 2, 'stroke-dasharray': '8 5' }));
+  c.appendChild(el('text', { x: L + pw + 10, y: Y(1000) - 8, 'font-size': 15, 'font-family': 'var(--fm)', 'font-weight': 700, fill: 'var(--hit)' }, 'límite de Python'));
+  c.appendChild(el('text', { x: L + pw + 10, y: Y(1000) + 12, 'font-size': 13.5, 'font-family': 'var(--fm)', fill: 'var(--muted)' }, '1000 llamadas'));
+  c.appendChild(el('line', { x1: X(0), y1: Y(0), x2: X(XM), y2: Y(XM), stroke: 'var(--td)', 'stroke-width': 3.2 }));
+  c.appendChild(el('line', { x1: X(0), y1: Y(1), x2: X(XM), y2: Y(1), stroke: 'var(--bu)', 'stroke-width': 3.2 }));
+  c.appendChild(el('text', { x: L + pw + 10, y: Y(XM) + 5, 'font-size': 15, 'font-family': 'var(--fm)', 'font-weight': 700, fill: 'var(--td)' }, 'memoización'));
+  c.appendChild(el('text', { x: L + pw + 10, y: Y(1) + 5, 'font-size': 15, 'font-family': 'var(--fm)', 'font-weight': 700, fill: 'var(--bu)' }, 'tabulación'));
+  c.appendChild(el('text', { x: L + pw + 10, y: Y(1) + 24, 'font-size': 13.5, 'font-family': 'var(--fm)', fill: 'var(--muted)' }, 'siempre 1'));
+  c.appendChild(el('circle', { cx: X(1000), cy: Y(1000), r: 7, fill: 'var(--hit)' }));
+  c.appendChild(el('line', { x1: X(1000), y1: Y(1000), x2: X(1000), y2: T + ph, stroke: 'var(--hit)', 'stroke-width': 1.4, 'stroke-dasharray': '4 4', opacity: .7 }));
+  c.appendChild(el('text', { x: X(1000) + 14, y: Y(1000) - 16, 'font-size': 16, 'font-family': 'var(--fm)', 'font-weight': 700, fill: 'var(--hit)' }, 'C ≈ 1000: RecursionError'));
+})();
+
+/* ====== FIGURA · la escalera del taller ====== */
+(function(){
+  const svg = $('#stairFig'), W = 1100, H = 262;
+  const costo = [10, 15, 20, 5, 10], camino = new Set([1, 3, 4]);
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  const BASE = 250, X0 = 150, SW = 184, SWI = 172, RISE = 34;
+  const top = i => 196 - i * RISE;
+  const cx = i => X0 + i * SW + SWI / 2;
+  /* piso */
+  svg.appendChild(el('rect', { x: 14, y: 222, width: 116, height: BASE - 222, rx: 3,
+    fill: 'var(--sunk)', stroke: 'var(--line-2)', 'stroke-width': 1.2 }));
+  svg.appendChild(el('text', { x: 72, y: 241, 'text-anchor': 'middle', 'font-size': 15, 'font-family': 'var(--fm)',
+    fill: 'var(--muted)' }, 'piso'));
+  /* escalones */
+  costo.forEach((c, i) => {
+    const on = camino.has(i), x = X0 + i * SW, y = top(i);
+    svg.appendChild(el('rect', { x, y, width: SWI, height: BASE - y, rx: 3,
+      fill: on ? 'var(--bu-soft)' : 'var(--surface)', stroke: on ? 'var(--bu)' : 'var(--line-2)',
+      'stroke-width': on ? 2.4 : 1.2 }));
+    svg.appendChild(el('text', { x: x + SWI / 2, y: y + 22, 'text-anchor': 'middle', 'font-size': 13.5,
+      'font-family': 'var(--fm)', fill: 'var(--muted)' }, 'escalón ' + i));
+    svg.appendChild(el('text', { x: x + SWI / 2, y: y + 47, 'text-anchor': 'middle', 'font-size': 21,
+      'font-family': 'var(--fm)', 'font-weight': 700, fill: on ? 'var(--bu)' : 'var(--ink)' }, 'costo ' + c));
+    if (on) svg.appendChild(el('text', { x: x + SWI / 2, y: y + 68, 'text-anchor': 'middle', 'font-size': 12.5,
+      'font-family': 'var(--fm)', fill: 'var(--bu)' }, 'se paga'));
+  });
+  /* saltos del camino óptimo, dibujados por encima */
+  function jump(x1, y1, x2, y2, label){
+    const apex = Math.min(y1, y2) - 42, mx = (x1 + x2) / 2;
+    svg.appendChild(el('path', { d: 'M ' + x1 + ' ' + y1 + ' Q ' + mx + ' ' + apex + ' ' + x2 + ' ' + (y2 - 4),
+      fill: 'none', stroke: 'var(--bu)', 'stroke-width': 2.6 }));
+    /* punta de flecha, orientada con la tangente final de la curva */
+    const tx = x2 - mx, ty = (y2 - 4) - apex, L = Math.hypot(tx, ty), ux = tx / L, uy = ty / L;
+    svg.appendChild(el('polygon', { points: x2 + ',' + (y2 - 4) + ' ' +
+      (x2 - ux * 13 - uy * 6) + ',' + (y2 - 4 - uy * 13 + ux * 6) + ' ' +
+      (x2 - ux * 13 + uy * 6) + ',' + (y2 - 4 - uy * 13 - ux * 6), fill: 'var(--bu)' }));
+    svg.appendChild(el('text', { x: mx, y: apex + 14, 'text-anchor': 'middle', 'font-size': 13,
+      'font-family': 'var(--fm)', 'font-weight': 700, fill: 'var(--bu)' }, label));
+  }
+  jump(72, 222, cx(1), top(1), 'sube 2');
+  jump(cx(1), top(1), cx(3), top(3), 'sube 2');
+  jump(cx(3), top(3), cx(4), top(4), 'sube 1');
+  /* total */
+  svg.appendChild(el('text', { x: 14, y: 26, 'font-size': 17, 'font-family': 'var(--fm)', 'font-weight': 700,
+    fill: 'var(--ink)' }, 'piso → 1 → 3 → 4'));
+  svg.appendChild(el('text', { x: 14, y: 50, 'font-size': 17, 'font-family': 'var(--fm)', fill: 'var(--bu)' },
+    '15 + 5 + 10 = 30'));
+  svg.appendChild(el('text', { x: 14, y: 72, 'font-size': 13, 'font-family': 'var(--fm)', fill: 'var(--muted)' },
+    'el mejor de 8 caminos · el siguiente cuesta 40'));
+})();
+
+/* ====== DEMOS · escalera, una técnica por diapositiva ======
+   f(i) = costo[i] + min( f(i-1), f(i-2) )   ·   f(0) = costo[0]   ·   f(1) = costo[1]
+   Una sola columna de estados: el problema no necesita más. */
+(function(){
+  const SETS = [
+    { label: '10 15 20 5 10 · el taller', c: [10, 15, 20, 5, 10] },
+    { label: '1 100 1 1 1 100 1 1 100 1', c: [1, 100, 1, 1, 1, 100, 1, 1, 100, 1] }
+  ];
+  let model = null;
+
+  function build(c){
+    const n = c.length;
+    /* memoización: g(i-1) antes que g(i-2), igual que el código */
+    const memo = new Map(), tdFills = [], stack = [];
+    let calls = 0;
+    (function g(i){
+      calls++;
+      if (memo.has(i)) return memo.get(i);
+      stack.push(i);
+      let v, deps = [], from = null;
+      if (i <= 1) v = c[i];
+      else {
+        deps = [i - 1, i - 2];
+        const a = g(i - 1), b = g(i - 2);
+        v = c[i] + Math.min(a, b);
+        from = a <= b ? i - 1 : i - 2;
+      }
+      memo.set(i, v);
+      tdFills.push({ i, v, deps, from, stack: stack.slice() });
+      stack.pop();
+      return v;
+    })(n - 1);
+    /* tabulación */
+    const f = [], buFills = [];
+    for (let i = 0; i < n; i++){
+      let deps = [], from = null;
+      if (i <= 1) f[i] = c[i];
+      else { deps = [i - 1, i - 2]; f[i] = c[i] + Math.min(f[i-1], f[i-2]); from = f[i-1] <= f[i-2] ? i - 1 : i - 2; }
+      buFills.push({ i, v: f[i], deps, from });
+    }
+    /* camino óptimo, reconstruido hacia atrás */
+    const path = new Set(); let i = n - 1;
+    while (i > 1){ path.add(i); i = f[i-1] <= f[i-2] ? i - 1 : i - 2; }
+    path.add(i);
+    return { c, n, f, tdFills, buFills, calls, path };
+  }
+
+  /* filas = escalón i · columnas: costo (referencia) y f(i) */
+  function render(host, fills, k, kind){
+    const { c, n, path } = model;
+    const done = Math.min(k, fills.length), byI = new Map();
+    for (let x = 0; x < done; x++) byI.set(fills[x].i, { v: fills[x].v, ord: x + 1 });
+    const current = done > 0 && done === k ? fills[done - 1] : null;
+    const deps = new Set(current ? current.deps : []);
+    const fin = k >= fills.length;
+    const rh = Math.min(34, Math.floor(380 / n) - 3);
+    host.innerHTML = '';
+    const blk = document.createElement('div');
+    blk.className = 'mblock';
+    const head = document.createElement('div');
+    head.className = 'mrow mhead';
+    head.innerHTML = '<div class="mrlab mrlab-h">i</div>' +
+      '<div class="mhcol" style="width:86px"><b>costo</b><span>dato</span></div>' +
+      '<div class="mhcol" style="width:96px"><b>f(i)</b><span>la tabla</span></div>';
+    blk.appendChild(head);
+    for (let i = 0; i < n; i++){
+      const row = document.createElement('div');
+      row.className = 'mrow';
+      const got = byI.get(i);
+      let cls = 'mcell ' + kind;
+      if (got) cls += ' filled';
+      if (current && current.i === i) cls += ' cur';
+      else if (deps.has(i)) cls += ' dep';
+      if (fin && path.has(i)) cls += ' path';
+      row.innerHTML = '<div class="mrlab" style="height:' + rh + 'px">' + i + '</div>' +
+        '<div class="mcell ref" style="width:86px;height:' + rh + 'px"><span>' + c[i] + '</span></div>' +
+        '<div class="' + cls + '" style="width:96px;height:' + rh + 'px"><span>' + (got ? got.v : '·') + '</span>' +
+        (got ? '<span class="ord">' + got.ord + '</span>' : '') + '</div>';
+      blk.appendChild(row);
+    }
+    host.appendChild(blk);
+    return { done, fin, current };
+  }
+  const pathTxt = () => [...model.path].sort((a, b) => a - b).join(' → ');
+
+  /* ---------- diapositiva · memoización ---------- */
+  const mMat = $('#smMat'), mStack = $('#smStack'), mNarr = $('#smNarr');
+  const mFilled = $('#smFilled'), mDepth = $('#smDepth'), mHits = $('#smHits');
+  const Sm = stepper('[data-demo="stairMemo"]', 'stairMemo', { render(k){
+    const a = render(mMat, model.tdFills, k, 'td-c');
+    const stk = a.current ? a.current.stack : null;
+    mStack.innerHTML = '';
+    if (!stk) mStack.innerHTML = '<span class="sarrow">' + (k === 0 ? 'todavía no arranca · la pila está vacía'
+      : 'terminó · la pila volvió a vaciarse') + '</span>';
+    else stk.forEach((i, x) => {
+      if (x){ const s = document.createElement('span'); s.className = 'sarrow'; s.textContent = '↓'; mStack.appendChild(s); }
+      const s2 = document.createElement('span');
+      s2.className = 'schip' + (x === stk.length - 1 ? ' last' : '');
+      s2.textContent = 'f(' + i + ')';
+      mStack.appendChild(s2);
+    });
+    mFilled.textContent = a.done + ' / ' + model.n;
+    mDepth.textContent = stk ? stk.length : 0;
+    mHits.textContent = a.fin ? (model.calls - model.tdFills.length) : '—';
+    if (k === 0){
+      mNarr.innerHTML = 'Arranca en <b>f(' + (model.n - 1) + ')</b>, el último escalón, y pregunta: ' +
+        '<b>¿desde dónde llegué aquí?</b> Para saberlo tiene que preguntarle lo mismo a los dos escalones de abajo.';
+      return;
+    }
+    const at = a.current;
+    if (!at){
+      mNarr.innerHTML = '<b>Terminó.</b> Respuesta <b>' + model.f[model.n - 1] + '</b>, por el camino ' +
+        '<b>' + pathTxt() + '</b>. Hizo ' + model.calls + ' llamadas, ' + (model.calls - model.tdFills.length) +
+        ' de ellas aciertos de caché. Y llenó <b>todos</b> los escalones: aquí no hay nada inalcanzable que saltarse.';
+      return;
+    }
+    if (at.i <= 1) mNarr.innerHTML = '<b>f(' + at.i + ') = ' + at.v + '</b>: caso base, se entra directo desde el ' +
+      'piso. Primer escalón en resolverse: el <b>' + model.tdFills[0].i + '</b>, no el 0.';
+    else mNarr.innerHTML = '<b>f(' + at.i + ') = ' + model.c[at.i] + ' + min(' + model.f[at.i-1] + ', ' +
+      model.f[at.i-2] + ') = ' + at.v + '</b>. Conviene llegar desde el escalón <b>' + at.from + '</b>.' +
+      (at.stack.length > 1 ? ' La pila todavía tiene ' + (at.stack.length - 1) + ' llamada' +
+        (at.stack.length > 2 ? 's' : '') + ' esperando esta respuesta.' : '');
+  }});
+
+  /* ---------- diapositiva · tabulación ---------- */
+  const tMat = $('#stMat'), tCalc = $('#stCalc'), tWin = $('#stWin'), tNarr = $('#stNarr'), tFilled = $('#stFilled');
+  const St = stepper('[data-demo="stairTab"]', 'stairTab', { render(k){
+    const b = render(tMat, model.buFills, k, 'bu-c');
+    tFilled.textContent = b.done + ' / ' + model.n;
+    const f = model.f, at = b.current;
+    if (!at) tCalc.innerHTML = '<span style="color:var(--muted)">' + (k === 0 ? 'el bucle todavía no arranca'
+      : 'el bucle terminó') + '</span>';
+    else if (at.i <= 1) tCalc.innerHTML = 'f(' + at.i + ') = costo[' + at.i + '] = <b>' + at.v + '</b><br>' +
+      '<span style="color:var(--bu)">caso base: se entra directo desde el piso</span>';
+    else tCalc.innerHTML = 'f(' + at.i + ') = ' + model.c[at.i] + ' + min(<br>&nbsp;&nbsp;f(' + (at.i-1) + ') = ' +
+      f[at.i-1] + ' <span style="color:var(--muted);font-size:15px">← sube 1</span><br>&nbsp;&nbsp;f(' + (at.i-2) +
+      ') = ' + f[at.i-2] + ' <span style="color:var(--muted);font-size:15px">← sube 2</span><br>) = <b>' + at.v + '</b>';
+    tWin.innerHTML =
+      '<span class="wvar">prev2<b>' + (k >= 2 ? f[k-2] : '—') + '</b></span>' +
+      '<span class="wvar">prev1<b>' + (k >= 1 ? f[k-1] : '—') + '</b></span>' +
+      '<span class="wvar" style="border-color:var(--hit)">memoria<b style="color:var(--hit)">O(1)</b></span>';
+    if (k === 0){
+      tNarr.innerHTML = 'Arranca en el escalón <b>0</b> y sube de uno en uno. Cuando llega a <b>i</b>, ' +
+        'los dos escalones de abajo ya están escritos: nunca tiene que esperar a nadie.';
+      return;
+    }
+    if (!at){
+      tNarr.innerHTML = '<b>Terminó.</b> Respuesta <b>' + f[model.n - 1] + '</b>, por el camino <b>' + pathTxt() +
+        '</b>. Mientras la tabla crecía, la cuenta solo necesitó las <b>dos</b> variables de arriba.';
+      return;
+    }
+    tNarr.innerHTML = at.i <= 1
+      ? 'Caso base. Se necesitan <b>dos</b> porque la transición mira dos escalones atrás.'
+      : 'Conviene llegar desde el escalón <b>' + at.from + '</b>. Fíjense en <b>prev2</b> y <b>prev1</b>: ' +
+        'son lo único que se leyó. Todo lo que está más arriba en la tabla ya nadie lo va a pedir.';
+  }});
+
+  function pick(x){
+    model = build(SETS[x].c);
+    [$('#smSets'), $('#stSets')].forEach(seg =>
+      [...seg.children].forEach((b, j) => b.classList.toggle('on', x === j)));
+    Sm.reload(model.tdFills.length, 0);
+    St.reload(model.buFills.length, 0);
+  }
+  [$('#smSets'), $('#stSets')].forEach(seg => SETS.forEach((s, x) => {
+    const b = document.createElement('button'); b.textContent = s.label;
+    b.addEventListener('click', () => pick(x)); seg.appendChild(b);
+  }));
+  pick(0);
+  attachPlay(Sm, $('#smPlay'), 'stairMemo', 620);
+  attachPlay(St, $('#stPlay'), 'stairTab', 620);
+})();
+
+
+/* arranque: respeta el ancla si la hay */
+const start = parseInt((location.hash || '').slice(1), 10);
+show(Number.isFinite(start) && start >= 1 ? start - 1 : 0);
+</script>
+</body>
+</html>

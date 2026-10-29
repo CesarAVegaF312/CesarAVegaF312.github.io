@@ -1,0 +1,1247 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Complemento visual interactivo de la guia de funciones de recurrencia.">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Ver una recurrencia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --ground:#F1F0F5; --surface:#FDFCFF; --sunk:#E9E7F0;
+  --ink:#191826; --ink-2:#3D3A50; --muted:#6B687E; --line:#DFDCE8; --line-2:#CBC7DA;
+  --baja:#BE5A0E;
+  --sube:#00897B;
+  --memo:#6D46E0;
+  --baja-soft:#F8E9DB; --sube-soft:#DBEFEC; --memo-soft:#E8E2FB;
+  --shadow:0 1px 2px rgba(25,24,38,.05), 0 10px 26px -18px rgba(25,24,38,.4);
+  --fd:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --fb:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --fm:'JetBrains Mono','Cascadia Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#131220; --surface:#1C1B25; --sunk:#232232;
+    --ink:#E9E7F2; --ink-2:#C3BFD3; --muted:#948FA8; --line:#2F2D3E; --line-2:#413E54;
+    --baja:#CE7526; --sube:#0BA187; --memo:#8E76EC;
+    --baja-soft:#372516; --sube-soft:#0D2C29; --memo-soft:#231D40;
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 26px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#131220; --surface:#1C1B25; --sunk:#232232;
+  --ink:#E9E7F2; --ink-2:#C3BFD3; --muted:#948FA8; --line:#2F2D3E; --line-2:#413E54;
+  --baja:#CE7526; --sube:#0BA187; --memo:#8E76EC;
+  --baja-soft:#372516; --sube-soft:#0D2C29; --memo-soft:#231D40;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 26px -18px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--fb);font-size:17px;line-height:1.62;
+  -webkit-font-smoothing:antialiased;padding:0 20px 80px}
+.wrap{max-width:1080px;margin:0 auto}
+h1,h2,h3,h4{font-family:var(--fd);text-wrap:balance;margin:0;line-height:1.15;letter-spacing:-.015em}
+p{margin:0}
+code{font-family:var(--fm);font-size:.85em}
+.eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500}
+a{color:var(--memo)}
+
+header.hero{padding:56px 0 34px;border-bottom:1px solid var(--line)}
+.hero h1{font-size:clamp(38px,6.6vw,66px);font-weight:800;max-width:15ch;margin-top:14px}
+.hero h1 em{font-style:normal;color:var(--baja)}
+.hero .sub{margin-top:22px;max-width:63ch;font-size:19px;color:var(--ink-2)}
+.thesis{margin-top:26px;border-left:3px solid var(--memo);padding:2px 0 2px 18px;max-width:58ch;
+  font-size:19px;font-style:italic}
+
+.key{margin-top:30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--surface)}
+.key div{padding:14px 17px;border-right:1px solid var(--line)}
+.key div:last-child{border-right:0}
+.key b{font-family:var(--fd);font-size:14.5px;display:flex;align-items:center;gap:9px;font-weight:600}
+.key .dot{width:13px;height:13px;border-radius:2px;flex:none}
+.key p{font-size:14px;color:var(--muted);margin-top:4px;line-height:1.45}
+
+section.lab{padding:54px 0;border-bottom:1px solid var(--line)}
+.lab-head{display:flex;gap:15px;align-items:baseline}
+.lab-num{font-family:var(--fm);font-size:12px;font-weight:700;color:var(--baja);letter-spacing:.08em;flex:none}
+.lab h2{font-size:clamp(25px,3.4vw,34px);font-weight:600}
+.lab .lede{max-width:65ch;margin-top:13px;color:var(--ink-2)}
+.stage{margin-top:26px;background:var(--surface);border:1px solid var(--line);border-radius:4px;
+  box-shadow:var(--shadow);overflow:hidden}
+.stage-body{padding:22px}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 292px}
+.split>.rail{border-left:1px solid var(--line);padding:20px;background:var(--sunk);min-width:0}
+@media (max-width:860px){.split{grid-template-columns:1fr}.split>.rail{border-left:0;border-top:1px solid var(--line)}}
+
+.ctl{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);
+  background:var(--sunk)}
+button{font-family:var(--fd);font-size:14px;font-weight:600;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:3px;padding:6px 12px;cursor:pointer;line-height:1.25}
+button:hover:not(:disabled){border-color:var(--ink-2)}
+button:disabled{opacity:.35;cursor:default}
+button.primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+button.on{background:var(--memo);border-color:var(--memo);color:#fff}
+:focus-visible{outline:2px solid var(--memo);outline-offset:2px}
+.ctl label{font-family:var(--fm);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+input[type=range]{accent-color:var(--memo);width:108px}
+input[type=text]{font-family:var(--fm);font-size:13px;padding:6px 9px;border:1px solid var(--line-2);
+  border-radius:3px;background:var(--surface);color:var(--ink);width:150px}
+.step-count{font-family:var(--fm);font-size:12px;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:3px;overflow:hidden}
+.seg button{border:0;border-radius:0;border-right:1px solid var(--line-2)}
+.seg button:last-child{border-right:0}
+
+.mono{font-family:var(--fm)}
+.rail h4{font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+  font-weight:500;margin-bottom:11px}
+.rail-block+.rail-block{margin-top:24px}
+.narration{font-size:15px;color:var(--ink-2);line-height:1.5;min-height:4.5em}
+.narration b{color:var(--ink);font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--fm);font-size:11.5px;font-weight:500;
+  padding:3px 8px;border-radius:2px;border:1px solid var(--line-2);color:var(--muted);background:var(--surface)}
+.pill.baja{color:var(--baja);border-color:var(--baja);background:var(--baja-soft)}
+.pill.sube{color:var(--sube);border-color:var(--sube);background:var(--sube-soft)}
+.pill.memo{color:var(--memo);border-color:var(--memo);background:var(--memo-soft)}
+figure{margin:0}
+figcaption{font-size:14.5px;color:var(--muted);margin-top:13px;line-height:1.5;max-width:72ch}
+.scroller{overflow-x:auto;padding-bottom:4px}
+pre{font-family:var(--fm);font-size:13px;line-height:1.65;background:var(--sunk);border:1px solid var(--line);
+  border-radius:3px;padding:14px 16px;overflow-x:auto;margin:0;color:var(--ink-2)}
+pre b{color:var(--ink);font-weight:700}
+.stat-row{display:flex;gap:24px;flex-wrap:wrap}
+.stat b{display:block;font-family:var(--fd);font-size:26px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{font-family:var(--fm);font-size:10.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.note{margin-top:24px;padding:16px 19px;background:var(--memo-soft);border:1px solid var(--memo);
+  border-radius:3px;font-size:15.5px;max-width:75ch}
+.note b{font-family:var(--fd)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* laboratorio 1 — cadena de gerentes */
+.mgr{display:flex;flex-direction:column;gap:0}
+.mgr-row{display:grid;grid-template-columns:96px minmax(0,1fr) 128px;align-items:center;gap:14px;
+  border:1px solid var(--line);border-radius:3px;padding:10px 14px;background:var(--surface);
+  transition:border-color .18s,background .18s;opacity:.3}
+.mgr-row.seen{opacity:1}
+.mgr-row.active{border-color:var(--baja);background:var(--baja-soft)}
+.mgr-row.done{border-color:var(--sube);background:var(--sube-soft)}
+.mgr-row .who{font-family:var(--fm);font-size:14px;font-weight:700}
+.mgr-row .say{font-size:14.5px;color:var(--ink-2)}
+.mgr-row .ret{font-family:var(--fm);font-size:13px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.mgr-row.done .ret{color:var(--sube);font-weight:700}
+.mgr-link{height:26px;margin-left:44px;border-left:2px solid var(--line-2);position:relative}
+.mgr-link.down{border-color:var(--baja)}
+.mgr-link.up{border-color:var(--sube)}
+.mgr-link .lbl{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-family:var(--fm);
+  font-size:11.5px;white-space:nowrap;color:var(--muted)}
+.mgr-link.down .lbl{color:var(--baja)}
+.mgr-link.up .lbl{color:var(--sube);font-weight:700}
+
+/* laboratorio 2 — seis preguntas */
+.q6{display:grid;grid-template-columns:1fr;gap:6px}
+.q6 button{display:flex;gap:11px;align-items:flex-start;text-align:left;width:100%;padding:9px 12px;font-weight:500}
+.q6 button.sel{background:var(--memo-soft);border-color:var(--memo)}
+.q6 .n{font-family:var(--fm);font-size:11px;font-weight:700;color:var(--memo);padding-top:3px}
+.q6 .t{font-family:var(--fd);font-size:13.5px;font-weight:600}
+.q6 .d{font-family:var(--fb);font-size:13px;color:var(--muted);line-height:1.4;display:block;font-weight:400}
+#gclCode span{display:block;padding:1px 6px;margin:0 -6px;border-radius:2px;transition:background .18s,color .18s}
+#gclCode span.hi{background:var(--memo-soft);color:var(--ink);box-shadow:inset 2px 0 0 var(--memo)}
+
+/* laboratorio 3 — pila */
+.stackwrap{display:grid;grid-template-columns:300px minmax(0,1fr);gap:26px;align-items:start}
+@media (max-width:760px){.stackwrap{grid-template-columns:1fr}}
+.frame{border:1px solid var(--line-2);border-radius:3px;padding:9px 13px;background:var(--surface);
+  font-family:var(--fm);font-size:13px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.frame+.frame{margin-top:5px}
+.frame.top{border-color:var(--baja);background:var(--baja-soft)}
+.frame.returning{border-color:var(--sube);background:var(--sube-soft)}
+.frame .val{font-weight:700;color:var(--sube)}
+.stack-empty{font-family:var(--fm);font-size:12.5px;color:var(--muted);border:1px dashed var(--line-2);
+  border-radius:3px;padding:12px;text-align:center}
+.trace-line{font-family:var(--fm);font-size:13.5px;line-height:1.9;color:var(--muted)}
+.trace-line.cur{color:var(--ink);font-weight:500}
+
+/* laboratorio 6 — palíndromo */
+.chars{display:flex;gap:5px;flex-wrap:wrap}
+.ch{width:40px;height:48px;display:grid;place-items:center;font-family:var(--fm);font-size:19px;font-weight:500;
+  border:1px solid var(--line-2);border-radius:3px;background:var(--surface);color:var(--muted);position:relative;
+  transition:.18s}
+.ch.inside{color:var(--ink);border-color:var(--line-2)}
+.ch.probe{border-color:var(--baja);background:var(--baja-soft);color:var(--baja);font-weight:700}
+.ch.ok{border-color:var(--sube);background:var(--sube-soft);color:var(--sube);font-weight:700}
+.ch.bad{border-color:var(--baja);background:var(--baja-soft);color:var(--baja);font-weight:700;
+  box-shadow:0 0 0 2px var(--baja)}
+.ch .ptr{position:absolute;bottom:-19px;font-family:var(--fm);font-size:11px;font-weight:700;color:var(--baja)}
+.callstack-line{font-family:var(--fm);font-size:13px;line-height:1.85;color:var(--muted)}
+.callstack-line.cur{color:var(--ink);font-weight:600}
+.callstack-line .v{font-weight:700}
+.callstack-line .v.t{color:var(--sube)}
+.callstack-line .v.f{color:var(--baja)}
+
+/* laboratorio 7 — kadane */
+table.trace{border-collapse:collapse;width:100%;font-family:var(--fm);font-size:12.5px;font-variant-numeric:tabular-nums}
+table.trace th{text-align:right;font-weight:500;color:var(--muted);font-size:10.5px;letter-spacing:.06em;
+  text-transform:uppercase;padding:6px 9px;border-bottom:1px solid var(--line-2)}
+table.trace th:last-child{text-align:left}
+table.trace td{text-align:right;padding:5px 9px;border-bottom:1px solid var(--line);color:var(--ink-2)}
+table.trace td:last-child{text-align:left;font-family:var(--fb);font-size:13.5px}
+table.trace tr.cur td{background:var(--memo-soft);color:var(--ink);font-weight:700}
+table.trace tr.best td{box-shadow:inset 0 0 0 1px var(--sube)}
+
+/* errores */
+.errgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-top:26px}
+.errcard{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:18px 19px;box-shadow:var(--shadow)}
+.errcard h4{font-size:16.5px;font-weight:600;margin-bottom:4px}
+.errcard .sym{font-family:var(--fm);font-size:12px;color:var(--baja);margin-bottom:12px;letter-spacing:.02em}
+.errcard p{font-size:14.5px;color:var(--ink-2);line-height:1.5;margin-top:12px}
+.errcard svg{width:100%;height:auto;display:block}
+
+/* cierre */
+.codecmp{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:26px}
+@media (max-width:800px){.codecmp{grid-template-columns:1fr}}
+.codecmp h4{font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+  font-weight:500;margin-bottom:9px}
+pre .same{background:var(--sube-soft);color:var(--ink);display:inline-block;width:100%;box-shadow:inset 2px 0 0 var(--sube)}
+pre .diff{background:var(--memo-soft);color:var(--ink);display:inline-block;width:100%;box-shadow:inset 2px 0 0 var(--memo)}
+footer{padding:46px 0 0;color:var(--muted);font-size:15px;max-width:70ch}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <p class="eyebrow">Complemento visual · Estructuras de datos y algoritmos</p>
+  <h1>Ver una <em>recurrencia</em> mientras corre</h1>
+  <p class="sub">La guía escrita explica qué es una relación de recurrencia. Esta página la pone en movimiento:
+  seis mecanismos que normalmente hay que armar en la cabeza —&nbsp;la delegación, la pila, el árbol de llamadas,
+  los dos índices, la tabla que se llena— dibujados paso a paso, con los controles en sus manos.</p>
+  <p class="thesis">Fuerza bruta y programación dinámica no son dos algoritmos. Son la misma recurrencia
+  evaluada de dos maneras. Todo lo que sigue existe para que esa frase se vea.</p>
+  <div class="key">
+    <div><b><span class="dot" style="background:var(--baja)"></span>Bajada</b>
+      <p>El gerente delega: entrega un subproblema estrictamente más pequeño y queda esperando.</p></div>
+    <div><b><span class="dot" style="background:var(--sube)"></span>Subida</b>
+      <p>La respuesta vuelve y se combina con la decisión que se tomó en ese nivel.</p></div>
+    <div><b><span class="dot" style="background:var(--memo)"></span>Estado repetido</b>
+      <p>Ese subproblema ya se resolvió antes. Es lo único que la memoización puede ahorrar.</p></div>
+  </div>
+</header>
+
+<!-- ============ 1 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">01</span>
+    <h2>El gerente perezoso, en cadena</h2></div>
+  <p class="lede">Usted solo sabe tomar <b>una</b> decisión: aportar el factor <code>n</code>. Todo lo demás lo
+  delega a un clon idéntico, y confía en su postcondición sin preguntarle cómo lo hizo. Eso es la
+  <b>fe recursiva</b>. Baje paso a paso y note que la cadena primero se estira completa hasta el caso base y
+  solo entonces empieza a devolver.</p>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="mgr">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <label>n = <input type="range" id="mgrN" min="3" max="6" step="1" value="5"><b class="mono" id="mgrNv">5</b></label>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body"><div class="mgr" id="mgrStage"></div></div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="mgrNarr"></p></div>
+        <div class="rail-block"><h4>La recurrencia</h4>
+          <pre>fact(n) = {
+  1              si n = 0
+  n · fact(n−1)  si n &gt; 0
+}</pre></div>
+        <div class="rail-block"><h4>Regla que se está viendo</h4>
+          <p class="narration" style="min-height:0">Nadie devuelve nada hasta que <b>alguien</b> llega al caso
+          base. Sin caso base, la cadena de clones no termina nunca.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">02</span>
+    <h2>Las seis preguntas son el código</h2></div>
+  <p class="lede">El método no es un ritual previo que después se bota: cada pregunta se convierte en una pieza
+  concreta del código. Haga clic en una pregunta y vea qué parte de la especificación GCL de
+  <code>mult(a,b)</code> escribe.</p>
+
+  <div class="stage">
+    <div class="split">
+      <div class="stage-body">
+        <pre id="gclCode"><span data-q="0">func mult(a : int, b : int) → int</span><span data-q="1">  { pre:  a ≥ 0 ∧ b ≥ 0 }</span><span data-q="2">  { post: mult = a · b }</span><span data-q="5">  if b = 0 → mult := 0</span><span data-q="3,4">  [] b &gt; 0 → mult := a + mult(a, b − 1)</span><span data-q="6">  fi</span></pre>
+        <div style="margin-top:18px"><p class="narration" id="q6Narr"></p></div>
+      </div>
+      <div class="rail">
+        <h4>El método</h4>
+        <div class="q6" id="q6List"></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>Regla de oro.</b> Si no puede escribir la pregunta 2 —&nbsp;una frase precisa de qué
+  devuelve la función— no siga. Casi todos los errores en recurrencias nacen ahí, y el laboratorio 07 muestra
+  exactamente cómo se ve ese error cuando aparece.</p>
+</section>
+
+<!-- ============ 3 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">03</span>
+    <h2>La pila: dónde vive el «después»</h2></div>
+  <p class="lede">Cuando un gerente delega, no desaparece: queda congelado con un hueco por llenar
+  (<code class="mono">4 + ▢</code>). Ese estado congelado ocupa memoria. Por eso <code>mult(4,b)</code> es
+  O(b) en tiempo <em>y</em> O(b) en espacio, aunque no guarde ningún arreglo.</p>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="stk">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <label>b = <input type="range" id="stkB" min="1" max="6" step="1" value="3"><b class="mono" id="stkBv">3</b></label>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <div class="stackwrap">
+          <div>
+            <h4 style="font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+              color:var(--muted);font-weight:500;margin-bottom:11px">Pila de llamadas</h4>
+            <div id="stkFrames"></div>
+          </div>
+          <div>
+            <h4 style="font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+              color:var(--muted);font-weight:500;margin-bottom:11px">La traza que se va formando</h4>
+            <div id="stkTrace"></div>
+          </div>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="stkNarr"></p></div>
+        <div class="rail-block"><h4>Costo observado</h4>
+          <div class="stat-row">
+            <div class="stat"><b id="stkDepth">0</b><span>marcos vivos</span></div>
+            <div class="stat"><b id="stkMax">0</b><span>profundidad máx.</span></div>
+          </div>
+          <p style="font-size:14px;color:var(--muted);margin-top:12px;line-height:1.5">La profundidad máxima es
+          literalmente el espacio que consume la recursión.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">04</span>
+    <h2>El árbol de Fibonacci, con y sin libreta</h2></div>
+  <p class="lede">Aquí está el corazón de la guía. Cada llamada hace <b>dos</b> llamadas, así que el árbol
+  explota. Pero muchos de esos nodos son el <b>mismo estado</b> calculado otra vez desde cero. Prenda la
+  libreta del gerente y vea el mismo árbol podarse sin cambiar ni una línea de la recurrencia.</p>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="fib">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <button data-act="play" id="fibPlay">▶ Reproducir</button>
+      <label>n = <input type="range" id="fibN" min="3" max="7" step="1" value="5"><b class="mono" id="fibNv">5</b></label>
+      <div class="seg"><button id="fibOff" class="on">Sin memo</button><button id="fibOn">Con memo</button></div>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <div class="scroller"><svg id="fibSvg" role="img" aria-label="Árbol de llamadas de fib(n) construyéndose paso a paso"></svg></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px">
+          <span class="pill baja">nodo abriéndose</span>
+          <span class="pill sube">valor devuelto</span>
+          <span class="pill memo">estado ya anotado</span>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="fibNarr"></p></div>
+        <div class="rail-block"><h4>Cuenta en vivo</h4>
+          <div class="stat-row">
+            <div class="stat"><b id="fibCalls">0</b><span>llamadas</span></div>
+            <div class="stat"><b id="fibStates">0</b><span>estados distintos</span></div>
+            <div class="stat"><b id="fibHits" style="color:var(--memo)">0</b><span>atajos por memo</span></div>
+          </div></div>
+        <div class="rail-block"><h4>La libreta del gerente</h4>
+          <div id="fibMemo" class="mono" style="font-size:13px;line-height:1.9;color:var(--muted)"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <figure style="margin-top:30px">
+    <div class="scroller"><svg id="fibCost" role="img" aria-label="Llamadas totales para calcular fib(n) sin memoización y con memoización"></svg></div>
+    <figcaption>El árbol completo de <code>fib(n)</code> crece como φⁿ; con libreta, cada estado se calcula
+    una sola vez y el total se vuelve lineal. Los dos algoritmos comparten exactamente la misma recurrencia.</figcaption>
+  </figure>
+</section>
+
+<!-- ============ 5 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">05</span>
+    <h2>¿Cuándo sirve memoizar?</h2></div>
+  <p class="lede">No siempre. La memoización solo cobra cuando el árbol de llamadas repite estados. Antes de
+  aplicarla, dibuje el árbol y busque repeticiones: si es una cadena, no hay nada que ahorrar.</p>
+
+  <figure style="margin-top:26px">
+    <div class="scroller"><svg id="cmpSvg" role="img" aria-label="Comparación: el árbol de mult es una cadena sin estados repetidos; el de fib repite estados"></svg></div>
+    <figcaption>Misma escala, misma notación. A la izquierda, <code>mult(4,3)</code>: cuatro llamadas, cuatro
+    estados distintos, ninguna repetición —&nbsp;memoizar aquí solo agrega un diccionario inútil. A la derecha,
+    <code>fib(5)</code>: quince llamadas para apenas seis estados distintos; los nodos morados son trabajo
+    que ya se hizo.</figcaption>
+  </figure>
+</section>
+
+<!-- ============ 6 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">06</span>
+    <h2>Palíndromo: cuando el estado necesita dos números</h2></div>
+  <p class="lede">El subproblema no es «una cadena más corta»: es <b>un segmento de la misma cadena</b>. Y un
+  segmento no se identifica con un número, sino con dos: dónde empieza y dónde termina. Fíjese en el último
+  paso de una palabra de longitud par —&nbsp;ahí se ve por qué el caso base es <code>i ≥ j</code> y no
+  <code>i = j</code>.</p>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="pal">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <div class="seg" id="palWords"></div>
+      <input type="text" id="palInput" maxlength="13" placeholder="su palabra" aria-label="Probar otra palabra">
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <div class="scroller" style="padding:14px 0 30px"><div class="chars" id="palChars"></div></div>
+        <div id="palCalls" style="margin-top:6px"></div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="palNarr"></p></div>
+        <div class="rail-block"><h4>La recurrencia</h4>
+          <pre>pal(i,j) = {
+  true                si i ≥ j
+  s[i]=s[j] ∧
+    pal(i+1, j−1)     si i &lt; j
+}
+respuesta = pal(0, n−1)</pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">07</span>
+    <h2>Suma máxima: el significado insuficiente, en vivo</h2></div>
+  <p class="lede">El primer intento —&nbsp;<code>mejor(i)</code> = la mejor suma en <code>a[0..i]</code>&nbsp;—
+  no cierra, porque el clon devuelve una suma que puede estar lejos de <code>i</code> y no ser extensible.
+  La solución es hacer la postcondición <b>más específica</b>: <code>term(i)</code> = la mejor suma de un
+  subarreglo que <b>termina exactamente en i</b>. Con esa promesa, la transición se escribe sola.</p>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="kad">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <div class="seg" id="kadSets"></div>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <div class="scroller"><svg id="kadSvg" role="img" aria-label="Arreglo de enteros con el subarreglo que termina en la posición actual resaltado"></svg></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
+          <span class="pill sube">a[i] positivo</span>
+          <span class="pill baja">a[i] negativo</span>
+          <span class="pill memo">mejor subarreglo que termina en i</span>
+        </div>
+        <div class="scroller" style="margin-top:22px"><table class="trace" id="kadTable"></table></div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="kadNarr"></p></div>
+        <div class="rail-block"><h4>Estado del gerente</h4>
+          <div class="stat-row">
+            <div class="stat"><b id="kadTerm">—</b><span>term(i)</span></div>
+            <div class="stat"><b id="kadBest" style="color:var(--sube)">—</b><span>máximo hasta ahora</span></div>
+          </div></div>
+        <div class="rail-block"><h4>La recurrencia</h4>
+          <pre>term(i) = {
+  a[0]                si i = 0
+  max( a[i],
+       a[i]+term(i−1) )  si i &gt; 0
+}
+respuesta =
+  max{ term(i) : 0 ≤ i &lt; n }</pre></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>La respuesta no siempre es <code>f(n)</code>.</b> Aquí el mejor subarreglo termina en
+  <em>alguna</em> posición y no sabemos cuál, así que la respuesta es una agregación sobre todos los estados,
+  no una llamada única. Responda siempre la pregunta 6 de forma explícita.</p>
+</section>
+
+<!-- ============ 8 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">08</span>
+    <h2>Cuatro formas de romper una recurrencia</h2></div>
+  <p class="lede">Cada una tiene un síntoma reconocible. Aprender a nombrar el síntoma es más útil que
+  memorizar la solución.</p>
+  <div class="errgrid" id="errGrid"></div>
+</section>
+
+<!-- ============ cierre ============ -->
+<section class="lab" style="border-bottom:0">
+  <div class="lab-head"><span class="lab-num">◆</span>
+    <h2>Lo único que cambió fue la libreta</h2></div>
+  <p class="lede">Compare las dos versiones. Las líneas verdes son idénticas: el caso base y la transición,
+  es decir, <b>la recurrencia completa</b>. Lo morado es todo lo que agrega la programación dinámica.</p>
+  <div class="codecmp">
+    <div><h4>Fuerza bruta</h4>
+<pre>def fib(n: int) -&gt; int:
+<span class="same">    if n &lt;= 1:</span>
+<span class="same">        return n</span>
+
+<span class="same">    return fib(n-1) + fib(n-2)</span>
+
+
+</pre></div>
+    <div><h4>Programación dinámica</h4>
+<pre>def fib_memo(n, memo=None):
+<span class="diff">    if memo is None: memo = {}</span>
+<span class="same">    if n &lt;= 1:</span>
+<span class="same">        return n</span>
+<span class="diff">    if n not in memo:</span>
+<span class="diff">        memo[n] = \</span>
+<span class="same">            fib_memo(n-1,memo) + fib_memo(n-2,memo)</span>
+<span class="diff">    return memo[n]</span></pre></div>
+  </div>
+  <p class="note"><b>Por eso escribir bien la recurrencia es lo que importa.</b> Si la tiene, la programación
+  dinámica sale sola: es la misma definición, evaluada sin repetir trabajo.</p>
+
+  <footer>
+    <p>Complemento visual de <em>Funciones de recurrencia: guía para el estudiante</em>. Sugerencia de uso en
+    clase: proyecte el laboratorio 04 en «Sin memo» con n = 7, deje que cuenten los nodos repetidos a ojo, y
+    solo entonces prenda la libreta.</p>
+  </footer>
+</section>
+</div>
+
+<script>
+/* ===== utilidades comunes ===== */
+const $ = (s, r) => (r || document).querySelector(s);
+const SVGNS = 'http://www.w3.org/2000/svg';
+/* Los atributos de presentación SVG no aceptan var() de forma fiable en todos los
+   motores; cualquier valor con var() se enruta al atributo style, donde sí resuelve. */
+function el(tag, attrs, text){
+  const n = document.createElementNS(SVGNS, tag);
+  let style = '';
+  for (const k in attrs){
+    const v = String(attrs[k]);
+    if (v.indexOf('var(') !== -1) style += k + ':' + v + ';';
+    else n.setAttribute(k, v);
+  }
+  if (style) n.setAttribute('style', style);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+/* Un solo patrón de control para todos los laboratorios. */
+function stepper(name, opts){
+  const bar = document.querySelector('[data-ctl="' + name + '"]');
+  const st = { i: 0, total: 0 };
+  const count = $('[data-role="count"]', bar);
+  function clamp(){ st.i = Math.max(0, Math.min(st.total, st.i)); }
+  function paint(){
+    clamp();
+    opts.render(st.i);
+    count.textContent = 'paso ' + st.i + ' / ' + st.total;
+    $('[data-act="prev"]', bar).disabled = st.i === 0;
+    $('[data-act="next"]', bar).disabled = st.i === st.total;
+  }
+  bar.addEventListener('click', e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const a = b.dataset.act;
+    if (a === 'next') st.i++;
+    else if (a === 'prev') st.i--;
+    else if (a === 'reset') st.i = 0;
+    if (a !== 'play') paint();
+  });
+  st.reload = (total, start) => { st.total = total; st.i = start === undefined ? total : start; paint(); };
+  st.paint = paint;
+  return st;
+}
+
+/* ===== 01 · gerente perezoso ===== */
+(function(){
+  const stage = $('#mgrStage'), narr = $('#mgrNarr'), slider = $('#mgrN'), nv = $('#mgrNv');
+  let n = 5, fact = [];
+  function build(){
+    n = +slider.value; nv.textContent = n;
+    fact = [1]; for (let k = 1; k <= n; k++) fact[k] = fact[k-1] * k;
+    S.reload(2 * (n + 1) - 1);
+  }
+  /* pasos 0..n = bajada (nivel n−paso alcanzado) · pasos n+1..2n+1 = subida */
+  const S = stepper('mgr', { render(s){
+    const reached = Math.min(s, n);                 // nivel más profundo alcanzado
+    const returnedUpTo = s <= n ? -1 : s - n - 1;   // 0..n contando desde el caso base
+    stage.innerHTML = '';
+    for (let d = 0; d <= n; d++){
+      const k = n - d;
+      const seen = d <= reached;
+      const done = returnedUpTo >= 0 && k <= returnedUpTo;
+      const active = (s <= n && d === reached) || (returnedUpTo >= 0 && k === returnedUpTo);
+      const row = document.createElement('div');
+      row.className = 'mgr-row' + (seen ? ' seen' : '') + (done ? ' done' : (active ? ' active' : ''));
+      row.innerHTML = '<span class="who">fact(' + k + ')</span>' +
+        '<span class="say">' + (k === 0
+          ? 'Caso base: no delego nada, respondo <b>1</b>.'
+          : 'Mi decisión: aporto el factor <b>' + k + '</b>. El resto lo delego.') + '</span>' +
+        '<span class="ret">' + (done ? '↑ devuelve ' + fact[k] : (seen ? 'esperando…' : '')) + '</span>';
+      stage.appendChild(row);
+      if (d < n){
+        const lk = document.createElement('div');
+        const downOn = seen && d + 1 <= reached;
+        const upOn = returnedUpTo >= 0 && k - 1 <= returnedUpTo;
+        lk.className = 'mgr-link' + (upOn ? ' up' : (downOn ? ' down' : ''));
+        lk.innerHTML = '<span class="lbl">' + (upOn
+          ? '↑ ' + fact[k-1] + '  ·  yo multiplico por ' + k
+          : (downOn ? '↓ delega fact(' + (k-1) + ')' : '')) + '</span>';
+        stage.appendChild(lk);
+      }
+    }
+    if (s === 0) narr.innerHTML = 'Usted es <b>fact(' + n + ')</b>. Solo sabe una cosa: aportar el factor ' +
+      n + '. No intente seguir la cadena entera con la cabeza.';
+    else if (s < n) narr.innerHTML = '<b>fact(' + (n - s) + ')</b> recibe el encargo y hace lo mismo: aporta su ' +
+      'factor y delega. Nadie ha devuelto nada todavía.';
+    else if (s === n) narr.innerHTML = 'Llegamos a <b>fact(0)</b>: el caso base. Este gerente sí puede responder ' +
+      'sin delegar. <b>Aquí se da la vuelta.</b>';
+    else {
+      const k = returnedUpTo;
+      narr.innerHTML = '<b>fact(' + k + ')</b> recibe ' + (k === 0 ? 'su propio caso base' :
+        fact[k-1] + ' del clon') + ' y devuelve <b>' + fact[k] + '</b>' +
+        (k === n ? '. Terminó: nunca hizo falta saber cómo lo calculó nadie más abajo.' : '.');
+    }
+  }});
+  slider.addEventListener('input', build);
+  build();
+})();
+
+/* ===== 02 · seis preguntas ===== */
+(function(){
+  const Q = [
+    ['Estado', '¿Qué parámetros describen un subproblema?',
+     'El estado es <b>b</b>: cuántas veces falta sumar <code>a</code>. El valor <code>a</code> nunca cambia, ' +
+     'así que es un parámetro fijo, no parte del estado que se reduce. Por eso <code>b</code> es lo que aparece ' +
+     'en la firma como lo que va a encogerse.', [0]],
+    ['Significado', '¿Qué devuelve f? Una frase precisa.',
+     'La frase es: <b>mult(a,b) es el producto a·b</b>. Esa frase, escrita en símbolos, <em>es</em> la ' +
+     'postcondición. Compárelas: son la misma oración. Si no puede escribir esta frase, no puede continuar.', [2]],
+    ['Decisión', '¿Qué opciones tengo en este estado?',
+     'Ninguna. Solo hay una forma de avanzar: sumar <code>a</code> una vez más. Una recurrencia <b>no necesita ' +
+     'tener decisión</b>; cuando no la tiene, el árbol de llamadas es una cadena.', [4]],
+    ['Transición', '¿A qué estado más pequeño llego y cómo combino?',
+     'El clon calcula <code>a·(b−1)</code> y yo le sumo <code>a</code>. Eso es exactamente la asignación de la ' +
+     'segunda guarda. La combinación es la suma; la reducción es <code>b − 1</code>.', [4]],
+    ['Caso base', '¿Dónde la respuesta es trivial?',
+     'Cuando <code>b = 0</code>: sumar <code>a</code> cero veces da 0. En GCL es la primera guarda. Sin ella, ' +
+     'los clones seguirían delegando hacia <code>b</code> negativo para siempre.', [3]],
+    ['Respuesta', '¿Qué llamada resuelve el problema original?',
+     'Aquí es directa: <code>mult(a,b)</code>. No siempre lo es —&nbsp;en el palíndromo es <code>pal(0,n−1)</code> ' +
+     'y en la suma máxima es un máximo sobre todos los estados. Responda esta pregunta siempre de forma explícita.',
+     [0]]
+  ];
+  const list = $('#q6List'), narr = $('#q6Narr'), code = $('#gclCode');
+  const lines = code.querySelectorAll('span');
+  Q.forEach((q, i) => {
+    const b = document.createElement('button');
+    b.innerHTML = '<span class="n">' + (i+1) + '</span><span class="t">' + q[0] +
+      '<span class="d">' + q[1] + '</span></span>';
+    b.addEventListener('click', () => sel(i));
+    list.appendChild(b);
+  });
+  function sel(i){
+    [...list.children].forEach((b, j) => b.classList.toggle('sel', i === j));
+    lines.forEach((ln, j) => ln.classList.toggle('hi', Q[i][3].includes(j)));
+    narr.innerHTML = Q[i][2];
+  }
+  sel(1);
+})();
+
+/* ===== 03 · pila de llamadas ===== */
+(function(){
+  const A = 4;
+  const frames = $('#stkFrames'), trace = $('#stkTrace'), narr = $('#stkNarr');
+  const slider = $('#stkB'), bv = $('#stkBv'), dEl = $('#stkDepth'), mEl = $('#stkMax');
+  let b = 3;
+  function build(){ b = +slider.value; bv.textContent = b; S.reload(2 * (b + 1), b + 1); }
+  const S = stepper('stk', { render(s){
+    const pushed = Math.min(s, b + 1);          // marcos abiertos
+    const popped = Math.max(0, s - (b + 1));    // marcos ya cerrados
+    const live = pushed - popped;
+    frames.innerHTML = '';
+    if (live === 0){
+      frames.innerHTML = '<div class="stack-empty">' + (s === 0 ? 'la pila está vacía · aún no se llama a nada'
+        : 'la pila volvió a vaciarse · el resultado ya salió') + '</div>';
+    }
+    for (let d = 0; d < live; d++){
+      const k = b - d;
+      const isTop = d === live - 1;
+      const f = document.createElement('div');
+      const returning = popped > 0 && isTop;
+      f.className = 'frame' + (returning ? ' returning' : (isTop ? ' top' : ''));
+      const pend = k === 0 ? 'caso base → 0' : A + ' + ▢';
+      f.innerHTML = '<span>mult(' + A + ',' + k + ')</span><span style="color:var(--muted)">' + pend + '</span>';
+      frames.appendChild(f);
+    }
+    /* traza acumulada, igual a la de la guía */
+    trace.innerHTML = '';
+    for (let d = 0; d < pushed; d++){
+      const k = b - d;
+      const line = document.createElement('div');
+      line.className = 'trace-line' + (d === pushed - 1 && popped === 0 ? ' cur' : '');
+      let txt = 'mult(' + A + ',' + b + ') = ';
+      txt += Array(d).fill(A + ' + ').join('');
+      txt += (k === 0 ? '0' : A + ' + mult(' + A + ',' + (k-1) + ')');
+      line.textContent = txt;
+      trace.appendChild(line);
+    }
+    for (let p = 0; p < popped; p++){
+      const k = p;
+      const line = document.createElement('div');
+      line.className = 'trace-line' + (p === popped - 1 ? ' cur' : '');
+      line.innerHTML = '<span style="color:var(--sube);font-weight:700">↑ mult(' + A + ',' + k + ') = ' +
+        (A * k) + '</span>';
+      trace.appendChild(line);
+    }
+    dEl.textContent = live; mEl.textContent = Math.min(pushed, b + 1);
+    if (s === 0) narr.innerHTML = 'Nada ha pasado todavía. Vamos a calcular <b>' + A + ' · ' + b + '</b> usando ' +
+      'solo sumas.';
+    else if (s <= b) narr.innerHTML = 'Se abre el marco de <b>mult(' + A + ',' + (b - s + 1) + ')</b>. Queda ' +
+      'congelado con un hueco: <span class="mono">' + A + ' + ▢</span>. No puede terminar hasta que el hueco ' +
+      'se llene.';
+    else if (s === b + 1) narr.innerHTML = 'Caso base <b>mult(' + A + ',0) = 0</b>. Hay <b>' + (b + 1) + '</b> ' +
+      'marcos vivos al mismo tiempo: eso es el espacio O(b).';
+    else {
+      const k = popped - 1;   // el marco que acaba de cerrarse
+      narr.innerHTML = 'Se cierra <b>mult(' + A + ',' + k + ')</b> devolviendo <b>' + (A * k) + '</b>. ' +
+        (k === 0 ? 'Es el caso base: el primero que puede responder.'
+                 : 'Ese valor llena el hueco <span class="mono">' + A + ' + ▢</span> del marco de abajo y libera memoria.');
+    }
+  }});
+  slider.addEventListener('input', build);
+  build();
+})();
+
+/* ===== 04 · árbol de fibonacci ===== */
+(function(){
+  const svg = $('#fibSvg'), narr = $('#fibNarr'), slider = $('#fibN'), nv = $('#fibNv');
+  const cEl = $('#fibCalls'), sEl = $('#fibStates'), hEl = $('#fibHits'), memoEl = $('#fibMemo');
+  const btnOff = $('#fibOff'), btnOn = $('#fibOn'), btnPlay = $('#fibPlay');
+  const COL = 62, ROW = 76, NW = 50, NH = 34;
+  let n = 5, useMemo = false, model = null, timer = null;
+
+  function build(){
+    n = +slider.value; nv.textContent = n;
+    const nodes = [], events = [], memo = new Map();
+    let id = 0;
+    (function go(k, parent, depth){
+      const nd = { id: id++, k, parent, depth, children: [], kind: 'pending', value: null };
+      nodes.push(nd);
+      if (parent !== null) nodes[parent].children.push(nd.id);
+      events.push({ t: 'enter', id: nd.id, k, depth });
+      if (useMemo && k > 1 && memo.has(k)){
+        nd.kind = 'memo'; nd.value = memo.get(k);
+        events.push({ t: 'memo', id: nd.id, k, value: nd.value });
+        return nd;
+      }
+      if (k <= 1){ nd.kind = 'base'; nd.value = k; events.push({ t: 'base', id: nd.id, k, value: k }); return nd; }
+      const a = go(k - 1, nd.id, depth + 1), c = go(k - 2, nd.id, depth + 1);
+      nd.kind = 'calc'; nd.value = a.value + c.value;
+      if (useMemo) memo.set(k, nd.value);
+      events.push({ t: 'return', id: nd.id, k, value: nd.value, note: useMemo });
+      return nd;
+    })(n, null, 0);
+    let leaf = 0;
+    (function lay(i){
+      const nd = nodes[i];
+      if (!nd.children.length) nd.gx = leaf++;
+      else { nd.children.forEach(lay); nd.gx = (nodes[nd.children[0]].gx + nodes[nd.children[nd.children.length-1]].gx) / 2; }
+    })(0);
+    const maxD = Math.max.apply(null, nodes.map(d => d.depth));
+    model = { nodes, events, cols: leaf, maxD };
+    S.reload(events.length);
+  }
+
+  const S = stepper('fib', { render(s){
+    const { nodes, events, cols, maxD } = model;
+    const state = nodes.map(nd => ({ vis: false, kind: 'pending', value: null }));
+    const memoNotes = new Map();
+    let calls = 0, hits = 0; const seen = new Set(); const kCount = new Map();
+    for (let i = 0; i < s; i++){
+      const e = events[i];
+      if (e.t === 'enter'){ state[e.id].vis = true; state[e.id].kind = 'open'; calls++; seen.add(e.k);
+        kCount.set(e.k, (kCount.get(e.k) || 0) + 1); }
+      else if (e.t === 'memo'){ state[e.id].kind = 'memo'; state[e.id].value = e.value; hits++; }
+      else if (e.t === 'base'){ state[e.id].kind = 'base'; state[e.id].value = e.value; }
+      else if (e.t === 'return'){ state[e.id].kind = 'done'; state[e.id].value = e.value;
+        if (e.note) memoNotes.set(e.k, e.value); }
+    }
+    const cur = s > 0 ? events[s-1].id : -1;
+    const W = 40 + Math.max(1, cols) * COL, H = 46 + maxD * ROW + NH;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('width', W); svg.setAttribute('height', H);
+    svg.style.maxWidth = 'none'; svg.style.height = 'auto';
+    svg.innerHTML = '';
+    const px = nd => 20 + nd.gx * COL + COL / 2;
+    const py = nd => 24 + nd.depth * ROW;
+    /* aristas */
+    nodes.forEach(nd => {
+      if (nd.parent === null || !state[nd.id].vis) return;
+      const p = nodes[nd.parent];
+      const x1 = px(p), y1 = py(p) + NH, x2 = px(nd), y2 = py(nd);
+      const resolved = state[nd.id].value !== null;
+      const stroke = resolved ? 'var(--sube)' : 'var(--baja)';
+      svg.appendChild(el('path', { d: 'M' + x1 + ' ' + y1 + ' C ' + x1 + ' ' + (y1+22) + ', ' + x2 + ' ' + (y2-22) + ', ' + x2 + ' ' + y2,
+        fill: 'none', stroke: stroke, 'stroke-width': resolved ? 2 : 1.5, opacity: resolved ? 1 : .75 }));
+      if (resolved){
+        const mx = (x1 + x2) / 2, my = (y1 + y2) / 2 + 2;
+        svg.appendChild(el('rect', { x: mx - 11, y: my - 9, width: 22, height: 15, rx: 2,
+          fill: 'var(--surface)', stroke: 'var(--sube)', 'stroke-width': 1 }));
+        svg.appendChild(el('text', { x: mx, y: my + 2, 'text-anchor': 'middle', 'font-size': 11,
+          'font-family': 'var(--fm)', 'font-weight': 700, fill: 'var(--sube)' }, String(state[nd.id].value)));
+      }
+    });
+    /* nodos */
+    nodes.forEach(nd => {
+      const st = state[nd.id]; if (!st.vis) return;
+      const x = px(nd) - NW / 2, y = py(nd);
+      let fill = 'var(--surface)', stroke = 'var(--line-2)', tc = 'var(--ink)', dash = null, sw = 1;
+      if (st.kind === 'open'){ fill = 'var(--baja-soft)'; stroke = 'var(--baja)'; tc = 'var(--baja)'; sw = 2; }
+      if (st.kind === 'base'){ fill = 'var(--sube-soft)'; stroke = 'var(--sube)'; tc = 'var(--sube)'; }
+      if (st.kind === 'done'){ fill = 'var(--sube-soft)'; stroke = 'var(--sube)'; tc = 'var(--ink)'; }
+      if (st.kind === 'memo'){ fill = 'var(--memo-soft)'; stroke = 'var(--memo)'; tc = 'var(--memo)'; dash = '4 3'; sw = 2; }
+      const r = el('rect', { x: x, y: y, width: NW, height: NH, rx: 3, fill: fill, stroke: stroke, 'stroke-width': sw });
+      if (dash) r.setAttribute('stroke-dasharray', dash);
+      if (nd.id === cur) r.setAttribute('stroke-width', 2.5);
+      svg.appendChild(r);
+      svg.appendChild(el('text', { x: x + NW / 2, y: y + 22, 'text-anchor': 'middle', 'font-size': 13,
+        'font-family': 'var(--fm)', 'font-weight': st.kind === 'pending' ? 400 : 500, fill: tc }, 'fib(' + nd.k + ')'));
+      if (st.kind === 'memo')
+        svg.appendChild(el('text', { x: x + NW / 2, y: y + NH + 13, 'text-anchor': 'middle', 'font-size': 9.5,
+          'font-family': 'var(--fm)', fill: 'var(--memo)' }, 'ya anotado'));
+    });
+    /* resultado de la raíz */
+    if (state[0].value !== null){
+      const rx = px(nodes[0]);
+      svg.appendChild(el('text', { x: rx, y: 15, 'text-anchor': 'middle', 'font-size': 12,
+        'font-family': 'var(--fm)', 'font-weight': 700, fill: 'var(--sube)' }, 'fib(' + n + ') = ' + state[0].value));
+    }
+    cEl.textContent = calls; sEl.textContent = seen.size; hEl.textContent = hits;
+    if (!useMemo) memoEl.innerHTML = '<span style="opacity:.7">la libreta está apagada — cada estado se ' +
+      'recalcula desde cero</span>';
+    else if (!memoNotes.size) memoEl.innerHTML = '<span style="opacity:.7">vacía por ahora</span>';
+    else memoEl.innerHTML = [...memoNotes.keys()].sort((a,b) => a - b)
+      .map(k => 'libreta[' + k + '] = <b style="color:var(--memo)">' + memoNotes.get(k) + '</b>').join('<br>');
+    const e = s > 0 ? events[s-1] : null;
+    if (!e) narr.innerHTML = 'El árbol arranca vacío. Cada llamada a <b>fib(k)</b> con k &gt; 1 va a producir ' +
+      '<b>dos</b> clones, no uno.';
+    else if (e.t === 'enter') narr.innerHTML = 'Se abre <b>fib(' + e.k + ')</b>' +
+      ((kCount.get(e.k) || 0) > 1
+        ? ' — este estado <b>ya apareció antes</b> en el árbol (van ' + kCount.get(e.k) + ' veces).'
+        : ', un estado nuevo.');
+    else if (e.t === 'base') narr.innerHTML = '<b>fib(' + e.k + ')</b> es caso base: responde ' + e.value +
+      ' sin delegar. Se necesitan <b>dos</b> casos base porque la transición mira dos estados atrás.';
+    else if (e.t === 'memo') narr.innerHTML = 'Atajo: <b>fib(' + e.k + ')</b> ya estaba en la libreta. Se ' +
+      'devuelve <b>' + e.value + '</b> y <b>todo ese subárbol nunca se dibuja</b>. Ahí está el ahorro.';
+    else narr.innerHTML = '<b>fib(' + e.k + ')</b> suma lo que devolvieron sus dos clones y entrega <b>' +
+      e.value + '</b>' + (e.note ? ', y lo anota en la libreta.' : '.');
+  }});
+
+  function mode(m){ useMemo = m; btnOff.classList.toggle('on', !m); btnOn.classList.toggle('on', m); build(); }
+  btnOff.addEventListener('click', () => mode(false));
+  btnOn.addEventListener('click', () => mode(true));
+  slider.addEventListener('input', build);
+  btnPlay.addEventListener('click', () => {
+    if (timer){ clearInterval(timer); timer = null; btnPlay.textContent = '▶ Reproducir'; btnPlay.classList.remove('on'); return; }
+    if (S.i >= S.total) S.i = 0;
+    btnPlay.textContent = '❙❙ Pausa'; btnPlay.classList.add('on');
+    timer = setInterval(() => {
+      if (S.i >= S.total){ clearInterval(timer); timer = null; btnPlay.textContent = '▶ Reproducir'; btnPlay.classList.remove('on'); return; }
+      S.i++; S.paint();
+    }, 320);
+  });
+  build();
+
+  /* --- gráfico de costo: llamadas sin memo vs con memo --- */
+  (function cost(){
+    const c = $('#fibCost');
+    const ns = [5, 10, 15, 20, 25, 30];
+    const naive = k => { const t = [1,1]; for (let i = 2; i <= k; i++) t[i] = 1 + t[i-1] + t[i-2]; return t[k]; };
+    const rows = ns.map(k => ({ n: k, a: naive(k), b: 2 * k - 1 }));
+    const W = 780, H = 250, L = 58, R = 16, T = 22, B = 40;
+    const maxV = Math.max.apply(null, rows.map(r => r.a));
+    const ph = H - T - B, pw = W - L - R;
+    const sy = v => T + ph - (Math.log10(v + 1) / Math.log10(maxV + 1)) * ph;
+    c.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    c.setAttribute('width', W); c.setAttribute('height', H);
+    c.style.maxWidth = 'none'; c.style.height = 'auto';
+    /* rejilla logarítmica, porque el contraste es de órdenes de magnitud */
+    [1, 10, 100, 1000, 10000, 100000, 1000000].forEach(v => {
+      if (v > maxV) return;
+      const y = sy(v);
+      c.appendChild(el('line', { x1: L, y1: y, x2: W - R, y2: y, stroke: 'var(--line)', 'stroke-width': 1 }));
+      c.appendChild(el('text', { x: L - 9, y: y + 4, 'text-anchor': 'end', 'font-size': 10.5,
+        'font-family': 'var(--fm)', fill: 'var(--muted)' }, v.toLocaleString('es')));
+    });
+    const gw = pw / rows.length;
+    rows.forEach((r, i) => {
+      const cx = L + gw * i + gw / 2;
+      const bw = 22;
+      [['a', 'var(--baja)', -bw - 1], ['b', 'var(--sube)', 1]].forEach(([key, col, off]) => {
+        const y = sy(r[key]);
+        c.appendChild(el('rect', { x: cx + off, y: y, width: bw, height: T + ph - y, rx: 3, fill: col }));
+        c.appendChild(el('text', { x: cx + off + bw / 2, y: y - 6, 'text-anchor': 'middle', 'font-size': 10,
+          'font-family': 'var(--fm)', 'font-weight': 700, fill: 'var(--ink-2)' }, r[key].toLocaleString('es')));
+      });
+      c.appendChild(el('text', { x: cx, y: H - B + 20, 'text-anchor': 'middle', 'font-size': 11.5,
+        'font-family': 'var(--fm)', fill: 'var(--muted)' }, 'n = ' + r.n));
+    });
+    c.appendChild(el('line', { x1: L, y1: T + ph, x2: W - R, y2: T + ph, stroke: 'var(--line-2)', 'stroke-width': 1 }));
+    /* leyenda */
+    const lg = [['sin memoización', 'var(--baja)', L], ['con memoización', 'var(--sube)', L + 150]];
+    lg.forEach(([t, col, x]) => {
+      c.appendChild(el('rect', { x: x, y: 6, width: 10, height: 10, rx: 2, fill: col }));
+      c.appendChild(el('text', { x: x + 16, y: 15, 'font-size': 11.5, 'font-family': 'var(--fm)',
+        fill: 'var(--muted)' }, t));
+    });
+    c.appendChild(el('text', { x: W - R, y: 15, 'text-anchor': 'end', 'font-size': 10.5,
+      'font-family': 'var(--fm)', fill: 'var(--muted)' }, 'llamadas · escala logarítmica'));
+  })();
+})();
+
+/* ===== 05 · cadena vs árbol ===== */
+(function(){
+  const svg = $('#cmpSvg');
+  const W = 900, H = 330;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  svg.style.maxWidth = 'none'; svg.style.height = 'auto';
+  function node(x, y, label, hot){
+    const w = 54, h = 30;
+    svg.appendChild(el('rect', { x: x - w/2, y: y, width: w, height: h, rx: 3,
+      fill: hot ? 'var(--memo-soft)' : 'var(--surface)', stroke: hot ? 'var(--memo)' : 'var(--line-2)',
+      'stroke-width': hot ? 2 : 1 }));
+    svg.appendChild(el('text', { x: x, y: y + 20, 'text-anchor': 'middle', 'font-size': 12,
+      'font-family': 'var(--fm)', fill: hot ? 'var(--memo)' : 'var(--ink)' }, label));
+  }
+  function link(x1, y1, x2, y2){
+    svg.appendChild(el('path', { d: 'M' + x1 + ' ' + y1 + ' C ' + x1 + ' ' + (y1+18) + ', ' + x2 + ' ' + (y2-18) + ', ' + x2 + ' ' + y2,
+      fill: 'none', stroke: 'var(--line-2)', 'stroke-width': 1.4 }));
+  }
+  function title(x, t, sub){
+    svg.appendChild(el('text', { x: x, y: 18, 'font-size': 13, 'font-family': 'var(--fd)', 'font-weight': 600,
+      fill: 'var(--ink)' }, t));
+    svg.appendChild(el('text', { x: x, y: 36, 'font-size': 11.5, 'font-family': 'var(--fm)',
+      fill: 'var(--muted)' }, sub));
+  }
+  /* izquierda: cadena */
+  title(24, 'mult(4,3) — una cadena', '4 llamadas · 4 estados distintos · 0 repetidos');
+  const chain = ['mult(4,3)', 'mult(4,2)', 'mult(4,1)', 'mult(4,0)'];
+  chain.forEach((t, i) => {
+    const x = 110, y = 60 + i * 62;
+    if (i) link(x, y - 32, x, y);
+    node(x, y, t, false);
+  });
+  svg.appendChild(el('text', { x: 152, y: 100, 'font-size': 11, 'font-family': 'var(--fm)',
+    fill: 'var(--baja)' }, '↓ un solo clon'));
+  svg.appendChild(el('text', { x: 24, y: 316, 'font-size': 11.5, 'font-family': 'var(--fm)',
+    fill: 'var(--muted)' }, 'memoizar aquí no ahorra nada'));
+  /* separador */
+  svg.appendChild(el('line', { x1: 300, y1: 8, x2: 300, y2: H - 8, stroke: 'var(--line)', 'stroke-width': 1,
+    'stroke-dasharray': '3 4' }));
+  /* derecha: árbol de fib(5) */
+  title(330, 'fib(5) — un árbol', '15 llamadas · 6 estados distintos · 9 repetidos');
+  const tree = [
+    { k: 5, d: 0, gx: 10.5, hot: false }, { k: 4, d: 1, gx: 5.5, hot: false }, { k: 3, d: 1, gx: 15.5, hot: true },
+    { k: 3, d: 2, gx: 2.5, hot: false }, { k: 2, d: 2, gx: 8.5, hot: true }, { k: 2, d: 2, gx: 13.5, hot: true },
+    { k: 1, d: 2, gx: 17.5, hot: true },
+    { k: 2, d: 3, gx: 1, hot: false }, { k: 1, d: 3, gx: 4, hot: true },
+    { k: 1, d: 3, gx: 7.5, hot: true }, { k: 0, d: 3, gx: 9.5, hot: true },
+    { k: 1, d: 3, gx: 12.5, hot: true }, { k: 0, d: 3, gx: 14.5, hot: true },
+    { k: 1, d: 4, gx: 0, hot: true }, { k: 0, d: 4, gx: 2, hot: true }
+  ];
+  const edges = [[0,1],[0,2],[1,3],[1,4],[2,5],[2,6],[3,7],[3,8],[4,9],[4,10],[5,11],[5,12],[7,13],[7,14]];
+  const X = g => 340 + g * 31, Y = d => 56 + d * 58;
+  edges.forEach(([a, b]) => link(X(tree[a].gx), Y(tree[a].d) + 30, X(tree[b].gx), Y(tree[b].d)));
+  tree.forEach(t => node(X(t.gx), Y(t.d), 'fib(' + t.k + ')', t.hot));
+  svg.appendChild(el('text', { x: 330, y: 316, 'font-size': 11.5, 'font-family': 'var(--fm)',
+    fill: 'var(--memo)' }, 'morado = este estado ya se calculó antes'));
+})();
+
+/* ===== 06 · palíndromo ===== */
+(function(){
+  const chars = $('#palChars'), calls = $('#palCalls'), narr = $('#palNarr');
+  const words = ['abba', 'abca', 'reconocer', 'anilina'];
+  const seg = $('#palWords'), input = $('#palInput');
+  let word = 'abba', steps = [];
+  words.forEach(w => {
+    const b = document.createElement('button');
+    b.textContent = w;
+    b.addEventListener('click', () => { input.value = ''; setWord(w); });
+    seg.appendChild(b);
+  });
+  input.addEventListener('input', () => {
+    const v = input.value.trim().toLowerCase().replace(/[^a-záéíóúñü]/g, '');
+    if (v.length >= 2) setWord(v);
+  });
+  function setWord(w){
+    word = w;
+    [...seg.children].forEach(b => b.classList.toggle('on', b.textContent === w));
+    steps = [];
+    let i = 0, j = w.length - 1;
+    while (true){
+      if (i >= j){ steps.push({ i, j, kind: 'base' }); break; }
+      const eq = w[i] === w[j];
+      steps.push({ i, j, kind: eq ? 'ok' : 'bad' });
+      if (!eq) break;
+      i++; j--;
+    }
+    S.reload(steps.length, steps.length);
+  }
+  const S = stepper('pal', { render(s){
+    const shown = steps.slice(0, Math.max(s, 1));
+    const cur = steps[Math.max(0, s - 1)];
+    const active = s > 0;
+    chars.innerHTML = '';
+    [...word].forEach((ch, idx) => {
+      const d = document.createElement('div');
+      let cls = 'ch';
+      if (active && idx >= cur.i && idx <= cur.j) cls += ' inside';
+      if (active && cur.kind !== 'base' && (idx === cur.i || idx === cur.j)) cls += cur.kind === 'ok' ? ' ok' : ' bad';
+      d.className = cls;
+      d.textContent = ch;
+      if (active && idx === cur.i) d.innerHTML += '<span class="ptr">i=' + cur.i + '</span>';
+      if (active && idx === cur.j && cur.i !== cur.j) d.innerHTML += '<span class="ptr">j=' + cur.j + '</span>';
+      chars.appendChild(d);
+    });
+    calls.innerHTML = '';
+    shown.forEach((st, k) => {
+      if (!active && k > 0) return;
+      const line = document.createElement('div');
+      line.className = 'callstack-line' + (k === s - 1 ? ' cur' : '');
+      const pad = '&nbsp;'.repeat(k * 2);
+      let body;
+      if (st.kind === 'base') body = 'pal(' + st.i + ',' + st.j + '): i ≥ j → <span class="v t">true</span>' +
+        (st.i > st.j ? '  ← segmento vacío' : '  ← un solo carácter');
+      else if (st.kind === 'ok') body = 'pal(' + st.i + ',' + st.j + '): s[' + st.i + ']=‘' + word[st.i] +
+        '’ = s[' + st.j + ']=‘' + word[st.j] + '’ → delega pal(' + (st.i+1) + ',' + (st.j-1) + ')';
+      else body = 'pal(' + st.i + ',' + st.j + '): s[' + st.i + ']=‘' + word[st.i] + '’ ≠ s[' + st.j +
+        ']=‘' + word[st.j] + '’ → <span class="v f">false</span>, sin llamada recursiva';
+      line.innerHTML = pad + body;
+      calls.appendChild(line);
+    });
+    if (s === 0){ narr.innerHTML = 'El estado es el par <b>(i, j)</b>. Con un solo índice no se puede escribir ' +
+      'la transición: no sabríamos qué segmento estamos verificando.'; return; }
+    if (cur.kind === 'ok') narr.innerHTML = 'Los extremos coinciden. El problema se reduce al <b>interior</b>: ' +
+      'el mismo tipo de pregunta, sobre un segmento dos caracteres más corto.';
+    else if (cur.kind === 'bad') narr.innerHTML = 'Los extremos <b>no</b> coinciden, así que la respuesta es ' +
+      '<b>false</b> de inmediato. El cortocircuito de <span class="mono">∧</span> evita incluso hacer la llamada.';
+    else narr.innerHTML = cur.i > cur.j
+      ? 'Caso base con <b>i &gt; j</b>: segmento vacío, palíndromo por convención. Esto pasa con palabras de ' +
+        'longitud <b>par</b> — por eso el caso base es <span class="mono">i ≥ j</span> y no <span class="mono">i = j</span>. ' +
+        'Con <span class="mono">i = j</span> solamente, aquí la recursión se saldría del arreglo.'
+      : 'Caso base con <b>i = j</b>: un solo carácter, siempre palíndromo. Palabra de longitud <b>impar</b>.';
+  }});
+  setWord('abba');
+})();
+
+/* ===== 07 · suma máxima ===== */
+(function(){
+  const svg = $('#kadSvg'), table = $('#kadTable'), narr = $('#kadNarr');
+  const tEl = $('#kadTerm'), bEl = $('#kadBest'), seg = $('#kadSets');
+  const SETS = {
+    'de la guía': [-2, 1, -3, 4, -1, 2, 1, -5, 4],
+    'todo negativo': [-3, -1, -4, -2],
+    'sin trampa': [2, 3, -1, 4]
+  };
+  let a = SETS['de la guía'], term = [];
+  Object.keys(SETS).forEach(k => {
+    const b = document.createElement('button');
+    b.textContent = k;
+    b.addEventListener('click', () => setArr(k));
+    seg.appendChild(b);
+  });
+  function setArr(k){
+    a = SETS[k];
+    [...seg.children].forEach(b => b.classList.toggle('on', b.textContent === k));
+    term = []; for (let i = 0; i < a.length; i++) term[i] = i === 0 ? a[0] : Math.max(a[i], a[i] + term[i-1]);
+    S.reload(a.length, a.length);
+  }
+  /* inicio del mejor subarreglo que termina en i */
+  function startOf(i){ let s = i; while (s > 0 && term[s] !== a[s]) s--; return s; }
+  const S = stepper('kad', { render(s){
+    const i = s - 1, active = s > 0;
+    const st = active ? startOf(i) : -1;
+    const best = active ? Math.max.apply(null, term.slice(0, s)) : null;
+    const bestI = active ? term.slice(0, s).indexOf(best) : -1;
+    /* --- gráfico --- */
+    /* B deja aire para: etiqueta de barra negativa (≈ +15), fila de índices (+34)
+       y el rótulo term(i) (+50) — así ninguna de las tres se pisa. */
+    const n = a.length, BW = 46, GAP = 10, L = 46, T = 26, B = 62;
+    const W = L + n * (BW + GAP) + 16, PH = 190;
+    const H = T + PH + B;
+    const vmax = Math.max(1, Math.max.apply(null, a)), vmin = Math.min(-1, Math.min.apply(null, a));
+    const zero = T + PH * (vmax / (vmax - vmin));
+    const scale = v => PH * Math.abs(v) / (vmax - vmin);
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('width', W); svg.setAttribute('height', H);
+    svg.style.maxWidth = 'none'; svg.style.height = 'auto';
+    svg.innerHTML = '';
+    /* banda del subarreglo vigente */
+    if (active && st <= i){
+      const x0 = L + st * (BW + GAP) - 5, x1 = L + i * (BW + GAP) + BW + 5;
+      svg.appendChild(el('rect', { x: x0, y: T - 8, width: x1 - x0, height: PH + 30, rx: 3,
+        fill: 'var(--memo-soft)', stroke: 'var(--memo)', 'stroke-width': 1.5 }));
+      svg.appendChild(el('text', { x: (x0 + x1) / 2, y: T + PH + 50, 'text-anchor': 'middle', 'font-size': 11,
+        'font-family': 'var(--fm)', 'font-weight': 700, fill: 'var(--memo)' },
+        'term(' + i + ') = ' + term[i]));
+    }
+    /* eje cero */
+    svg.appendChild(el('line', { x1: L - 12, y1: zero, x2: W - 8, y2: zero, stroke: 'var(--line-2)', 'stroke-width': 1 }));
+    svg.appendChild(el('text', { x: L - 18, y: zero + 4, 'text-anchor': 'end', 'font-size': 10.5,
+      'font-family': 'var(--fm)', fill: 'var(--muted)' }, '0'));
+    a.forEach((v, idx) => {
+      const x = L + idx * (BW + GAP), h = Math.max(3, scale(v));
+      const y = v >= 0 ? zero - h : zero;
+      const col = v >= 0 ? 'var(--sube)' : 'var(--baja)';
+      const dim = active && idx > i;
+      const g = el('g', {});
+      g.appendChild(el('rect', { x: x, y: y, width: BW, height: h, rx: 3, fill: col,
+        opacity: dim ? .22 : (active && idx >= st && idx <= i ? 1 : .55) }));
+      g.appendChild(el('text', { x: x + BW / 2, y: v >= 0 ? y - 7 : y + h + 15, 'text-anchor': 'middle',
+        'font-size': 12, 'font-family': 'var(--fm)', 'font-weight': 600,
+        fill: dim ? 'var(--muted)' : 'var(--ink)' }, String(v)));
+      g.appendChild(el('title', {}, 'a[' + idx + '] = ' + v));
+      svg.appendChild(g);
+      svg.appendChild(el('text', { x: x + BW / 2, y: T + PH + 34, 'text-anchor': 'middle', 'font-size': 10.5,
+        'font-family': 'var(--fm)', fill: idx === i ? 'var(--ink)' : 'var(--muted)' }, 'i=' + idx));
+    });
+    /* --- tabla --- */
+    let html = '<thead><tr><th>i</th><th>a[i]</th><th>term(i−1)</th><th>a[i]+term(i−1)</th><th>term(i)</th>' +
+      '<th>decisión</th></tr></thead><tbody>';
+    for (let k = 0; k < s; k++){
+      const ext = k > 0 ? a[k] + term[k-1] : null;
+      const restart = k === 0 || a[k] >= ext;
+      html += '<tr class="' + (k === i ? 'cur' : (k === bestI ? 'best' : '')) + '">' +
+        '<td>' + k + '</td><td>' + a[k] + '</td>' +
+        '<td>' + (k > 0 ? term[k-1] : '—') + '</td>' +
+        '<td>' + (k > 0 ? ext : '—') + '</td>' +
+        '<td>' + term[k] + '</td>' +
+        '<td>' + (k === 0 ? 'caso base: solo a[0]' : (restart ? 'empiezo de nuevo en i'
+          : 'extiendo el de i−1')) + '</td></tr>';
+    }
+    html += '</tbody>';
+    table.innerHTML = html;
+    tEl.textContent = active ? term[i] : '—';
+    bEl.textContent = active ? best : '—';
+    if (!active){ narr.innerHTML = 'Cada estado <b>i</b> promete una sola cosa: la mejor suma de un subarreglo ' +
+      'que <b>termina exactamente en i</b>. Con esa promesa el clon sí sirve.'; return; }
+    if (i === 0) narr.innerHTML = 'Caso base: el único subarreglo que termina en 0 es <span class="mono">[a[0]]</span>, ' +
+      'valga lo que valga. Por eso <b>term(0) = ' + a[0] + '</b>.';
+    else {
+      const ext = a[i] + term[i-1];
+      narr.innerHTML = 'El clon promete <b>' + term[i-1] + '</b> como mejor final en i−1. Extender da <b>' + ext +
+        '</b>; empezar de nuevo da <b>' + a[i] + '</b>. Gana ' + (a[i] >= ext ? '<b>empezar de nuevo</b>' :
+        '<b>extender</b>') + ', así que term(' + i + ') = <b>' + term[i] + '</b>.' +
+        (term[i] === best && i === bestI ? ' Y es el mejor visto hasta ahora.' : '');
+    }
+  }});
+  setArr('de la guía');
+})();
+
+/* ===== 08 · errores ===== */
+(function(){
+  const errs = [
+    { t: 'Sin caso base (o con uno insuficiente)',
+      s: 'síntoma: RecursionError, o la traza nunca se da la vuelta',
+      p: 'Si la transición mira <b>k</b> estados hacia atrás, se necesitan al menos <b>k</b> casos base. ' +
+         'Fibonacci con solo <code>fib(0)</code> llama a <code>fib(−1)</code> y no vuelve.',
+      draw: c => {
+        [0,1,2,3].forEach(i => box(c, 14 + i*66, 14, 'fib(' + (2-i) + ')', i === 3 ? 'var(--baja)' : null));
+        [0,1,2].forEach(i => arrow(c, 14 + i*66 + 56, 29, 14 + (i+1)*66, 29));
+        arrow(c, 278, 29, 300, 29);
+        txt(c, 305, 33, '∞', 'var(--baja)', 15, 700);
+      } },
+    { t: 'Significado insuficiente',
+      s: 'síntoma: «necesito saber algo» que el clon no promete',
+      p: 'La postcondición del clon es demasiado general para lo que hay que combinar. La salida no es cambiar ' +
+         'el código: es <b>redefinir qué significa f</b>, casi siempre haciéndola más específica.',
+      draw: c => {
+        box(c, 14, 10, 'gerente i', null, 96);
+        box(c, 190, 10, 'clon i−1', null, 96);
+        arrow(c, 112, 25, 188, 25);
+        txt(c, 150, 20, 'necesito…', 'var(--muted)', 9.5, 500, 'middle');
+        txt(c, 14, 62, 'pide: «la mejor que TERMINA en i−1»', 'var(--ink-2)', 10.5);
+        txt(c, 14, 78, 'recibe: «la mejor EN CUALQUIER PARTE»', 'var(--baja)', 10.5);
+        c.appendChild(el('line', { x1: 188, y1: 40, x2: 112, y2: 40, stroke: 'var(--baja)', 'stroke-width': 1.5,
+          'stroke-dasharray': '3 3' }));
+        txt(c, 150, 36, '✗ no encaja', 'var(--baja)', 9.5, 700, 'middle');
+      } },
+    { t: 'El estado no identifica el subproblema',
+      s: 'síntoma: el mismo estado con dos respuestas distintas',
+      p: 'Si dos subproblemas comparten estado pero deben responder distinto, al estado le falta información. ' +
+         'Es el mismo diagnóstico que hace fallar una tabla de programación dinámica.',
+      draw: c => {
+        box(c, 30, 12, 'f(3)', 'var(--memo)');
+        box(c, 170, 12, 'f(3)', 'var(--memo)');
+        txt(c, 56, 56, '→ 7', 'var(--sube)', 12, 700, 'middle');
+        txt(c, 196, 56, '→ 12', 'var(--baja)', 12, 700, 'middle');
+        txt(c, 126, 78, 'mismo estado, distinta respuesta ⇒ falta un parámetro', 'var(--muted)', 10, 400, 'middle');
+      } },
+    { t: 'Memoizar una cadena',
+      s: 'síntoma: el diccionario nunca acierta',
+      p: 'La memoización solo paga cuando hay estados repetidos. En una recurrencia lineal cada estado aparece ' +
+         'una vez: el diccionario cuesta memoria y no ahorra nada. Dibuje el árbol antes de memoizar.',
+      draw: c => {
+        [0,1,2,3].forEach(i => box(c, 14 + i*66, 20, 'g(' + (4-i) + ')'));
+        [0,1,2].forEach(i => arrow(c, 14 + i*66 + 56, 35, 14 + (i+1)*66, 35));
+        txt(c, 14, 78, '0 repeticiones · 0 aciertos de memo', 'var(--muted)', 10.5);
+      } }
+  ];
+  function box(c, x, y, t, col, w){
+    w = w || 56;
+    c.appendChild(el('rect', { x: x, y: y, width: w, height: 30, rx: 3, fill: col ? 'var(--memo-soft)' : 'var(--surface)',
+      stroke: col || 'var(--line-2)', 'stroke-width': col ? 1.5 : 1 }));
+    c.appendChild(el('text', { x: x + w/2, y: y + 20, 'text-anchor': 'middle', 'font-size': 11.5,
+      'font-family': 'var(--fm)', fill: col || 'var(--ink)' }, t));
+  }
+  function arrow(c, x1, y, x2, y2){
+    c.appendChild(el('line', { x1: x1, y1: y, x2: x2 - 5, y2: y2, stroke: 'var(--baja)', 'stroke-width': 1.4 }));
+    c.appendChild(el('polygon', { points: (x2-5) + ',' + (y2-3.5) + ' ' + x2 + ',' + y2 + ' ' + (x2-5) + ',' + (y2+3.5),
+      fill: 'var(--baja)' }));
+  }
+  function txt(c, x, y, t, fill, size, w, anchor){
+    const n = el('text', { x: x, y: y, 'font-size': size || 11, 'font-family': 'var(--fm)', fill: fill || 'var(--ink)' }, t);
+    if (w) n.setAttribute('font-weight', w);
+    if (anchor) n.setAttribute('text-anchor', anchor);
+    c.appendChild(n);
+  }
+  const grid = $('#errGrid');
+  errs.forEach(e => {
+    const card = document.createElement('div');
+    card.className = 'errcard';
+    card.innerHTML = '<h4>' + e.t + '</h4><p class="sym">' + e.s + '</p>';
+    const c = el('svg', { viewBox: '0 0 320 92', role: 'img', 'aria-label': e.t });
+    e.draw(c);
+    card.appendChild(c);
+    const p = document.createElement('p'); p.innerHTML = e.p;
+    card.appendChild(p);
+    grid.appendChild(card);
+  });
+})();
+</script>
+</body>
+</html>

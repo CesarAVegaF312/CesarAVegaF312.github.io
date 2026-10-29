@@ -1,0 +1,1764 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Complemento visual interactivo de la guia de tablas hash: funcion hash y eleccion de m, encadenamiento, sondeo lineal con lapidas, factor de carga, redimensionamiento y dos sumas.">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Cajones, sondeos y lápidas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --ground:#F1F0F5; --surface:#FDFCFF; --sunk:#E9E7F0;
+  --ink:#191826; --ink-2:#3D3A50; --muted:#6B687E; --line:#DFDCE8; --line-2:#CBC7DA;
+  --baja:#BE5A0E;
+  --sube:#00897B;
+  --memo:#6D46E0;
+  --baja-soft:#F8E9DB; --sube-soft:#DBEFEC; --memo-soft:#E8E2FB;
+  --c0:#6D46E0; --c1:#BE5A0E; --c2:#00897B; --c3:#B4397C;
+  --shadow:0 1px 2px rgba(25,24,38,.05), 0 10px 26px -18px rgba(25,24,38,.4);
+  --fd:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --fb:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --fm:'JetBrains Mono','Cascadia Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#131220; --surface:#1C1B25; --sunk:#232232;
+    --ink:#E9E7F2; --ink-2:#C3BFD3; --muted:#948FA8; --line:#2F2D3E; --line-2:#413E54;
+    --baja:#CE7526; --sube:#0BA187; --memo:#8E76EC;
+    --baja-soft:#372516; --sube-soft:#0D2C29; --memo-soft:#231D40;
+    --c0:#8E76EC; --c1:#CE7526; --c2:#0BA187; --c3:#D45A9C;
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 26px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#131220; --surface:#1C1B25; --sunk:#232232;
+  --ink:#E9E7F2; --ink-2:#C3BFD3; --muted:#948FA8; --line:#2F2D3E; --line-2:#413E54;
+  --baja:#CE7526; --sube:#0BA187; --memo:#8E76EC;
+  --baja-soft:#372516; --sube-soft:#0D2C29; --memo-soft:#231D40;
+  --c0:#8E76EC; --c1:#CE7526; --c2:#0BA187; --c3:#D45A9C;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 26px -18px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--fb);font-size:17px;line-height:1.62;
+  -webkit-font-smoothing:antialiased;padding:0 20px 80px}
+.wrap{max-width:1080px;margin:0 auto}
+h1,h2,h3,h4{font-family:var(--fd);text-wrap:balance;margin:0;line-height:1.15;letter-spacing:-.015em}
+p{margin:0}
+code{font-family:var(--fm);font-size:.85em}
+sup,sub{font-size:.66em;line-height:0}
+.eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500}
+a{color:var(--memo)}
+
+header.hero{padding:56px 0 34px;border-bottom:1px solid var(--line)}
+.hero h1{font-size:clamp(38px,6.6vw,66px);font-weight:800;max-width:17ch;margin-top:14px}
+.hero h1 em{font-style:normal;color:var(--baja)}
+.hero .sub{margin-top:22px;max-width:63ch;font-size:19px;color:var(--ink-2)}
+.thesis{margin-top:26px;border-left:3px solid var(--memo);padding:2px 0 2px 18px;max-width:58ch;
+  font-size:19px;font-style:italic}
+
+.key{margin-top:30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--surface)}
+.key div{padding:14px 17px;border-right:1px solid var(--line)}
+.key div:last-child{border-right:0}
+.key b{font-family:var(--fd);font-size:14.5px;display:flex;align-items:center;gap:9px;font-weight:600}
+.key .dot{width:13px;height:13px;border-radius:50%;flex:none}
+.key p{font-size:14px;color:var(--muted);margin-top:4px;line-height:1.45}
+
+section.lab{padding:54px 0;border-bottom:1px solid var(--line);scroll-margin-top:8px}
+html{scroll-behavior:smooth}
+.toplink{margin-left:auto;flex:none;font-family:var(--fm);font-size:12px;color:var(--muted);text-decoration:none;padding:2px 6px;border-radius:3px}
+.toplink:hover{color:var(--memo);background:var(--memo-soft)}
+.about{margin-top:16px;max-width:65ch}
+.about .mini{color:var(--baja);margin-bottom:5px}
+.about p{font-size:17px;color:var(--ink);line-height:1.6}
+.about .src{display:block;margin-top:6px;font-family:var(--fm);font-size:12px;color:var(--muted)}
+
+/* mapa */
+.map{padding:50px 0 54px;border-bottom:1px solid var(--line);scroll-margin-top:8px}
+.map h2{font-size:clamp(25px,3.4vw,34px);font-weight:600;margin-top:10px}
+.map .lede{max-width:65ch;margin-top:13px;color:var(--ink-2)}
+.map h3{font-size:19px;font-weight:600;margin-top:40px}
+.map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:12px;margin-top:20px}
+.map-card{display:flex;flex-direction:column;gap:6px;padding:14px 16px 13px;background:var(--surface);border:1px solid var(--line);border-radius:4px;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s,box-shadow .2s}
+.map-card:hover{border-color:var(--ink-2);transform:translateY(-2px);box-shadow:var(--shadow)}
+.map-card .n{font-family:var(--fm);font-size:11px;font-weight:700;color:var(--baja);letter-spacing:.08em}
+.map-card b{font-family:var(--fd);font-size:16.5px;font-weight:600;line-height:1.25}
+.map-card p{font-size:14px;color:var(--ink-2);line-height:1.45}
+.map-card .go{margin-top:auto;padding-top:4px;font-family:var(--fm);font-size:12px;color:var(--memo)}
+.algos{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:0 30px;margin-top:14px}
+.algo{padding:14px 0 15px;border-top:1px solid var(--line)}
+.algo h4{font-family:var(--fd);font-size:16.5px;font-weight:600}
+.algo .rec{display:block;margin-top:3px;font-family:var(--fm);font-size:12px;color:var(--muted)}
+.algo p{font-size:14.5px;color:var(--ink-2);line-height:1.5;margin-top:6px}
+.algo .links{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.algo .links a,.algo .links span{font-family:var(--fm);font-size:11.5px;padding:3px 8px;border-radius:2px;text-decoration:none;border:1px solid var(--line-2)}
+.algo .links a{color:var(--memo);border-color:var(--memo);background:var(--memo-soft)}
+.algo .links a:hover{background:var(--memo);color:#fff}
+.algo .links span{color:var(--muted)}
+@media (max-width:420px){.algos{grid-template-columns:1fr}}
+.lab-head{display:flex;gap:15px;align-items:baseline}
+.lab-num{font-family:var(--fm);font-size:12px;font-weight:700;color:var(--baja);letter-spacing:.08em;flex:none}
+.lab h2{font-size:clamp(25px,3.4vw,34px);font-weight:600}
+.lab .lede{max-width:65ch;margin-top:13px;color:var(--ink-2)}
+.goal{margin-top:18px;max-width:65ch;padding:12px 16px 13px;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--sube);border-radius:3px}
+.goal .mini{margin-bottom:5px}
+.goal p{font-size:15.5px;color:var(--ink-2);line-height:1.55}
+.goal b{color:var(--ink)}
+.stage{margin-top:26px;background:var(--surface);border:1px solid var(--line);border-radius:4px;
+  box-shadow:var(--shadow);overflow:hidden}
+.stage-body{padding:22px;min-width:0}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 300px}
+.split>.rail{border-left:1px solid var(--line);padding:20px;background:var(--sunk);min-width:0}
+@media (max-width:860px){.split{grid-template-columns:1fr}.split>.rail{border-left:0;border-top:1px solid var(--line)}}
+
+.ctl{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);
+  background:var(--sunk)}
+button{font-family:var(--fd);font-size:14px;font-weight:600;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:3px;padding:6px 12px;cursor:pointer;line-height:1.25}
+button:hover:not(:disabled){border-color:var(--ink-2)}
+button:disabled{opacity:.35;cursor:default}
+button.primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+button.on{background:var(--memo);border-color:var(--memo);color:#fff}
+button.warn.on{background:#C62828;border-color:#C62828;color:#fff}
+:focus-visible{outline:2px solid var(--memo);outline-offset:2px}
+.ctl label{font-family:var(--fm);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+input[type=range]{accent-color:var(--memo);width:108px}
+input[type=number],input[type=text],select{font-family:var(--fm);font-size:13px;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:3px;padding:5px 7px;line-height:1.2;min-width:0}
+input[type=number]{width:76px}
+input[type=text]{width:210px;max-width:100%}
+.step-count{font-family:var(--fm);font-size:12px;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line-2);border-radius:3px;overflow:hidden}
+.seg button{border:0;border-radius:0;border-right:1px solid var(--line-2)}
+.seg button:last-child{border-right:0}
+.ctl .err{font-family:var(--fm);font-size:12px;color:#C62828;flex-basis:100%}
+.ctl .err:empty{display:none}
+
+.mono{font-family:var(--fm)}
+.rail h4,.mini{font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+  font-weight:500;margin-bottom:11px}
+.rail-block+.rail-block{margin-top:24px}
+.narration{font-size:15px;color:var(--ink-2);line-height:1.5;min-height:6em}
+.narration b{color:var(--ink);font-weight:600}
+.narration .bad{color:#C62828;font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--fm);font-size:11.5px;font-weight:500;
+  padding:3px 8px;border-radius:2px;border:1px solid var(--line-2);color:var(--muted);background:var(--surface)}
+.pill.baja{color:var(--baja);border-color:var(--baja);background:var(--baja-soft)}
+.pill.sube{color:var(--sube);border-color:var(--sube);background:var(--sube-soft)}
+.pill.memo{color:var(--memo);border-color:var(--memo);background:var(--memo-soft)}
+.pill.tomb{border-style:dashed;background:var(--sunk)}
+.pill.bad{color:#C62828;border-color:#C62828}
+.pills{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+figure{margin:0}
+figcaption{font-size:14.5px;color:var(--muted);margin-top:13px;line-height:1.5;max-width:72ch}
+.scroller{overflow-x:auto;padding-bottom:4px}
+pre{font-family:var(--fm);font-size:13px;line-height:1.65;background:var(--surface);border:1px solid var(--line);
+  border-radius:3px;padding:12px 14px;overflow-x:auto;margin:0;color:var(--ink-2)}
+pre b{color:var(--ink);font-weight:700}
+pre.code span{display:block;padding:0 6px;margin:0 -6px;border-radius:2px;transition:background .25s,box-shadow .25s;white-space:pre}
+pre.code span.hi{background:var(--memo-soft);color:var(--ink);box-shadow:inset 2px 0 0 var(--memo)}
+pre.code span.hibad{background:var(--baja-soft);color:var(--ink);box-shadow:inset 2px 0 0 #C62828}
+.stat-row{display:flex;gap:22px;flex-wrap:wrap}
+.stat b{display:block;font-family:var(--fd);font-size:26px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{font-family:var(--fm);font-size:10.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.note{margin-top:24px;padding:16px 19px;background:var(--memo-soft);border:1px solid var(--memo);
+  border-radius:3px;font-size:15.5px;max-width:75ch}
+.note b{font-family:var(--fd)}
+.note p+p{margin-top:8px}
+.hint{font-size:13.5px;color:var(--muted);margin-top:12px}
+.noanim,.noanim *{transition:none!important}
+
+/* celdas genéricas */
+.qbox{margin-top:18px}
+.qbox h4{margin-bottom:8px}
+.cells{display:flex;flex-wrap:wrap;gap:5px;min-height:44px;align-items:center}
+.cell{min-width:40px;height:40px;padding:0 6px;display:grid;place-items:center;border:1px solid var(--line-2);border-radius:3px;
+  background:var(--surface);font-family:var(--fm);font-size:14px;font-weight:700;color:var(--ink);
+  transition:background .3s,border-color .3s,color .3s,opacity .3s}
+.cell.q{background:var(--memo-soft);border-color:var(--memo);color:var(--memo)}
+.cell.front{background:var(--baja-soft);border-color:var(--baja);color:var(--baja)}
+.cell.cur{background:var(--baja);border-color:var(--baja);color:#fff}
+.cell.found{background:var(--sube);border-color:var(--sube);color:#fff}
+.cell.bad{background:#C62828;border-color:#C62828;color:#fff}
+.cell.seen{opacity:.45;text-decoration:line-through}
+.cell.dim{opacity:.4}
+.cell.empty{border-style:dashed;color:var(--muted);font-weight:500;font-size:11px;padding:0 10px}
+.cell.new{animation:pop .35s ease}
+@keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:none;opacity:1}}
+.order{font-family:var(--fm);font-size:13.5px;color:var(--ink);margin-top:8px;min-height:1.4em;line-height:1.8}
+.order span{color:var(--muted)}
+.order span.done{color:var(--ink)}
+.order span.now{color:#fff;background:var(--baja);padding:1px 5px;border-radius:2px}
+.opline{font-family:var(--fm);font-size:14px;color:var(--ink);margin-bottom:14px;min-height:1.5em;overflow-wrap:anywhere}
+.opline b{color:var(--baja)}
+
+table.trace{border-collapse:collapse;font-family:var(--fm);font-size:12.5px;width:100%}
+table.trace th{font-weight:500;color:var(--muted);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line-2);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+table.trace td{padding:4px 8px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink-2);transition:background .25s}
+table.trace tr.on td{background:var(--memo-soft);color:var(--ink)}
+table.trace td.ok{color:var(--sube);font-weight:700}
+table.trace td.bad{color:#C62828;font-weight:700}
+table.trace td.h{color:var(--muted)}
+table.trace tbody tr.pick{cursor:pointer}
+table.trace tbody tr.pick:hover td{background:var(--sunk)}
+
+/* 01 · reparto */
+.dual{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:16px}
+.panel{border:1px solid var(--line);border-radius:4px;padding:12px 14px 14px;background:var(--surface);min-width:0}
+.panel-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px;font-family:var(--fm);font-size:12px;color:var(--muted)}
+.panel-head .tag{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);font-weight:700;margin-right:4px}
+.panel-head button{font-size:12.5px;padding:4px 9px}
+.panel-head input[type=range]{width:96px}
+.panel-head input[type=number]{width:64px}
+.bars{display:block;width:100%;height:auto}
+.panel .stat-row{gap:16px;margin-top:8px}
+.panel .stat b{font-size:21px}
+table.keys{border-collapse:collapse;font-family:var(--fm);font-size:12.5px}
+table.keys th{font-weight:500;color:var(--muted);text-align:left;padding:4px 10px 4px 0;white-space:nowrap;font-size:11.5px}
+table.keys td{padding:4px 7px;border-left:1px solid var(--line);text-align:center;font-variant-numeric:tabular-nums;color:var(--ink)}
+table.keys tr+tr td{border-top:1px solid var(--line)}
+table.keys tr.ra td{color:var(--baja)}
+table.keys tr.rb td{color:var(--memo)}
+
+/* 02 · cajones */
+.buckets{display:flex;flex-direction:column;gap:5px}
+.brow{display:flex;align-items:center;gap:8px;padding:4px 7px;border-radius:3px;border:1px solid transparent;transition:background .25s,border-color .25s;min-height:50px}
+.brow.on{background:var(--baja-soft);border-color:var(--baja)}
+.bidx{font-family:var(--fm);font-size:12px;color:var(--muted);width:58px;flex:none}
+.brow.on .bidx{color:var(--baja);font-weight:700}
+.chain{display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-width:0}
+.chain .ar{font-family:var(--fm);color:var(--muted);font-size:12px}
+
+/* 03 · arreglo de celdas */
+.arr-grid{display:grid;gap:4px}
+.slot{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.slot small{font-family:var(--fm);font-size:10.5px;color:var(--muted);line-height:1.2}
+.slot .box{width:100%;height:46px;display:grid;place-items:center;border:1px solid var(--line-2);border-radius:3px;background:var(--surface);
+  font-family:var(--fm);font-weight:700;font-size:14px;color:var(--ink);transition:background .3s,border-color .3s,color .3s,box-shadow .3s;overflow:hidden}
+.slot .box.long{font-size:10px}
+.slot .box.occ{background:var(--memo-soft);border-color:var(--memo);color:var(--memo)}
+.slot .box.empty{color:var(--muted);font-weight:500}
+.slot .box.tomb{border-style:dashed;color:var(--muted);background:var(--sunk)}
+.slot .box.probed{box-shadow:0 0 0 2px var(--baja)}
+.slot .box.fd{outline:2px dashed var(--sube);outline-offset:2px}
+.slot .box.cur{background:var(--baja);border-color:var(--baja);color:#fff}
+.slot .box.found{background:var(--sube);border-color:var(--sube);color:#fff;box-shadow:none}
+.slot .box.bad{background:#C62828;border-color:#C62828;color:#fff;animation:pulse 1.6s ease-in-out infinite}
+.slot i{font-style:normal;font-family:var(--fm);font-size:10px;color:var(--baja);min-height:14px;font-weight:700;line-height:1.3}
+.arr-grid.mini .box{height:32px;font-size:12px}
+.arr-grid.mini small{font-size:9.5px}
+.arr-grid.mini i{min-height:12px;font-size:9.5px}
+.trace-wrap{margin-top:20px}
+
+/* 04 · factor de carga */
+.chart{display:block;width:100%;height:auto;touch-action:pan-y;cursor:crosshair}
+.swatch{display:inline-block;width:18px;height:3px;border-radius:2px;vertical-align:middle}
+.readout .stat b{font-size:24px}
+.readout .stat{min-width:76px}
+
+/* 05 · crecer */
+.cmp2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:700px){.cmp2{grid-template-columns:1fr}}
+.cmp2 figure{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:14px;min-width:0}
+.cmp2 .stat-row{gap:16px;margin-bottom:10px}
+.cmp2 .stat b{font-size:20px}
+.gchart{display:block;width:100%;height:auto}
+.gl{font-family:var(--fm);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:8px 0 2px}
+
+/* 06 · dos sumas */
+.ts-line{font-family:var(--fm);font-size:14px;margin-top:14px;min-height:1.5em}
+.verdict{font-family:var(--fd);font-size:20px;font-weight:600}
+
+/* 07 · errores */
+.errgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:18px;margin-top:26px}
+.errcard{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:18px 19px;box-shadow:var(--shadow);min-width:0}
+.errcard h4{font-size:16.5px;font-weight:600;margin-bottom:4px}
+.errcard .sym{font-family:var(--fm);font-size:12px;color:var(--baja);margin-bottom:12px;letter-spacing:.02em}
+.errcard p{font-size:14.5px;color:var(--ink-2);line-height:1.5;margin-top:12px}
+.errcard pre{font-size:12px;margin-top:12px}
+.errcard .act{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+.errcard .act button{font-size:13px;padding:5px 10px}
+.errcard .rowlab{font-family:var(--fm);font-size:11px;color:var(--muted);margin:10px 0 4px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.errcard .rowlab b{font-weight:700}
+.errcard .rowlab .r-ok{color:var(--sube)}
+.errcard .rowlab .r-bad{color:#C62828}
+.errcard .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.errcard .two>div{min-width:0}
+.errcard .cell{min-width:30px;height:30px;font-size:12px;padding:0 5px}
+.errcard .brow{min-height:36px;padding:2px 5px;gap:6px}
+.errcard .bidx{width:22px;font-size:11px}
+.errcard .res{font-family:var(--fm);font-size:12.5px;margin-top:6px;line-height:1.5;color:var(--ink-2)}
+.errcard .res b.ok{color:var(--sube)} .errcard .res b.bad{color:#C62828}
+@keyframes pulse{50%{opacity:.45}}
+
+footer{padding:46px 0 0;color:var(--muted);font-size:15px;max-width:70ch}
+
+@media (max-width:520px){
+  body{padding:0 16px 70px}
+  .stage-body{padding:16px}
+  .split>.rail{padding:16px}
+  .ctl{padding:10px 12px}
+  .cell{min-width:34px;height:34px;font-size:12.5px}
+  .arr-grid{gap:3px}
+  .slot .box{height:40px;font-size:12.5px}
+  .bidx{width:48px}
+  input[type=number],input[type=text],select{font-size:16px}
+  .errcard{padding:16px 14px}
+  .errcard .two{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <p class="eyebrow">Complemento visual · Estructuras de datos y algoritmos</p>
+  <h1>Calcular el cajón, abrirlo — <em>y saber cuándo parar</em></h1>
+  <p class="sub">La guía escrita abre la caja de un <code>dict</code> de Python: la función hash, el encadenamiento,
+  el sondeo lineal con lápidas, el factor de carga y el costo de crecer. Esta página repite sus ejemplos paso a paso,
+  con los mismos números, y le deja cambiar las claves y el tamaño de la tabla para ver qué se rompe.</p>
+  <p class="thesis">No es n lo que hace lenta una tabla hash: es α = n/m, y que las claves se repartan como si fueran
+  al azar. Cada Θ(1) de esta página viene con esa letra pequeña, y cada búsqueda que para temprano necesita un
+  invariante que le dé permiso.</p>
+  <div class="key">
+    <div><b><span class="dot" style="background:var(--baja)"></span>Actual</b>
+      <p>El cajón o la celda que se revisa en este paso. Un borde naranja marca las celdas ya sondeadas.</p></div>
+    <div><b><span class="dot" style="background:var(--memo)"></span>Guardada</b>
+      <p>Una clave que ya está en la tabla.</p></div>
+    <div><b><span class="dot" style="background:var(--sube)"></span>Encontrada o destino</b>
+      <p>Donde termina la operación: la clave buscada o el lugar donde se inserta.</p></div>
+    <div><b><span class="dot" style="border:2px dashed var(--muted);background:var(--sunk)"></span>Lápida (†)</b>
+      <p>Celda BORRADA: para buscar cuenta como ocupada, para insertar como libre.</p></div>
+  </div>
+</header>
+
+<!-- ============ mapa ============ -->
+<section class="map" id="mapa">
+  <p class="eyebrow">Antes de empezar</p>
+  <h2>Mapa de la página</h2>
+  <p class="lede">Esta página acompaña la guía escrita. Los laboratorios con controles tienen <b>Adelante</b> y <b>Atrás</b> para avanzar paso a paso, <b>Reproducir</b> para animar solo y una velocidad ajustable. Conviene seguir el orden: primero la función hash (01), después las dos políticas de colisión (02 y 03), luego cuánto cuestan según α (04) y cómo se mantiene α acotado (05), una aplicación (06) y al final los errores (07).</p>
+  <div class="map-grid">
+    <a class="map-card" href="#lab-01"><span class="n">01</span><b>Reparto según m</b><p>El método de la división, k mod m, y por qué un m primo reparte mejor las claves que tienen un patrón.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-02"><span class="n">02</span><b>Encadenamiento paso a paso</b><p>La traza de la guía con m = 7: cajones con listas, comparaciones, y una búsqueda sin éxito que cuesta lo mismo que una con éxito.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-03"><span class="n">03</span><b>Sondeo lineal con lápidas</b><p>La traza con m = 11, el agrupamiento primario y lo que pasa si borrar deja una celda VACÍA.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-04"><span class="n">04</span><b>Factor de carga</b><p>Las fórmulas de Knuth en un gráfico: por qué una tabla con direccionamiento abierto nunca se deja llenar.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-05"><span class="n">05</span><b>Crecer: duplicar contra sumar</b><p>El costo de cada inserción, los picos al redimensionar y un promedio que no pasa de 3.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-06"><span class="n">06</span><b>Dos sumas</b><p>Un conjunto reemplaza el ciclo interno, y el orden de dos líneas decide si la respuesta es correcta.</p><span class="go">Ir al laboratorio →</span></a>
+    <a class="map-card" href="#lab-07"><span class="n">07</span><b>Cuatro formas de romper una tabla hash</b><p>Errores de código que la vuelven lenta, que encuentran claves que no están o que pierden las que sí.</p><span class="go">Ir al laboratorio →</span></a>
+  </div>
+  <h3 id="algoritmos" style="scroll-margin-top:8px">Las estructuras y algoritmos de esta página</h3>
+  <p class="lede">Qué hace cada uno, su costo y dónde verlo. Los botones llevan al laboratorio correspondiente.</p>
+  <div class="algos">
+    <div class="algo"><h4>Método de la división</h4><span class="rec">h(k) = k mod m · Θ(1)</span><p>Si todas las claves son múltiplos de d, la tabla usa apenas m / mcd(d, m) cajones. Con m primo, ningún patrón común reduce los cajones, salvo que el patrón sea el propio m.</p><div class="links"><a href="#lab-01">01 reparto</a><span>Guía, sección 3.1</span></div></div>
+    <div class="algo"><h4>Encadenamiento</h4><span class="rec">Θ(1 + α) promedio · Θ(n) peor caso · memoria Θ(m + n)</span><p>Cada cajón es una lista. Buscar es calcular el cajón y recorrer su lista; si llega al final, la clave no está en ninguna parte.</p><div class="links"><a href="#lab-02">02 traza</a><a href="#lab-07">07 errores</a><span>Guía, ejercicio 1</span></div></div>
+    <div class="algo"><h4>Sondeo lineal con lápidas</h4><span class="rec">≈ ½(1 + 1/(1 − α)²) sin éxito · Θ(m) peor caso</span><p>Una clave por celda; si está ocupada se prueba la siguiente. Buscar para en una celda VACÍA, y por eso borrar deja una lápida.</p><div class="links"><a href="#lab-03">03 traza</a><a href="#lab-04">04 gráfico</a><span>Guía, ejercicio 2</span></div></div>
+    <div class="algo"><h4>Redimensionar duplicando</h4><span class="rec">Θ(1) amortizado · costo total &lt; 3N</span><p>Cuando α pasaría de 2/3, se duplica m y se reubican todas las claves. Un pico de Θ(n) de vez en cuando, y un promedio constante.</p><div class="links"><a href="#lab-05">05 costos</a><span>Guía, ejercicio 3</span></div></div>
+    <div class="algo"><h4>Dos sumas con un conjunto</h4><span class="rec">Θ(n) promedio · memoria Θ(n)</span><p>Para cada x, preguntar si k − x ya se vio, y solo después anotar x. Cambia espacio por tiempo.</p><div class="links"><a href="#lab-06">06 traza</a><span>Guía, ejercicio 4</span></div></div>
+  </div>
+</section>
+
+<!-- ============ 1 ============ -->
+<section class="lab" id="lab-01">
+  <div class="lab-head"><span class="lab-num">01</span>
+    <h2>Reparto según m</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>La función hash dice en qué cajón va cada clave. El <b>método de la división</b> usa <code>h(k) = k mod m</code>: siempre da un número entre 0 y m − 1 y cuesta una operación. Pero el valor de m importa: si todas las claves son múltiplos de d, entonces k mod m solo puede tomar múltiplos de mcd(d, m), y la tabla usa apenas <b>m / mcd(d, m)</b> de sus cajones.<span class="src">Guía, sección 3.1</span></p></div>
+  <p class="lede">Dos tablas reciben las mismas claves. Por defecto son las de la guía, <b>10, 20, 30, 40, 50, 60</b>, en una tabla con m = 10 y otra con m = 11. Cambie el patrón de las claves y los dos valores de m, y compare cuántos cajones se usan.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Que con m = 10 las seis claves caen en el cajón 0 y con m = 11 en seis cajones distintos, aunque α sea casi igual. Después pruebe múltiplos de 6 con m = 12 y m = 13, y códigos terminados en 00 con m = 100, 128 y 101: los cajones usados nunca pasan de <b>m / mcd(d, m)</b>.</p></div>
+
+  <div class="stage">
+    <div class="ctl">
+      <div class="seg" id="repKind"><button data-k="mult" class="on">múltiplos de d</button><button data-k="cod">códigos que terminan en 00</button><button data-k="rand">al azar</button></div>
+      <label id="repDlab">d = <input type="range" id="repD" min="1" max="100" step="1" value="10"><b class="mono" id="repDv">10</b></label>
+      <label>claves n = <input type="range" id="repN" min="1" max="120" step="1" value="6"><b class="mono" id="repNv">6</b></label>
+      <button id="repSeed" hidden>otras claves</button>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <div class="dual">
+          <div class="panel" id="repP0">
+            <div class="panel-head"><span class="tag">Tabla A</span>
+              <label>m = <input type="number" data-r="num" min="2" max="128" value="10" aria-label="m de la tabla A"></label>
+              <input type="range" data-r="rng" min="2" max="128" step="1" value="10" aria-label="m de la tabla A">
+              <button data-r="prev" title="Primo anterior">◀ primo</button><button data-r="next" title="Primo siguiente">primo ▶</button>
+              <span class="pill" data-r="prime"></span></div>
+            <svg class="bars" role="img" aria-label="Claves por cajón en la tabla A"></svg>
+            <div class="stat-row">
+              <div class="stat"><b data-r="used">0</b><span>cajones usados</span></div>
+              <div class="stat"><b data-r="alpha">0</b><span>α = n/m</span></div>
+              <div class="stat"><b data-r="long">0</b><span>lista más larga</span></div>
+              <div class="stat"><b data-r="max">—</b><span>m / mcd(d, m)</span></div>
+            </div>
+          </div>
+          <div class="panel" id="repP1">
+            <div class="panel-head"><span class="tag">Tabla B</span>
+              <label>m = <input type="number" data-r="num" min="2" max="128" value="11" aria-label="m de la tabla B"></label>
+              <input type="range" data-r="rng" min="2" max="128" step="1" value="11" aria-label="m de la tabla B">
+              <button data-r="prev" title="Primo anterior">◀ primo</button><button data-r="next" title="Primo siguiente">primo ▶</button>
+              <span class="pill" data-r="prime"></span></div>
+            <svg class="bars" role="img" aria-label="Claves por cajón en la tabla B"></svg>
+            <div class="stat-row">
+              <div class="stat"><b data-r="used">0</b><span>cajones usados</span></div>
+              <div class="stat"><b data-r="alpha">0</b><span>α = n/m</span></div>
+              <div class="stat"><b data-r="long">0</b><span>lista más larga</span></div>
+              <div class="stat"><b data-r="max">—</b><span>m / mcd(d, m)</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="qbox"><h4 class="mini">Las claves y su cajón</h4><div class="scroller"><table class="keys" id="repKeys"></table></div></div>
+        <div class="pills">
+          <span class="pill memo">cajón con claves</span>
+          <span class="pill baja">el cajón más cargado (si tiene 2 o más)</span>
+          <span class="pill">cajón vacío</span>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="repNarr"></p></div>
+        <div class="rail-block"><h4>La cuenta</h4>
+<pre>h(k) = k mod m
+
+si todas las k son múltiplos de d:
+  k mod m es múltiplo de g = mcd(d, m)
+  cajones posibles: m / g</pre>
+          <p class="hint">Una tabla con un solo cajón ocupado es una lista: buscar vuelve a costar Θ(n).</p></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>Por qué un primo.</b> Los datos reales tienen patrones: códigos que terminan en 00, precios
+  múltiplos de 50, direcciones alineadas a 8 bytes. Un m primo no comparte factores con ninguno de esos patrones, salvo
+  que el patrón sea el propio m. Por eso la recomendación para el método de la división es escoger m primo y lejos de
+  una potencia de 2 o de 10.</p>
+</section>
+
+<!-- ============ 2 ============ -->
+<section class="lab" id="lab-02">
+  <div class="lab-head"><span class="lab-num">02</span>
+    <h2>Encadenamiento paso a paso</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>Cada cajón admite varias claves en una lista. La clave k va en la lista del cajón <code>k mod m</code>. Buscar es calcular el cajón y recorrer su lista comparando con <code>==</code>; insertar primero busca, para no duplicar. El invariante: toda clave guardada está en la lista de su cajón, una sola vez. Por eso, si la búsqueda llega al final de la lista, la clave no está en ninguna parte.<span class="src">Guía, ejercicio 1</span></p></div>
+  <p class="lede">La traza de la guía: m = 7, se insertan <b>15, 8, 22, 3, 10, 29, 12</b> y después se busca <b>29</b> y <b>36</b>. Cada inserción es un paso; en las búsquedas, cada comparación es un paso. Abajo puede poner sus propias claves y su m.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Que buscar 29 y buscar 36 cuestan lo mismo, <b>4 comparaciones</b>, aunque una encuentra la clave y la otra no: las dos recorren el cajón 1 completo. Y que con α = 1 hay cuatro cajones vacíos y uno con cuatro claves: el promedio no protege contra un mal reparto.</p></div>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="ch">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <button data-act="play">▶ Reproducir</button>
+      <label>velocidad <input type="range" data-role="speed" min="300" max="1400" step="50" value="900" aria-label="Velocidad"></label>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="ctl">
+      <label>m = <input type="number" id="chM" min="1" max="20" value="7"></label>
+      <label>insertar <input type="text" id="chIns" value="15, 8, 22, 3, 10, 29, 12" aria-label="Claves a insertar"></label>
+      <label>buscar <input type="text" id="chBus" value="29, 36" aria-label="Claves a buscar" style="width:110px"></label>
+      <button id="chApply">Aplicar</button>
+      <button id="chGuide">Ejemplo de la guía</button>
+      <span class="err" id="chErr"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <p class="opline" id="chOp"></p>
+        <div class="buckets" id="chB"></div>
+        <div class="qbox"><h4 class="mini">Operaciones</h4><p class="order" id="chOps"></p></div>
+        <div class="pills">
+          <span class="pill baja">cajón abierto · clave que se compara</span>
+          <span class="pill memo">guardada</span>
+          <span class="pill sube">encontrada o recién insertada</span>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="chNarr"></p></div>
+        <div class="rail-block"><h4>Cuenta en vivo</h4>
+          <div class="stat-row">
+            <div class="stat"><b id="chCmp">—</b><span>comparaciones</span></div>
+            <div class="stat"><b id="chN">0</b><span>claves n</span></div>
+            <div class="stat"><b id="chA">0</b><span>α = n/m</span></div>
+            <div class="stat"><b id="chL">0</b><span>lista más larga</span></div>
+          </div></div>
+        <div class="rail-block"><h4>El código</h4>
+<pre class="code" id="chCode"><span>def insertar(self, k, v):</span><span>  caj = self.cajones[k % self.m]</span><span>  for par in caj:</span><span>    if par[0] == k: par[1] = v; return</span><span>  caj.append([k, v]); self.n += 1</span><span> </span><span>def buscar(self, k):</span><span>  caj = self.cajones[k % self.m]</span><span>  for clave, valor in caj:</span><span>    if clave == k: return valor</span><span>  return None</span></pre></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>Costo.</b> Bajo hashing uniforme simple cada lista tiene en promedio α = n/m claves, y buscar
+  cuesta Θ(1 + α): el 1 por calcular el cajón, el α por recorrer la lista. Si m crece al ritmo de n, α queda acotado y
+  todo cuesta Θ(1) en promedio. En el peor caso, todas las claves en el mismo cajón, cuesta Θ(n).</p>
+</section>
+
+<!-- ============ 3 ============ -->
+<section class="lab" id="lab-03">
+  <div class="lab-head"><span class="lab-num">03</span>
+    <h2>Sondeo lineal con lápidas</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>Una clave por celda. Para k se revisan las celdas h(k), h(k) + 1, h(k) + 2, ... dando la vuelta al final: es la <b>secuencia de sondeo</b>, y cada celda revisada es un <b>sondeo</b>. Buscar para al encontrar k, al encontrar una celda VACÍA o después de m sondeos. Puede parar en una VACÍA por el invariante: <b>si k está en la celda p, ninguna celda de su secuencia anterior a p está VACÍA</b>. Insertar primero confirma que k no está; después usa la primera lápida que vio o, si no vio ninguna, la VACÍA donde paró.<span class="src">Guía, ejercicio 2</span></p></div>
+  <p class="lede">La traza de la guía con <b>m = 11</b>: se insertan 22, 1, 13, 11, 24, 33, 18, 42, 31; se borra 13; se busca 33 y 35; se inserta 44. El número bajo cada celda es el orden en que se sondeó. Cambie el modo de borrar y repita la búsqueda de 33.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Tres cosas. El bloque de las celdas 0 a 5 que se forma al insertar: el <b>agrupamiento primario</b>. Que buscar 33 después de borrar 13 solo funciona con lápida: con «borrar con VACÍA» la búsqueda para en la celda 2 y responde que 33 no está, y está en la celda 5. Y que insertar 44 hace <b>7 sondeos</b> antes de guardarse en la celda 2: primero confirma que 44 no está, después vuelve a la primera lápida.</p></div>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="lp">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <button data-act="play">▶ Reproducir</button>
+      <label>velocidad <input type="range" data-role="speed" min="300" max="1400" step="50" value="900" aria-label="Velocidad"></label>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="ctl">
+      <div class="seg" id="lpDel"><button data-d="tomb" class="on">borrar con lápida</button><button data-d="vacia" class="warn">borrar con VACÍA (incorrecto)</button></div>
+      <div class="seg" id="lpGran"><button data-g="probe" class="on">cada sondeo</button><button data-g="op">cada operación</button></div>
+    </div>
+    <div class="ctl">
+      <select id="lpOp" aria-label="Operación"><option value="ins">insertar</option><option value="bus">buscar</option><option value="del">borrar</option></select>
+      <input type="number" id="lpK" min="0" max="9999" value="35" aria-label="Clave">
+      <button id="lpRun" class="primary">Ejecutar</button>
+      <label>m = <input type="number" id="lpM" min="5" max="16" value="11"></label>
+      <button id="lpClear">Tabla vacía</button>
+      <button id="lpGuide">Ejemplo de la guía</button>
+      <span class="err" id="lpErr"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <p class="opline" id="lpOpl"></p>
+        <div class="scroller"><div class="arr-grid" id="lpArr"></div></div>
+        <div class="pills">
+          <span class="pill baja">celda que se sondea</span>
+          <span class="pill memo">ocupada</span>
+          <span class="pill tomb">† lápida</span>
+          <span class="pill sube">encontrada o destino</span>
+          <span class="pill bad">la clave sigue ahí</span>
+        </div>
+        <div class="trace-wrap"><h4 class="mini">Traza</h4><div class="scroller"><table class="trace" id="lpLog">
+          <thead><tr><th>operación</th><th>h(k)</th><th>celdas revisadas</th><th>resultado</th><th>sondeos</th></tr></thead><tbody></tbody></table></div></div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="lpNarr"></p></div>
+        <div class="rail-block"><h4>Cuenta en vivo</h4>
+          <div class="stat-row">
+            <div class="stat"><b id="lpP">—</b><span>sondeos</span></div>
+            <div class="stat"><b id="lpN">0</b><span>ocupadas n</span></div>
+            <div class="stat"><b id="lpT">0</b><span>lápidas</span></div>
+            <div class="stat"><b id="lpA">0</b><span>α = n/m</span></div>
+          </div></div>
+        <div class="rail-block"><h4>El código</h4>
+<pre class="code" id="lpCode"><span>i = k % m; primera_borrada = -1</span><span>for _ in range(m):</span><span>  c = celdas[i]</span><span>  if c is VACIA:</span><span>    return -1, primera_borrada, i</span><span>  if c is BORRADA:</span><span>    if primera_borrada == -1: primera_borrada = i</span><span>  elif c == k:</span><span>    return i, primera_borrada, -1</span><span>  i = (i + 1) % m</span><span>return -1, primera_borrada, -1</span></pre>
+<pre class="code" id="lpCode2" style="margin-top:8px"><span># insertar: si no está,</span><span>destino = borrada if borrada != -1 else vacia</span><span># borrar:</span><span id="lpDelLine">celdas[p] = BORRADA</span></pre></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>Para buscar, ocupada; para insertar, libre.</b> La lápida dice «aquí hubo algo; siga buscando».
+  Las lápidas cuentan para el costo aunque no guarden nada: una tabla con muchas lápidas es lenta aunque n sea pequeño,
+  y la solución es reconstruirla. En el peor caso, cualquier operación revisa las m celdas: Θ(m).</p>
+</section>
+
+<!-- ============ 4 ============ -->
+<section class="lab" id="lab-04">
+  <div class="lab-head"><span class="lab-num">04</span>
+    <h2>Factor de carga</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>El número esperado de comparaciones o sondeos depende de α = n/m, no de n. Para encadenamiento es 1 + α. Para sondeo lineal, Knuth calculó en 1963 que una búsqueda con éxito hace ≈ ½(1 + 1/(1 − α)) sondeos y una sin éxito ≈ ½(1 + 1/(1 − α)²). Las tres valen bajo una suposición de azar sobre las claves.<span class="src">Guía, ejercicio 2, complejidad</span></p></div>
+  <p class="lede">Mueva α con el control o arrastrando sobre el gráfico. El eje vertical está cortado en 10 sondeos: las curvas que salen por arriba siguen subiendo. Las líneas punteadas marcan dónde crecen Python (2/3) y Java (0.75).</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Que hasta α = 0.5 las tres curvas están cerca, y que después la de búsqueda sin éxito se dispara: <b>8.5</b> sondeos en 0.75 y <b>50.5</b> en 0.9. El encadenamiento apenas se mueve. Por eso una tabla con direccionamiento abierto crece mucho antes de llenarse.</p></div>
+
+  <div class="stage">
+    <div class="ctl">
+      <label>α = <input type="range" id="lfA" min="0" max="0.99" step="0.01" value="0.5"><b class="mono" id="lfAv">0.50</b></label>
+      <div class="seg" id="lfPre"><button data-a="0.25">0.25</button><button data-a="0.5">0.50</button><button data-a="2/3">2/3</button><button data-a="0.75">0.75</button><button data-a="0.9">0.90</button><button data-a="0.99">0.99</button></div>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <figure>
+          <svg class="chart" id="lfSvg" viewBox="0 0 640 330" role="img" aria-label="Sondeos esperados en función del factor de carga para encadenamiento y sondeo lineal"></svg>
+          <div class="pills">
+            <span class="pill"><span class="swatch" style="background:var(--sube)"></span>encadenamiento 1 + α</span>
+            <span class="pill"><span class="swatch" style="background:var(--memo)"></span>lineal, con éxito</span>
+            <span class="pill"><span class="swatch" style="background:var(--baja)"></span>lineal, sin éxito</span>
+          </div>
+        </figure>
+        <div class="qbox"><h4 class="mini">La tabla de la guía · haga clic en una fila</h4><div class="scroller"><table class="trace" id="lfTable">
+          <thead><tr><th>α</th><th>encadenamiento 1 + α</th><th>lineal, con éxito</th><th>lineal, sin éxito</th></tr></thead><tbody></tbody></table></div></div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Lectura en α</h4>
+          <div class="stat-row readout">
+            <div class="stat"><b id="lfC" style="color:var(--sube)">—</b><span>1 + α</span></div>
+            <div class="stat"><b id="lfH" style="color:var(--memo)">—</b><span>con éxito</span></div>
+            <div class="stat"><b id="lfM" style="color:var(--baja)">—</b><span>sin éxito</span></div>
+          </div></div>
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="lfNarr"></p></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>Encadenamiento puede pasar de α = 1; sondeo lineal no.</b> Con listas, α = 2 solo significa dos
+  claves por cajón en promedio. Con una clave por celda, α &lt; 1 siempre, y en la práctica se mantiene por debajo de
+  2/3 o 3/4. Es la pregunta 6 de la guía: cuándo está demasiado llena y qué se hace entonces.</p>
+</section>
+
+<!-- ============ 5 ============ -->
+<section class="lab" id="lab-05">
+  <div class="lab-head"><span class="lab-num">05</span>
+    <h2>Crecer: duplicar contra sumar</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>Para mantener α acotado hay que hacer crecer m. Crecer cuesta Θ(n), porque el cajón de cada clave es k mod m y m acaba de cambiar: todas las claves se <b>reubican</b>. La regla de la guía: empezar con m = 8 y, antes de cada inserción, si <code>3(n + 1) &gt; 2m</code> (α pasaría de 2/3), crecer. Cada inserción cuesta 1 más el número de claves reubicadas.<span class="src">Guía, ejercicio 3</span></p></div>
+  <p class="lede">Las dos tablas reciben las mismas N inserciones. La izquierda <b>duplica</b> m al crecer; la derecha le <b>suma 8</b>. Arriba, el costo de cada inserción; abajo, el promedio acumulado con la línea y = 3.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Que duplicando, los picos (6, 11, 22, 43, ...) se vuelven más raros al mismo ritmo al que se vuelven más caros, y el promedio <b>nunca cruza y = 3</b>. Sumando 8, los picos llegan cada pocas inserciones y el promedio sigue subiendo con N: el total es Θ(N²).</p></div>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="gr">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <button data-act="play">▶ Reproducir</button>
+      <label>velocidad <input type="range" data-role="speed" min="300" max="1600" step="50" value="1100" aria-label="Velocidad"></label>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="ctl">
+      <label>N =</label>
+      <div class="seg" id="grN"><button data-n="12">12</button><button data-n="25" class="on">25</button><button data-n="50">50</button><button data-n="100">100</button><button data-n="1000">1 000</button><button data-n="100000">100 000</button></div>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <div class="cmp2">
+          <figure id="grF0"><h4 class="mini">Duplicar · m → 2m</h4>
+            <div class="stat-row">
+              <div class="stat"><b data-r="tot">0</b><span>costo total</span></div>
+              <div class="stat"><b data-r="avg">—</b><span>por inserción</span></div>
+              <div class="stat"><b data-r="m">8</b><span>m</span></div>
+              <div class="stat"><b data-r="gr">0</b><span>crecimientos</span></div>
+            </div>
+            <p class="gl">costo de cada inserción</p>
+            <svg class="gchart" data-r="cost" viewBox="0 0 340 130" role="img" aria-label="Costo de cada inserción duplicando m"></svg>
+            <p class="gl">promedio acumulado</p>
+            <svg class="gchart" data-r="avgc" viewBox="0 0 340 110" role="img" aria-label="Promedio acumulado duplicando m"></svg>
+            <p class="order" data-r="list"></p>
+          </figure>
+          <figure id="grF1"><h4 class="mini">Sumar 8 · m → m + 8</h4>
+            <div class="stat-row">
+              <div class="stat"><b data-r="tot">0</b><span>costo total</span></div>
+              <div class="stat"><b data-r="avg">—</b><span>por inserción</span></div>
+              <div class="stat"><b data-r="m">8</b><span>m</span></div>
+              <div class="stat"><b data-r="gr">0</b><span>crecimientos</span></div>
+            </div>
+            <p class="gl">costo de cada inserción</p>
+            <svg class="gchart" data-r="cost" viewBox="0 0 340 130" role="img" aria-label="Costo de cada inserción sumando 8 a m"></svg>
+            <p class="gl">promedio acumulado</p>
+            <svg class="gchart" data-r="avgc" viewBox="0 0 340 110" role="img" aria-label="Promedio acumulado sumando 8 a m"></svg>
+            <p class="order" data-r="list"></p>
+          </figure>
+        </div>
+        <p class="hint" id="grHint"></p>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="grNarr"></p></div>
+        <div class="rail-block"><h4>Los totales de la guía</h4>
+          <table class="trace" id="grRef"><thead><tr><th>N</th><th>duplicar</th><th>sumar 8</th></tr></thead><tbody></tbody></table>
+          <p class="hint">Calculados aquí mismo con la regla de arriba.</p></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>Análisis amortizado.</b> Al insertar N claves hay N costos de 1. Las reubicaciones son a lo sumo
+  N + N/2 + N/4 + ... &lt; 2N, así que el total es menor que 3N y el costo por inserción menor que 3, aunque una inserción
+  sola cueste Θ(n). No hay ninguna suposición de azar: la garantía vale para cualquier secuencia. Es lo que pasa con
+  <code>list.append</code> de Python.</p>
+</section>
+
+<!-- ============ 6 ============ -->
+<section class="lab" id="lab-06">
+  <div class="lab-head"><span class="lab-num">06</span>
+    <h2>Dos sumas</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>Dada una lista a de n enteros y un entero k, ¿existen índices i ≠ j con a[i] + a[j] = k? Probar todos los pares cuesta Θ(n²). Con un conjunto basta recorrer una vez: para cada x, preguntar si <b>k − x ya se vio</b>. El invariante: al empezar a revisar a[j], el conjunto contiene exactamente a[0..j). Lo que queda para usted es el <b>orden</b> de las dos operaciones en cada paso.<span class="src">Guía, ejercicio 4 · Parcial 1, ejercicio 4</span></p></div>
+  <p class="lede">La traza de la guía con <b>a = [8, 3, 5, 9, 1, 7]</b> y <b>k = 10</b>. Después active «anotar antes de preguntar»: cambia a <b>a = [5, 1, 2]</b>, donde ningún par suma 10.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Que en j = 2 se busca 5 y la respuesta es <b>no</b>, aunque 5 + 5 = 10: hay un solo 5 y el enunciado exige i ≠ j. Con el orden invertido, el 5 que se acaba de anotar se encuentra a sí mismo y la función responde que sí.</p></div>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="ts">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <button data-act="play">▶ Reproducir</button>
+      <label>velocidad <input type="range" data-role="speed" min="300" max="1400" step="50" value="900" aria-label="Velocidad"></label>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="ctl">
+      <div class="seg" id="tsMode"><button data-m="ok" class="on">preguntar y después anotar</button><button data-m="bad" class="warn">anotar antes de preguntar (incorrecto)</button></div>
+      <div class="seg" id="tsData"><button data-i="0" class="on">a = [8, 3, 5, 9, 1, 7]</button><button data-i="1">a = [5, 1, 2]</button></div>
+    </div>
+    <div class="ctl">
+      <label>a = <input type="text" id="tsA" value="8, 3, 5, 9, 1, 7" aria-label="Lista a"></label>
+      <label>k = <input type="number" id="tsK" value="10" min="-999" max="999"></label>
+      <button id="tsApply">Aplicar</button>
+      <span class="err" id="tsErr"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <div class="qbox" style="margin-top:0"><h4 class="mini">a · posición j debajo</h4><div class="scroller"><div class="arr-grid" id="tsArr"></div></div></div>
+        <p class="ts-line" id="tsLine"></p>
+        <div class="qbox"><h4 class="mini">vistos</h4><div class="cells" id="tsSet"></div></div>
+        <div class="trace-wrap"><h4 class="mini">Traza</h4><div class="scroller"><table class="trace" id="tsLog">
+          <thead><tr><th>j</th><th>x</th><th>busca k − x</th><th>vistos al preguntar</th><th>¿está?</th></tr></thead><tbody></tbody></table></div></div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="tsNarr"></p></div>
+        <div class="rail-block"><h4>Respuesta</h4><p class="verdict" id="tsRes">…</p></div>
+        <div class="rail-block"><h4>El código</h4>
+<pre class="code" id="tsCodeOk"><span>def hay_par(a, k):</span><span>  vistos = set()</span><span>  for x in a:</span><span>    if k - x in vistos:   # primero preguntar</span><span>      return True</span><span>    vistos.add(x)         # después anotar</span><span>  return False</span></pre>
+<pre class="code" id="tsCodeBad" hidden><span>def hay_par(a, k):</span><span>  vistos = set()</span><span>  for x in a:</span><span>    vistos.add(x)         # INCORRECTO: antes</span><span>    if k - x in vistos:</span><span>      return True</span><span>  return False</span></pre></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>Espacio por tiempo.</b> n búsquedas y n inserciones de Θ(1) en promedio: Θ(n) en promedio, Θ(n²)
+  en el peor caso, y Θ(n) de memoria. El patrón vale la pena reconocerlo: si el ciclo interno de una fuerza bruta solo
+  <b>busca</b> un valor que se puede calcular de antemano (aquí k − x), ese ciclo se reemplaza por una tabla hash.
+  Pruebe siempre el caso k = 2x con un único x.</p>
+</section>
+
+<!-- ============ 7 ============ -->
+<section class="lab" id="lab-07" style="border-bottom:0">
+  <div class="lab-head"><span class="lab-num">07</span>
+    <h2>Cuatro formas de romper una tabla hash</h2><a class="toplink" href="#mapa" title="Volver al mapa de la página">↑ mapa</a></div>
+  <div class="about"><h4 class="mini">¿De qué trata?</h4><p>Errores de programación reales. Casi todos son una operación que rompe el invariante sin que el error aparezca en esa misma operación: la tabla sigue respondiendo, solo que lento, o encuentra claves que no están, o pierde las que sí. Cada tarjeta compara la versión correcta con la incorrecta sobre el mismo ejemplo.<span class="src">Guía, sección 12</span></p></div>
+  <p class="lede">Use los botones de cada tarjeta. La fila o columna de la izquierda (o de arriba) es la correcta.</p>
+  <div class="goal"><h4 class="mini">Qué debe observar</h4><p>Relacionar cada error con la regla que rompe: m listas distintas, comparar la <b>clave</b> y no el hash, borrar con lápida, y confirmar que la clave no está antes de escoger dónde insertarla. Si puede decir cuál regla rompe su código, puede encontrar el error antes de enviarlo.</p></div>
+  <div class="errgrid" id="errGrid"></div>
+  <footer>
+    <p>Complemento visual de <em>Tablas hash: guía para el estudiante</em>. Para repasar: en el laboratorio 03, antes de
+    cada paso, prediga qué celda se sondea y dónde para la búsqueda; después active «borrar con VACÍA» y repita la
+    búsqueda de 33. En el 05, prediga en qué inserción llega el siguiente pico.</p>
+  </footer>
+</section>
+</div>
+
+<script id="modelo">
+/* ===== modelo: funciones puras, sin DOM (las mismas reglas de la guía) ===== */
+const HT = (function(){
+  const mod = (k, m) => ((k % m) + m) % m;
+  function gcd(a, b){ a = Math.abs(a); b = Math.abs(b); while (b){ const t = a % b; a = b; b = t; } return a; }
+  function isPrime(n){ if (n < 2) return false; for (let p = 2; p * p <= n; p++) if (n % p === 0) return false; return true; }
+  function rng(seed){
+    let s = seed >>> 0;
+    return function(){
+      s = (s + 0x6D2B79F5) >>> 0; let t = s;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  /* claves: múltiplos de d, códigos 2026XXXX00, o al azar en [0, 10^6) */
+  function keys(kind, n, d, seed){
+    if (kind === 'mult') return Array.from({ length: n }, (_, i) => (i + 1) * d);
+    const r = rng(seed), out = [], seen = new Set();
+    while (out.length < n){
+      const k = kind === 'cod' ? (20260000 + Math.floor(r() * 10000)) * 100 : Math.floor(r() * 1000000);
+      if (!seen.has(k)){ seen.add(k); out.push(k); }
+    }
+    return out;
+  }
+  function spread(ks, m){ const c = new Array(m).fill(0); ks.forEach(k => { c[mod(k, m)]++; }); return c; }
+
+  /* ---- encadenamiento: insertar al final de la lista, después de confirmar que no está ---- */
+  function chainTrace(m, ops){
+    const B = Array.from({ length: m }, () => []);
+    const snaps = [];
+    let n = 0;
+    const snap = o => snaps.push(Object.assign({ B: B.map(b => b.slice()), n }, o));
+    snap({ kind: 'init', op: -1 });
+    ops.forEach((op, oi) => {
+      const k = op.k, c = mod(k, m), b = B[c], at = b.indexOf(k);
+      if (op.t === 'ins'){
+        if (at !== -1) snap({ kind: 'dup', op: oi, t: 'ins', k, c, comps: at + 1, at });
+        else { const comps = b.length; b.push(k); n++; snap({ kind: 'ins', op: oi, t: 'ins', k, c, comps, at: b.length - 1 }); }
+      } else {
+        snap({ kind: 'h', op: oi, t: 'bus', k, c, comps: 0, at: -1 });
+        let found = false;
+        for (let j = 0; j < b.length; j++){
+          const hit = b[j] === k;
+          snap({ kind: hit ? 'hit' : 'cmp', op: oi, t: 'bus', k, c, comps: j + 1, at: j });
+          if (hit){ found = true; break; }
+        }
+        if (!found) snap({ kind: 'miss', op: oi, t: 'bus', k, c, comps: b.length, at: -1 });
+      }
+    });
+    snap({ kind: 'end', op: -1 });
+    return snaps;
+  }
+
+  /* ---- sondeo lineal: celdas {s: 0 VACÍA | 1 OCUPADA | 2 BORRADA, k} ---- */
+  function lpProbe(cells, m, k){
+    let i = mod(k, m), fd = -1;
+    const pr = [], what = [];
+    for (let t = 0; t < m; t++){
+      pr.push(i);
+      const c = cells[i];
+      if (c.s === 0){ what.push('vacia'); return { pos: -1, fd, empty: i, pr, what }; }
+      if (c.s === 2){ what.push('lapida'); if (fd === -1) fd = i; }
+      else if (c.k === k){ what.push('k'); return { pos: i, fd, empty: -1, pr, what }; }
+      else what.push('otra');
+      i = (i + 1) % m;
+    }
+    return { pos: -1, fd, empty: -1, pr, what };
+  }
+  function lpApply(cells, m, op, delMode){
+    const r = lpProbe(cells, m, op.k);
+    const rec = { t: op.t, k: op.k, h: mod(op.k, m), pr: r.pr, what: r.what, fd: r.fd, pos: r.pos, empty: r.empty, dest: -1, res: '' };
+    if (op.t === 'ins'){
+      if (r.pos !== -1) rec.res = 'dup';
+      else {
+        const d = r.fd !== -1 ? r.fd : r.empty;
+        if (d === -1) rec.res = 'full';
+        else { cells[d] = { s: 1, k: op.k }; rec.res = 'ins'; rec.dest = d; }
+      }
+    } else if (op.t === 'bus') rec.res = r.pos !== -1 ? 'hit' : 'miss';
+    else {
+      if (r.pos !== -1){ cells[r.pos] = delMode === 'vacia' ? { s: 0 } : { s: 2 }; rec.res = 'del'; rec.dest = r.pos; }
+      else rec.res = 'nodel';
+    }
+    return rec;
+  }
+  /* el error de la guía: para en la primera lápida (o VACÍA, o k) sin terminar de buscar */
+  function lpInsertWrong(cells, m, k){
+    let i = mod(k, m);
+    const pr = [i];
+    for (let t = 1; t < m && cells[i].s === 1 && cells[i].k !== k; t++){ i = (i + 1) % m; pr.push(i); }
+    if (cells[i].s === 1 && cells[i].k !== k) return { dest: -1, pr };
+    cells[i] = { s: 1, k };
+    return { dest: i, pr };
+  }
+  const copyCells = cells => cells.map(c => Object.assign({}, c));
+  const emptyCells = m => Array.from({ length: m }, () => ({ s: 0 }));
+  function lpTrace(m, ops, delMode){
+    const cells = emptyCells(m), snaps = [], log = [];
+    snaps.push({ kind: 'init', op: -1, cells: copyCells(cells), log: [], np: 0 });
+    ops.forEach((op, oi) => {
+      const before = copyCells(cells);
+      const rec = lpApply(cells, m, op, delMode);
+      snaps.push({ kind: 'start', op: oi, rec, cells: before, np: 0, log: log.slice() });
+      rec.pr.forEach((p, t) => snaps.push({ kind: 'probe', op: oi, rec, cells: before, np: t + 1, log: log.slice() }));
+      log.push(rec);
+      snaps.push({ kind: 'result', op: oi, rec, cells: copyCells(cells), np: rec.pr.length, log: log.slice() });
+    });
+    return snaps;
+  }
+  const LP_GUIDE = [22, 1, 13, 11, 24, 33, 18, 42, 31].map(k => ({ t: 'ins', k }))
+    .concat([{ t: 'del', k: 13 }, { t: 'bus', k: 33 }, { t: 'bus', k: 35 }, { t: 'ins', k: 44 }]);
+
+  /* ---- factor de carga ---- */
+  const costChain = a => 1 + a;
+  const costHit = a => 0.5 * (1 + 1 / (1 - a));
+  const costMiss = a => 0.5 * (1 + 1 / ((1 - a) * (1 - a)));
+
+  /* ---- crecer: antes de insertar, si 3(n+1) > 2m, crecer; costo = 1 + reubicadas ---- */
+  function growth(N, mode){
+    let m = 8, n = 0, tot = 0;
+    const cost = new Array(N), mAfter = new Array(N), cum = new Array(N);
+    for (let i = 0; i < N; i++){
+      let c = 1;
+      if (3 * (n + 1) > 2 * m){ c += n; m = mode === 'dup' ? 2 * m : m + 8; }
+      n++; tot += c; cost[i] = c; mAfter[i] = m; cum[i] = tot;
+    }
+    return { cost, mAfter, cum, total: tot };
+  }
+  function growthTotal(N, mode){
+    let m = 8, n = 0, tot = 0;
+    for (let i = 0; i < N; i++){
+      let c = 1;
+      if (3 * (n + 1) > 2 * m){ c += n; m = mode === 'dup' ? 2 * m : m + 8; }
+      n++; tot += c;
+    }
+    return tot;
+  }
+
+  /* ---- dos sumas ---- */
+  function twoSum(a, k, mode){
+    const vistos = [], snaps = [], rows = [];
+    let ans = null, pair = null;
+    const snap = o => snaps.push(Object.assign({ vistos: vistos.slice(), ans, pair, rows: rows.map(r => Object.assign({}, r)) }, o));
+    snap({ kind: 'init', j: -1 });
+    for (let j = 0; j < a.length; j++){
+      const x = a[j], y = k - x;
+      const ask = () => {
+        const hit = vistos.indexOf(y) !== -1;
+        rows.push({ j, x, y, before: vistos.slice(), hit });
+        if (hit){ ans = true; pair = { i: a.indexOf(y), j, y, x }; }
+        snap({ kind: 'ask', j, x, y, hit });
+        return hit;
+      };
+      const add = () => { const had = vistos.indexOf(x) !== -1; if (!had) vistos.push(x); snap({ kind: 'add', j, x, y, had }); };
+      if (mode === 'ok'){ if (ask()) break; add(); }
+      else { add(); if (ask()) break; }
+    }
+    if (ans === null) ans = false;
+    snap({ kind: 'end', j: -1 });
+    return snaps;
+  }
+
+  return { mod, gcd, isPrime, keys, spread, chainTrace, lpProbe, lpApply, lpInsertWrong, lpTrace, copyCells, emptyCells,
+    LP_GUIDE, costChain, costHit, costMiss, growth, growthTotal, twoSum };
+})();
+</script>
+
+<script>
+/* ===== utilidades comunes ===== */
+const $ = (s, r) => (r || document).querySelector(s);
+const SVGNS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, text){
+  const n = document.createElementNS(SVGNS, tag);
+  let style = '';
+  for (const k in attrs){
+    const v = String(attrs[k]);
+    if (v.indexOf('var(') !== -1) style += k + ':' + v + ';';
+    else n.setAttribute(k, v);
+  }
+  if (style) n.setAttribute('style', style);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+/* Un solo patrón de control para todos los laboratorios, con reproducción. */
+function stepper(name, opts){
+  const bar = document.querySelector('[data-ctl="' + name + '"]');
+  const st = { i: 0, total: 0, timer: null };
+  const count = $('[data-role="count"]', bar);
+  const playBtn = $('[data-act="play"]', bar);
+  const speed = $('[data-role="speed"]', bar);
+  function clamp(){ st.i = Math.max(0, Math.min(st.total, st.i)); }
+  function paint(){
+    clamp();
+    opts.render(st.i);
+    count.textContent = 'paso ' + st.i + ' / ' + st.total;
+    $('[data-act="prev"]', bar).disabled = st.i === 0;
+    $('[data-act="next"]', bar).disabled = st.i === st.total;
+  }
+  const delay = () => speed ? (+speed.max + 300) - (+speed.value) : 800;
+  function stop(){
+    if (st.timer){ clearTimeout(st.timer); st.timer = null; }
+    if (playBtn){ playBtn.textContent = '▶ Reproducir'; playBtn.classList.remove('on'); }
+  }
+  function tick(){
+    st.timer = null;
+    if (st.i >= st.total){ stop(); return; }
+    st.i++; paint();
+    if (st.i >= st.total){ stop(); return; }
+    st.timer = setTimeout(tick, delay());
+  }
+  function play(){
+    if (st.i >= st.total){ st.i = 0; paint(); }
+    if (playBtn){ playBtn.textContent = '❙❙ Pausa'; playBtn.classList.add('on'); }
+    st.timer = setTimeout(tick, st.i === 0 ? 450 : delay());
+  }
+  bar.addEventListener('click', e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const a = b.dataset.act;
+    if (a === 'play'){ if (st.timer) stop(); else play(); return; }
+    stop();
+    if (a === 'next') st.i++;
+    else if (a === 'prev') st.i--;
+    else if (a === 'reset') st.i = 0;
+    paint();
+  });
+  st.reload = (total, start) => { stop(); st.total = total; st.i = start === undefined ? total : start; paint(); };
+  st.paint = paint; st.play = play; st.stop = stop;
+  return st;
+}
+const hiLines = (pre, idx, cls) => pre.querySelectorAll('span').forEach((ln, j) => ln.classList.toggle(cls || 'hi', idx.indexOf(j) !== -1));
+function segPick(seg, btn){ [...seg.children].forEach(x => x.classList.toggle('on', x === btn)); }
+const fmtN = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
+const fmt2 = v => v.toFixed(2);
+const setTxt = (list) => '{' + list.slice().sort((a, b) => a - b).join(', ') + '}';
+function parseInts(str, lo, hi, maxCount){
+  const parts = String(str).split(/[\s,;]+/).filter(Boolean);
+  if (!parts.length) return { err: 'Escriba al menos un número.' };
+  if (parts.length > maxCount) return { err: 'Use a lo sumo ' + maxCount + ' números.' };
+  const vals = [];
+  for (const p of parts){
+    if (!/^-?\d+$/.test(p)) return { err: '«' + p + '» no es un entero.' };
+    const v = +p;
+    if (v < lo || v > hi) return { err: 'Los números deben estar entre ' + lo + ' y ' + hi + '.' };
+    vals.push(v);
+  }
+  return { vals };
+}
+function cellsHTML(box, items, emptyText){
+  box.innerHTML = '';
+  if (!items.length){ const d = document.createElement('div'); d.className = 'cell empty'; d.textContent = emptyText || 'vacío'; box.appendChild(d); return; }
+  items.forEach(it => {
+    const d = document.createElement('div'); d.className = 'cell ' + (it.cls || '');
+    d.innerHTML = it.html; box.appendChild(d);
+  });
+}
+/* Dibuja un arreglo de celdas de sondeo lineal. ov: probed (en orden), cur, found, fd, bad[]. */
+function drawSlots(box, cells, ov, mini){
+  ov = ov || {};
+  const m = cells.length;
+  box.className = 'arr-grid' + (mini ? ' mini' : '');
+  box.style.gridTemplateColumns = 'repeat(' + m + ', minmax(' + (mini ? 22 : 24) + 'px, 1fr))';
+  box.innerHTML = '';
+  const order = {};
+  (ov.probed || []).forEach((p, t) => { if (order[p] === undefined) order[p] = t + 1; });
+  cells.forEach((c, i) => {
+    const s = document.createElement('div'); s.className = 'slot';
+    const txt = c.s === 1 ? String(c.k) : (c.s === 2 ? '†' : '·');
+    let bc = c.s === 1 ? 'occ' : (c.s === 2 ? 'tomb' : 'empty');
+    if (txt.length > 3) bc += ' long';
+    if (order[i] !== undefined) bc += ' probed';
+    if (i === ov.fd) bc += ' fd';
+    if (i === ov.cur) bc += ' cur';
+    if (i === ov.found) bc += ' found';
+    if (ov.bad && ov.bad.indexOf(i) !== -1) bc += ' bad';
+    s.innerHTML = '<small>' + i + '</small><div class="box ' + bc + '">' + txt + '</div><i>' + (order[i] !== undefined ? order[i] : '') + '</i>';
+    box.appendChild(s);
+  });
+}
+function onVisible(node, fn, threshold){
+  if (!('IntersectionObserver' in window)){ fn(); return; }
+  const io = new IntersectionObserver(es => { es.forEach(e => { if (e.isIntersecting){ fn(); io.disconnect(); } }); },
+    { threshold: threshold || 0.2 });
+  io.observe(node);
+}
+
+/* ===== 01 · reparto según m ===== */
+(function(){
+  const st = { kind: 'mult', d: 10, n: 6, seed: 2026, m: [10, 11] };
+  const kindSeg = $('#repKind'), dIn = $('#repD'), dV = $('#repDv'), dLab = $('#repDlab');
+  const nIn = $('#repN'), nV = $('#repNv'), seedBtn = $('#repSeed'), keysTbl = $('#repKeys'), narr = $('#repNarr');
+  const panels = [0, 1].map(t => {
+    const root = $('#repP' + t), q = r => $('[data-r="' + r + '"]', root);
+    return { root, num: q('num'), rng: q('rng'), prev: q('prev'), next: q('next'), prime: q('prime'), svg: $('svg', root),
+      used: q('used'), alpha: q('alpha'), long: q('long'), max: q('max') };
+  });
+  const dEff = () => st.kind === 'mult' ? st.d : (st.kind === 'cod' ? 100 : 0);
+  function drawBars(svg, counts, ymax, ks, m){
+    const W = 600, H = 200, L = 30, R = 6, T = 18, B = 26, pw = W - L - R, ph = H - T - B;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.innerHTML = '';
+    const bw = pw / m, gap = bw > 8 ? 3 : (bw > 3 ? 1 : 0);
+    svg.appendChild(el('line', { x1: L, y1: T, x2: W - R, y2: T, stroke: 'var(--line)', 'stroke-dasharray': '3 3' }));
+    svg.appendChild(el('line', { x1: L, y1: T + ph, x2: W - R, y2: T + ph, stroke: 'var(--line-2)' }));
+    svg.appendChild(el('text', { x: L - 6, y: T + ph, 'text-anchor': 'end', 'font-family': 'var(--fm)', 'font-size': 11, fill: 'var(--muted)' }, '0'));
+    svg.appendChild(el('text', { x: L - 6, y: T + 4, 'text-anchor': 'end', 'font-family': 'var(--fm)', 'font-size': 11, fill: 'var(--muted)' }, String(ymax)));
+    const mx = Math.max.apply(null, counts);
+    const lstep = m <= 16 ? 1 : (m <= 40 ? 5 : (m <= 80 ? 10 : 20));
+    counts.forEach((c, i) => {
+      const x = L + i * bw + gap / 2, w = Math.max(0.6, bw - gap), h = c / ymax * ph;
+      if (c > 0){
+        const r = el('rect', { x, y: T + ph - h, width: w, height: h, rx: bw > 8 ? 2 : 0, fill: c >= 2 && c === mx ? 'var(--baja)' : 'var(--memo)' });
+        r.appendChild(el('title', {}, 'cajón ' + i + ': ' + ks.filter(k => HT.mod(k, m) === i).join(', ')));
+        svg.appendChild(r);
+        if (m <= 24) svg.appendChild(el('text', { x: x + w / 2, y: T + ph - h - 4, 'text-anchor': 'middle', 'font-family': 'var(--fm)', 'font-size': 11, 'font-weight': 700, fill: 'var(--ink)' }, String(c)));
+      } else svg.appendChild(el('rect', { x, y: T + ph - 2, width: w, height: 2, fill: 'var(--line-2)' }));
+      if (i % lstep === 0) svg.appendChild(el('text', { x: L + i * bw + bw / 2, y: H - 8, 'text-anchor': 'middle', 'font-family': 'var(--fm)', 'font-size': 10.5, fill: 'var(--muted)' }, String(i)));
+    });
+  }
+  function render(){
+    const ks = HT.keys(st.kind, st.n, st.d, st.seed), d = dEff();
+    const counts = st.m.map(m => HT.spread(ks, m));
+    const ymax = Math.max(1, Math.max.apply(null, counts[0].concat(counts[1])));
+    const parts = [];
+    if (st.kind === 'mult') parts.push('Las ' + st.n + ' claves son ' + (st.n <= 3 ? ks.join(', ') : d + ', ' + 2 * d + ', ..., ' + st.n * d) + ': todas múltiplos de d = ' + d + '.');
+    else if (st.kind === 'cod') parts.push('Los ' + st.n + ' códigos tienen la forma 2026XXXX00: todos son múltiplos de 100.');
+    else parts.push(st.n + ' claves al azar entre 0 y 999 999, sin patrón.');
+    panels.forEach((p, t) => {
+      const m = st.m[t], c = counts[t];
+      p.num.value = m; p.rng.value = m;
+      p.prev.disabled = m <= 2; p.next.disabled = m >= 127;
+      const pr = HT.isPrime(m);
+      p.prime.textContent = pr ? 'primo' : 'no primo';
+      p.prime.className = 'pill' + (pr ? ' sube' : '');
+      drawBars(p.svg, c, ymax, ks, m);
+      const used = c.filter(x => x > 0).length, longest = Math.max.apply(null, c);
+      p.used.textContent = used + ' / ' + m;
+      p.alpha.textContent = fmt2(st.n / m);
+      p.long.textContent = longest;
+      p.max.textContent = d ? String(m / HT.gcd(d, m)) : '—';
+      let s = '<b>' + (t === 0 ? 'Tabla A' : 'Tabla B') + ', m = ' + m + (pr ? ' (primo)' : '') + ':</b> ';
+      if (d){
+        const g = HT.gcd(d, m);
+        if (g === 1) s += 'mcd(' + d + ', ' + m + ') = 1, así que el patrón no reduce los cajones: puede usar los ' + m + '. ';
+        else s += 'mcd(' + d + ', ' + m + ') = ' + g + ', así que k mod ' + m + ' solo toma múltiplos de ' + g + ': a lo sumo ' + (m / g) + (m / g === 1 ? ' cajón. ' : ' cajones. ');
+      }
+      s += 'Usa ' + used + ' de ' + m + (d && used < m / HT.gcd(d, m) && st.n < m / HT.gcd(d, m) ? ' (hay solo ' + st.n + ' claves)' : '') + ' y la lista más larga tiene ' + longest + (longest === 1 ? ' clave.' : ' claves.');
+      parts.push(s);
+    });
+    if (!d) parts.push('Sin patrón, cualquier m reparte parecido. Aun así hay cajones con más de una clave: las colisiones son inevitables.');
+    else if (counts.some(c => Math.max.apply(null, c) === st.n) && st.n > 1) parts.push('Una tabla con todas las claves en un cajón es una lista: buscar cuesta Θ(n).');
+    narr.innerHTML = parts.join('<br><br>');
+    /* tabla de claves */
+    const show = ks.slice(0, 16), more = ks.length > 16 ? '<td>…</td>' : '';
+    keysTbl.innerHTML = '<tr><th>k</th>' + show.map(k => '<td>' + k + '</td>').join('') + more + '</tr>' +
+      st.m.map((m, t) => '<tr class="' + (t === 0 ? 'ra' : 'rb') + '"><th>k mod ' + m + '</th>' + show.map(k => '<td>' + HT.mod(k, m) + '</td>').join('') + more + '</tr>').join('');
+    dLab.hidden = st.kind !== 'mult';
+    seedBtn.hidden = st.kind === 'mult';
+    dV.textContent = st.d; nV.textContent = st.n;
+  }
+  function setM(t, v){ v = Math.round(+v); if (!isFinite(v)) v = st.m[t]; st.m[t] = Math.max(2, Math.min(128, v)); render(); }
+  panels.forEach((p, t) => {
+    p.num.addEventListener('change', () => setM(t, p.num.value));
+    p.rng.addEventListener('input', () => setM(t, p.rng.value));
+    p.prev.addEventListener('click', () => { let v = st.m[t] - 1; while (v > 2 && !HT.isPrime(v)) v--; setM(t, v); });
+    p.next.addEventListener('click', () => { let v = st.m[t] + 1; while (v < 127 && !HT.isPrime(v)) v++; setM(t, v); });
+  });
+  kindSeg.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; st.kind = b.dataset.k; segPick(kindSeg, b); render(); });
+  dIn.addEventListener('input', () => { st.d = +dIn.value; render(); });
+  nIn.addEventListener('input', () => { st.n = +nIn.value; render(); });
+  seedBtn.addEventListener('click', () => { st.seed = (st.seed * 1103515245 + 12345) >>> 0; render(); });
+  render();
+})();
+
+/* ===== 02 · encadenamiento ===== */
+(function(){
+  const GUIDE = { m: 7, ins: [15, 8, 22, 3, 10, 29, 12], bus: [29, 36] };
+  let cfg = { m: GUIDE.m, ins: GUIDE.ins.slice(), bus: GUIDE.bus.slice() };
+  let snaps = [], ops = [];
+  const bBox = $('#chB'), opEl = $('#chOp'), opsEl = $('#chOps'), narr = $('#chNarr'), code = $('#chCode');
+  const cmpEl = $('#chCmp'), nEl = $('#chN'), aEl = $('#chA'), lEl = $('#chL');
+  const mIn = $('#chM'), insIn = $('#chIns'), busIn = $('#chBus'), errEl = $('#chErr');
+  function build(){
+    ops = cfg.ins.map(k => ({ t: 'ins', k })).concat(cfg.bus.map(k => ({ t: 'bus', k })));
+    snaps = HT.chainTrace(cfg.m, ops);
+    S.reload(snaps.length - 1, 0);
+  }
+  function render(i){
+    const sn = snaps[i], m = cfg.m;
+    const live = sn.op !== -1;
+    opEl.innerHTML = !live ? (sn.kind === 'init' ? 'tabla vacía · m = ' + m + ' cajones' : 'fin de las operaciones')
+      : '<b>' + (sn.t === 'ins' ? 'insertar' : 'buscar') + '(' + sn.k + ')</b> · h(' + sn.k + ') = ' + sn.k + ' mod ' + m + ' = ' + sn.c;
+    bBox.innerHTML = '';
+    for (let c = 0; c < m; c++){
+      const row = document.createElement('div');
+      row.className = 'brow' + (live && c === sn.c ? ' on' : '');
+      const lab = document.createElement('span'); lab.className = 'bidx'; lab.textContent = 'cajón ' + c; row.appendChild(lab);
+      const ch = document.createElement('div'); ch.className = 'chain';
+      const list = sn.B[c];
+      if (!list.length){ const e = document.createElement('div'); e.className = 'cell empty'; e.textContent = '[ ]'; ch.appendChild(e); }
+      list.forEach((k, j) => {
+        if (j) { const a = document.createElement('span'); a.className = 'ar'; a.textContent = '→'; ch.appendChild(a); }
+        let cls = 'q';
+        if (live && c === sn.c){
+          if (sn.kind === 'ins' && j === sn.at) cls = 'found new';
+          else if (sn.kind === 'dup' && j === sn.at) cls = 'found';
+          else if (sn.kind === 'hit' && j === sn.at) cls = 'found';
+          else if (sn.kind === 'cmp' && j === sn.at) cls = 'cur';
+          else if ((sn.kind === 'cmp' || sn.kind === 'hit') && j < sn.at) cls = 'q seen';
+          else if (sn.kind === 'miss') cls = 'q seen';
+          else if (sn.kind === 'ins' && j < sn.at) cls = 'q seen';
+          else if (sn.kind === 'dup' && j < sn.at) cls = 'q seen';
+        }
+        const d = document.createElement('div'); d.className = 'cell ' + cls; d.textContent = k; ch.appendChild(d);
+      });
+      row.appendChild(ch); bBox.appendChild(row);
+    }
+    /* secuencia de operaciones */
+    opsEl.innerHTML = ops.map((o, j) => {
+      const lbl = (j === 0 || ops[j - 1].t !== o.t ? (o.t === 'ins' ? (j ? ' · ' : '') + 'insertar: ' : ' · buscar: ') : '');
+      const cls = j === sn.op ? 'now' : ((sn.op === -1 && sn.kind === 'end') || j < sn.op ? 'done' : '');
+      return lbl + '<span class="' + cls + '">' + o.k + '</span>';
+    }).join(' ');
+    const longest = Math.max.apply(null, sn.B.map(b => b.length));
+    cmpEl.textContent = live ? sn.comps : '—';
+    nEl.textContent = sn.n; aEl.textContent = fmt2(sn.n / m); lEl.textContent = longest;
+    /* código */
+    const hl = { ins: [0, 1, 2, 3, 4], dup: [0, 1, 2, 3], h: [6, 7], cmp: [8, 9], hit: [8, 9], miss: [10] };
+    hiLines(code, hl[sn.kind] || []);
+    /* narración */
+    const listTxt = l => '[' + l.join(', ') + ']';
+    let t;
+    if (sn.kind === 'init') t = 'Tabla vacía con m = ' + m + ' cajones. Se van a insertar ' + cfg.ins.join(', ') + (cfg.bus.length ? ' y después buscar ' + cfg.bus.join(' y ') : '') + '. Cada clave k va al cajón k mod ' + m + '.';
+    else if (sn.kind === 'ins'){
+      const b = sn.B[sn.c];
+      t = '<b>insertar(' + sn.k + ')</b>: ' + sn.k + ' mod ' + m + ' = ' + sn.c + '. Antes de agregar, recorre el cajón ' + sn.c + ' para confirmar que ' + sn.k + ' no está: ' +
+        (sn.comps === 0 ? 'estaba vacío, 0 comparaciones.' : sn.comps + (sn.comps === 1 ? ' comparación' : ' comparaciones') + ' (' + b.slice(0, sn.comps).join(', ') + '), ninguna igual.') +
+        ' Se agrega al final: cajón ' + sn.c + ' = ' + listTxt(b) + '.';
+    }
+    else if (sn.kind === 'dup') t = '<b>insertar(' + sn.k + ')</b>: ' + sn.k + ' mod ' + m + ' = ' + sn.c + ', y ' + sn.k + ' ya está en ese cajón (' + sn.comps + (sn.comps === 1 ? ' comparación' : ' comparaciones') + '). No se duplica: el invariante pide que cada clave aparezca una sola vez.';
+    else if (sn.kind === 'h') t = '<b>buscar(' + sn.k + ')</b>: ' + sn.k + ' mod ' + m + ' = ' + sn.c + '. Solo hace falta abrir el cajón ' + sn.c + ': por el invariante, si ' + sn.k + ' está en la tabla, está ahí. El cajón tiene ' + sn.B[sn.c].length + (sn.B[sn.c].length === 1 ? ' clave.' : ' claves.');
+    else if (sn.kind === 'cmp') t = 'Compara ' + sn.B[sn.c][sn.at] + ' con ' + sn.k + ': distintas. Sigue con la siguiente clave del cajón. Comparaciones: ' + sn.comps + '.';
+    else if (sn.kind === 'hit') t = 'Compara ' + sn.k + ' con ' + sn.k + ': <b>encontrada</b> después de ' + sn.comps + (sn.comps === 1 ? ' comparación.' : ' comparaciones.') + (sn.at === sn.B[sn.c].length - 1 && sn.comps > 1 ? ' Recorrió todo el cajón porque ' + sn.k + ' era la última de la lista.' : '');
+    else if (sn.kind === 'miss') t = 'Llegó al final del cajón ' + sn.c + ' sin encontrar ' + sn.k + ': <b>no está</b>, después de ' + sn.comps + (sn.comps === 1 ? ' comparación' : ' comparaciones') + '. No hace falta mirar otros cajones: ' + sn.k + ' solo podría estar en el cajón ' + sn.c + '. Una búsqueda sin éxito recorre la lista completa.';
+    else {
+      const empt = sn.B.filter(b => !b.length).length, a = sn.n / m;
+      t = '<b>Fin.</b> n = ' + sn.n + ' y m = ' + m + ': α = ' + fmt2(a) + '. Hay ' + empt + (empt === 1 ? ' cajón vacío' : ' cajones vacíos') + ' y la lista más larga tiene ' + longest + (longest === 1 ? ' clave.' : ' claves.') +
+        (longest > Math.max(1, Math.ceil(a)) ? ' El promedio α no protege contra un mal reparto: lo que lo garantiza es que las claves se comporten al azar respecto a h.' : '');
+    }
+    narr.innerHTML = t;
+  }
+  const S = stepper('ch', { render });
+  $('#chApply').addEventListener('click', () => {
+    const m = Math.round(+mIn.value);
+    if (!(m >= 1 && m <= 20)){ errEl.textContent = 'm debe estar entre 1 y 20.'; return; }
+    const a = parseInts(insIn.value, 0, 999999, 30); if (a.err){ errEl.textContent = 'insertar: ' + a.err; return; }
+    let b = { vals: [] };
+    if (busIn.value.trim()){ b = parseInts(busIn.value, 0, 999999, 10); if (b.err){ errEl.textContent = 'buscar: ' + b.err; return; } }
+    errEl.textContent = '';
+    cfg = { m, ins: a.vals, bus: b.vals };
+    build();
+  });
+  $('#chGuide').addEventListener('click', () => {
+    cfg = { m: GUIDE.m, ins: GUIDE.ins.slice(), bus: GUIDE.bus.slice() };
+    mIn.value = cfg.m; insIn.value = cfg.ins.join(', '); busIn.value = cfg.bus.join(', '); errEl.textContent = '';
+    build();
+  });
+  build();
+})();
+
+/* ===== 03 · sondeo lineal con lápidas ===== */
+(function(){
+  const st = { m: 11, ops: HT.LP_GUIDE.slice(), del: 'tomb', gran: 'probe' };
+  let all = [], snaps = [];
+  const arr = $('#lpArr'), opl = $('#lpOpl'), logBody = $('#lpLog tbody'), narr = $('#lpNarr');
+  const pEl = $('#lpP'), nEl = $('#lpN'), tEl = $('#lpT'), aEl = $('#lpA'), code = $('#lpCode'), code2 = $('#lpCode2'), delLine = $('#lpDelLine');
+  const delSeg = $('#lpDel'), granSeg = $('#lpGran'), opSel = $('#lpOp'), kIn = $('#lpK'), mIn = $('#lpM'), errEl = $('#lpErr');
+  const opName = t => t === 'ins' ? 'insertar' : (t === 'bus' ? 'buscar' : 'borrar');
+  const isGuide = () => st.m === 11 && st.ops.length >= HT.LP_GUIDE.length && HT.LP_GUIDE.every((o, j) => st.ops[j].t === o.t && st.ops[j].k === o.k);
+  function build(keepOp, startAt){
+    all = HT.lpTrace(st.m, st.ops, st.del);
+    /* una búsqueda fallida es falsa si la clave sigue en la tabla (solo pasa al borrar con VACÍA) */
+    all.forEach(s => { if (s.kind === 'result' && s.rec.res === 'miss') s.rec.wrong = present(s.cells, s.rec.k) !== -1; });
+    snaps =st.gran === 'op' ? all.filter(s => s.kind === 'init' || s.kind === 'result') : all;
+    let i = 0;
+    if (startAt !== undefined) i = startAt(snaps);
+    else if (keepOp !== undefined && keepOp !== -1){ i = snaps.findIndex(s => s.op === keepOp && s.kind === 'result'); if (i < 0) i = 0; }
+    S.reload(snaps.length - 1, i);
+  }
+  function present(cells, k){ return cells.findIndex(c => c.s === 1 && c.k === k); }
+  function blockAround(cells, d){
+    const m = cells.length; let len = 1, a = d, b = d;
+    while (len < m && cells[(a - 1 + m) % m].s !== 0){ a = (a - 1 + m) % m; len++; }
+    while (len < m && cells[(b + 1) % m].s !== 0){ b = (b + 1) % m; len++; }
+    return { len, a, b };
+  }
+  function resText(r, cellsAfter){
+    if (r.res === 'ins') return 'queda en ' + r.dest;
+    if (r.res === 'dup') return 'ya estaba en ' + r.pos;
+    if (r.res === 'full') return 'tabla llena';
+    if (r.res === 'hit') return 'en la celda ' + r.pos;
+    if (r.res === 'miss') return 'no está';
+    if (r.res === 'del') return (st.del === 'vacia' ? 'VACÍA' : '†') + ' en ' + r.dest;
+    return 'no estaba';
+  }
+  function render(i){
+    const sn = snaps[i], rec = sn.rec, m = st.m;
+    const ov = {};
+    if (rec && (sn.kind === 'probe' || sn.kind === 'result')){
+      const pr = rec.pr.slice(0, sn.np);
+      ov.probed = pr;
+      if (sn.kind === 'probe') ov.cur = pr[pr.length - 1];
+      if (rec.t === 'ins' && rec.fd !== -1 && pr.indexOf(rec.fd) !== -1 && rec.res !== 'dup') ov.fd = rec.fd;
+      if (sn.kind === 'result'){
+        if (rec.res === 'ins') ov.found = rec.dest;
+        else if (rec.res === 'hit' || rec.res === 'dup') ov.found = rec.pos;
+        else if (rec.res === 'miss'){ ov.cur = pr[pr.length - 1]; const at = present(sn.cells, rec.k); if (at !== -1) ov.bad = [at]; }
+        else if (rec.res === 'del') ov.cur = rec.dest;
+      }
+    }
+    drawSlots(arr, sn.cells, ov);
+    /* línea de operación */
+    if (!rec) opl.innerHTML = 'tabla de m = ' + m + ' celdas · h(k) = k mod ' + m;
+    else opl.innerHTML = '<b>' + opName(rec.t) + '(' + rec.k + ')</b> · h(' + rec.k + ') = ' + rec.k + ' mod ' + m + ' = ' + rec.h + ' · sondeos: ' + sn.np;
+    /* estadísticas */
+    const occ = sn.cells.filter(c => c.s === 1).length, tomb = sn.cells.filter(c => c.s === 2).length;
+    pEl.textContent = rec ? sn.np : '—'; nEl.textContent = occ; tEl.textContent = tomb; aEl.textContent = fmt2(occ / m);
+    /* traza */
+    const rows = sn.log.map((r, j) => ({ r, np: r.pr.length, partial: false, on: sn.kind === 'result' && j === sn.log.length - 1 }));
+    if (rec && sn.kind !== 'result') rows.push({ r: rec, np: sn.np, partial: true, on: true });
+    logBody.innerHTML = rows.length ? rows.map(o => {
+      const r = o.r, bad = !o.partial && r.res === 'miss' && st.del === 'vacia' && r.wrong;
+      const cellsTxt = r.pr.slice(0, o.np).map((p, t) => p + (r.what[t] === 'lapida' ? ' (†)' : (r.what[t] === 'vacia' ? ' (·)' : ''))).join(', ') || '—';
+      return '<tr' + (o.on ? ' class="on"' : '') + '><td>' + opName(r.t) + ' ' + r.k + '</td><td class="h">' + r.h + '</td><td>' + cellsTxt + '</td><td class="' + (o.partial ? '' : (bad ? 'bad' : (r.res === 'ins' || r.res === 'hit' ? 'ok' : ''))) + '">' + (o.partial ? '…' : resText(r) + (bad ? ' (falso)' : '')) + '</td><td>' + o.np + '</td></tr>';
+    }).join('') : '<tr><td colspan="5" class="h">Sin operaciones todavía.</td></tr>';
+    /* código */
+    let hl = [], hl2 = [];
+    if (rec && sn.kind === 'start') hl = [0];
+    else if (rec && sn.kind === 'probe'){
+      const w = rec.what[sn.np - 1];
+      hl = w === 'vacia' ? [1, 2, 3, 4] : (w === 'lapida' ? [1, 2, 5, 6, 9] : (w === 'k' ? [1, 2, 7, 8] : [1, 2, 7, 9]));
+      if (sn.np === rec.pr.length && (w === 'lapida' || w === 'otra')) hl = hl.concat([10]);
+    } else if (rec && sn.kind === 'result'){
+      if (rec.t === 'ins' && rec.res === 'ins') hl2 = [0, 1];
+      if (rec.t === 'del' && rec.res === 'del') hl2 = [2, 3];
+    }
+    hiLines(code, hl); hiLines(code2, st.del === 'vacia' ? [] : hl2); hiLines(code2, st.del === 'vacia' ? hl2 : [], 'hibad');
+    /* narración */
+    let t = '';
+    if (!rec){
+      t = isGuide() ? 'Tabla vacía de m = 11 celdas. Se insertan 22, 1, 13, 11, 24, 33, 18, 42, 31; después se borra 13, se busca 33 y 35, y se inserta 44. Cada celda está VACÍA (·), OCUPADA o BORRADA (†).'
+        : 'Tabla de m = ' + m + ' celdas. Use el formulario para insertar, buscar o borrar claves; cada operación se puede seguir sondeo por sondeo.';
+    } else if (sn.kind === 'start'){
+      t = '<b>' + opName(rec.t) + '(' + rec.k + ')</b>: h(' + rec.k + ') = ' + rec.k + ' mod ' + m + ' = ' + rec.h + '. La secuencia de sondeo es ' + rec.h + ', ' + ((rec.h + 1) % m) + ', ' + ((rec.h + 2) % m) + ', ... (módulo ' + m + ').';
+      if (rec.t === 'ins') t += ' Primero hay que confirmar que ' + rec.k + ' no está.';
+      if (rec.t === 'del') t += ' Para borrar, primero hay que encontrarla.';
+    } else if (sn.kind === 'probe'){
+      const p = rec.pr[sn.np - 1], w = rec.what[sn.np - 1], c = sn.cells[p];
+      t = 'Sondeo ' + sn.np + ': celda ' + p + ' ';
+      if (w === 'otra') t += 'tiene ' + c.k + ', otra clave. Pasa a la celda ' + ((p + 1) % m) + '.';
+      else if (w === 'lapida'){
+        t += 'es una lápida (†). Para buscar cuenta como ocupada: sigue.';
+        if (rec.t === 'ins' && p === rec.fd) t += ' Es la primera lápida vista: se anota. Si ' + rec.k + ' no aparece, irá aquí.';
+      }
+      else if (w === 'vacia'){
+        t += 'está <b>VACÍA</b>. Por el invariante, ' + rec.k + ' no puede estar más adelante: la búsqueda para.';
+        if (rec.t === 'ins') t += ' Ahora sí se sabe que no está, y se escoge dónde ponerla.';
+      }
+      else t += 'contiene <b>' + rec.k + '</b>.' + (rec.t === 'bus' ? ' Encontrada.' : (rec.t === 'ins' ? ' Ya estaba.' : ' Es la que se borra.'));
+      if (sn.np === m && (w === 'otra' || w === 'lapida')) t += ' Ya revisó las ' + m + ' celdas.';
+    } else {
+      const P = rec.pr.length, ps = P + (P === 1 ? ' sondeo' : ' sondeos');
+      if (rec.res === 'ins'){
+        t = '<b>' + rec.k + ' queda en la celda ' + rec.dest + '</b>, después de ' + ps + '.';
+        if (rec.dest === rec.fd) t += ' Es la primera lápida vista, no la VACÍA donde paró (celda ' + rec.empty + ').';
+        const bl = blockAround(sn.cells, rec.dest);
+        const span = bl.a <= bl.b ? bl.a + ' a ' + bl.b : bl.a + ' a ' + (m - 1) + ' y 0 a ' + bl.b + ' (dando la vuelta)';
+        if (bl.len >= 4 && bl.len < m) t += ' Ahora las celdas ' + span + ' forman un bloque de ' + bl.len + ' celdas no vacías: cualquier clave cuyo h caiga en él lo recorre hasta el final y lo alarga. Es el agrupamiento primario.';
+      }
+      else if (rec.res === 'dup') t = rec.k + ' ya estaba en la celda ' + rec.pos + ': no se inserta otra vez (' + ps + ').';
+      else if (rec.res === 'full') t = 'Revisó las ' + m + ' celdas sin encontrar una VACÍA ni una lápida: <b>tabla llena</b>.';
+      else if (rec.res === 'hit') t = '<b>Encontrada</b> en la celda ' + rec.pos + ', con ' + ps + '.' + (rec.what.indexOf('lapida') !== -1 ? ' Pasó por una lápida sin detenerse: eso es lo que la lápida permite.' : '');
+      else if (rec.res === 'miss'){
+        const at = present(sn.cells, rec.k);
+        t = rec.k + ' <b>no está</b>: ' + ps + (rec.empty !== -1 ? ', hasta la VACÍA de la celda ' + rec.empty + '.' : ', las ' + m + ' celdas.');
+        if (at !== -1) t += ' <span class="bad">Falso: ' + rec.k + ' está en la celda ' + at + '.</span> La celda ' + rec.empty + ' quedó VACÍA al borrar, y está en la secuencia de ' + rec.k + ' antes de su posición: el invariante se rompió.';
+      }
+      else if (rec.res === 'del'){
+        if (st.del === 'vacia') t = 'La celda ' + rec.dest + ' queda <b>VACÍA</b>. Parece correcto, porque ' + rec.k + ' ya no está. Pero las claves que pasaron por esta celda al insertarse quedaron detrás de un hueco.';
+        else t = 'La celda ' + rec.dest + ' queda como <b>lápida (†)</b>: «aquí hubo algo; siga buscando». Las búsquedas que pasen por ella siguen de largo.';
+      }
+      else t = rec.k + ' no estaba: no hay nada que borrar (' + ps + ').';
+    }
+    narr.innerHTML = t;
+  }
+  const S = stepper('lp', { render });
+  delSeg.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    st.del = b.dataset.d; segPick(delSeg, b);
+    delLine.textContent = st.del === 'vacia' ? 'celdas[p] = VACIA     # INCORRECTO' : 'celdas[p] = BORRADA';
+    const cur = snaps[S.i]; build(cur ? cur.op : -1);
+  });
+  granSeg.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    st.gran = b.dataset.g; segPick(granSeg, b);
+    const cur = snaps[S.i]; build(cur ? cur.op : -1);
+  });
+  $('#lpRun').addEventListener('click', () => {
+    const k = Math.round(+kIn.value);
+    if (!(k >= 0 && k <= 9999) || kIn.value.trim() === ''){ errEl.textContent = 'La clave debe ser un entero entre 0 y 9999.'; return; }
+    errEl.textContent = '';
+    st.ops.push({ t: opSel.value, k });
+    const oi = st.ops.length - 1;
+    build(undefined, list => { const j = list.findIndex(s => s.op === oi); return j < 0 ? list.length - 1 : j; });
+    if (st.gran === 'probe') S.play();
+  });
+  mIn.addEventListener('change', () => {
+    const m = Math.round(+mIn.value);
+    if (!(m >= 5 && m <= 16)){ errEl.textContent = 'm debe estar entre 5 y 16.'; mIn.value = st.m; return; }
+    errEl.textContent = ''; st.m = m; st.ops = []; build();
+  });
+  $('#lpClear').addEventListener('click', () => { errEl.textContent = ''; st.ops = []; build(); });
+  $('#lpGuide').addEventListener('click', () => { errEl.textContent = ''; st.m = 11; mIn.value = 11; st.ops = HT.LP_GUIDE.slice(); build(); });
+  build();
+})();
+
+/* ===== 04 · factor de carga ===== */
+(function(){
+  const svg = $('#lfSvg'), sl = $('#lfA'), sv = $('#lfAv'), pre = $('#lfPre'), tbody = $('#lfTable tbody'), narr = $('#lfNarr');
+  const cEl = $('#lfC'), hEl = $('#lfH'), mEl = $('#lfM');
+  const W = 640, H = 330, L = 44, R = 18, T = 16, B = 42, PW = W - L - R, PH = H - T - B, YM = 10;
+  const X = a => L + a * PW, Y = v => T + (1 - v / YM) * PH;
+  const curves = [{ f: HT.costChain, c: 'var(--sube)' }, { f: HT.costHit, c: 'var(--memo)' }, { f: HT.costMiss, c: 'var(--baja)' }];
+  const ROWS = [[0.25, '0.25'], [0.5, '0.50'], [2 / 3, '0.67'], [0.75, '0.75'], [0.9, '0.90'], [0.99, '0.99']];
+  let alpha = 0.5;
+  /* estático */
+  const defs = el('defs', {});
+  const cp = el('clipPath', { id: 'lfClip' }); cp.appendChild(el('rect', { x: L, y: T, width: PW, height: PH })); defs.appendChild(cp); svg.appendChild(defs);
+  for (let v = 0; v <= YM; v += 2){
+    svg.appendChild(el('line', { x1: L, y1: Y(v), x2: L + PW, y2: Y(v), stroke: v === 0 ? 'var(--line-2)' : 'var(--line)' }));
+    svg.appendChild(el('text', { x: L - 8, y: Y(v) + 4, 'text-anchor': 'end', 'font-family': 'var(--fm)', 'font-size': 11, fill: 'var(--muted)' }, String(v)));
+  }
+  [0, 0.25, 0.5, 0.75, 1].forEach(a => {
+    svg.appendChild(el('line', { x1: X(a), y1: T + PH, x2: X(a), y2: T + PH + 5, stroke: 'var(--line-2)' }));
+    svg.appendChild(el('text', { x: X(a), y: T + PH + 18, 'text-anchor': 'middle', 'font-family': 'var(--fm)', 'font-size': 11, fill: 'var(--muted)' }, a === 1 ? '1' : String(a)));
+  });
+  svg.appendChild(el('text', { x: L + PW / 2, y: H - 4, 'text-anchor': 'middle', 'font-family': 'var(--fm)', 'font-size': 11, fill: 'var(--muted)' }, 'factor de carga α = n/m'));
+  svg.appendChild(el('text', { x: 12, y: T + PH / 2, 'text-anchor': 'middle', 'font-family': 'var(--fm)', 'font-size': 11, fill: 'var(--muted)', transform: 'rotate(-90 12 ' + (T + PH / 2) + ')' }, 'sondeos esperados'));
+  [[2 / 3, '2/3 · Python', 'end', -5], [0.75, '0.75 · Java', 'start', 5]].forEach(([a, lbl, anc, dx]) => {
+    svg.appendChild(el('line', { x1: X(a), y1: T, x2: X(a), y2: T + PH, stroke: 'var(--ink-2)', 'stroke-dasharray': '4 4', opacity: 0.55 }));
+    svg.appendChild(el('text', { x: X(a) + dx, y: T + 12, 'text-anchor': anc, 'font-family': 'var(--fm)', 'font-size': 10.5, fill: 'var(--ink-2)' }, lbl));
+  });
+  const g = el('g', { 'clip-path': 'url(#lfClip)' });
+  curves.forEach(cv => {
+    let d = '';
+    for (let a = 0; a <= 0.99 + 1e-9; a += 0.0025) d += (d ? ' L' : 'M') + X(a).toFixed(2) + ' ' + Y(cv.f(a)).toFixed(2);
+    g.appendChild(el('path', { d, fill: 'none', stroke: cv.c, 'stroke-width': 2.6, 'stroke-linejoin': 'round' }));
+  });
+  svg.appendChild(g);
+  const cur = el('g', {}); svg.appendChild(cur);
+  /* tabla */
+  tbody.innerHTML = ROWS.map(([a, lbl], j) => '<tr class="pick" data-j="' + j + '"><td>' + lbl + '</td><td>' + fmt2(HT.costChain(a)) + '</td><td>' + fmt2(HT.costHit(a)) + '</td><td>' + fmt2(HT.costMiss(a)) + '</td></tr>').join('');
+  function render(){
+    const vals = curves.map(cv => cv.f(alpha));
+    const exact23 = Math.abs(alpha - 2 / 3) < 1e-12;
+    sv.textContent = exact23 ? '2/3' : fmt2(alpha);
+    cEl.textContent = fmt2(vals[0]); hEl.textContent = fmt2(vals[1]); mEl.textContent = fmt2(vals[2]);
+    cur.innerHTML = '';
+    cur.appendChild(el('line', { x1: X(alpha), y1: T, x2: X(alpha), y2: T + PH, stroke: 'var(--ink)', 'stroke-width': 1.5 }));
+    vals.forEach((v, j) => {
+      const over = v > YM;
+      cur.appendChild(el('circle', { cx: X(alpha), cy: Y(Math.min(v, YM)), r: 5.5, fill: curves[j].c, stroke: 'var(--surface)', 'stroke-width': 2 }));
+      if (over) cur.appendChild(el('text', { x: X(alpha) + (alpha > 0.85 ? -9 : 9), y: T + 26, 'text-anchor': alpha > 0.85 ? 'end' : 'start', 'font-family': 'var(--fm)', 'font-size': 11, 'font-weight': 700, fill: curves[j].c }, '↑ ' + fmt2(v)));
+    });
+    tbody.querySelectorAll('tr').forEach((tr, j) => tr.classList.toggle('on', Math.abs(ROWS[j][0] - alpha) < 1e-9));
+    [...pre.children].forEach(b => b.classList.toggle('on', Math.abs((b.dataset.a === '2/3' ? 2 / 3 : +b.dataset.a) - alpha) < 1e-9));
+    let t;
+    if (alpha <= 0.5 + 1e-9) t = 'Con la tabla a la mitad o menos, el sondeo lineal es casi tan bueno como el encadenamiento: una búsqueda sin éxito revisa en promedio ' + fmt2(vals[2]) + ' celdas, a lo sumo 2.50.';
+    else if (alpha <= 0.75 + 1e-9) t = 'Zona de trabajo de las tablas reales: Python crece al llegar a 2/3 y Java al 75 %. Una búsqueda sin éxito ya revisa en promedio ' + fmt2(vals[2]) + ' celdas.';
+    else if (alpha < 0.9 - 1e-9) t = 'Pasado el 75 %, la curva sin éxito sube rápido: ' + fmt2(vals[2]) + ' sondeos en promedio. Los bloques de celdas ocupadas crecen más rápido cuanto más grandes son.';
+    else t = 'Con la tabla al ' + Math.round(alpha * 100) + ' %, una búsqueda sin éxito revisa en promedio <b>' + fmt2(vals[2]) + '</b> celdas. Por eso una tabla con direccionamiento abierto nunca se deja llenar.';
+    t += ' El encadenamiento apenas cambia: 1 + α = ' + fmt2(vals[0]) + '.';
+    narr.innerHTML = t;
+  }
+  function set(a){ alpha = Math.max(0, Math.min(0.99, a)); sl.value = alpha.toFixed(2); render(); }
+  sl.addEventListener('input', () => set(+sl.value));
+  pre.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; set(b.dataset.a === '2/3' ? 2 / 3 : +b.dataset.a); });
+  tbody.addEventListener('click', e => { const tr = e.target.closest('tr'); if (!tr) return; set(ROWS[+tr.dataset.j][0]); });
+  let drag = false;
+  function fromEvent(e){
+    const r = svg.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width * W;
+    set(Math.round((x - L) / PW * 100) / 100);
+  }
+  svg.addEventListener('pointerdown', e => { drag = true; try { svg.setPointerCapture(e.pointerId); } catch (_) {} fromEvent(e); });
+  svg.addEventListener('pointermove', e => { if (drag) fromEvent(e); });
+  ['pointerup', 'pointercancel'].forEach(ev => svg.addEventListener(ev, () => { drag = false; }));
+  render();
+})();
+
+/* ===== 05 · crecer ===== */
+(function(){
+  const figs = [0, 1].map(t => {
+    const root = $('#grF' + t), q = r => $('[data-r="' + r + '"]', root);
+    return { mode: t === 0 ? 'dup' : 'sum8', tot: q('tot'), avg: q('avg'), m: q('m'), gr: q('gr'), cost: q('cost'), avgc: q('avgc'), list: q('list') };
+  });
+  const nSeg = $('#grN'), narr = $('#grNarr'), hint = $('#grHint');
+  let N = 25, G = [], costMax = 1, avgMax = [4, 4];
+  /* totales de referencia */
+  $('#grRef tbody').innerHTML = [1000, 100000, 1000000].map(n => '<tr><td>' + fmtN(n) + '</td><td>' + fmtN(HT.growthTotal(n, 'dup')) + '</td><td>' + fmtN(HT.growthTotal(n, 'sum8')) + '</td></tr>').join('');
+  function build(){
+    G = figs.map(f => HT.growth(N, f.mode));
+    costMax = Math.max(1, Math.max.apply(null, G[0].cost), Math.max.apply(null, G[1].cost));
+    avgMax = G.map(g => { let mx = 0; for (let i = 0; i < N; i++) mx = Math.max(mx, g.cum[i] / (i + 1)); return Math.max(4, Math.ceil(mx * 1.12)); });
+    hint.textContent = N > 300 ? 'Con N = ' + fmtN(N) + ' cada barra agrupa ' + fmtN(Math.round(N / 300)) + ' inserciones y muestra la más cara.' : '';
+    S.reload(N, N <= 100 ? 0 : N);
+  }
+  function txtAxis(svg, x, y, s, anchor){ svg.appendChild(el('text', { x, y, 'text-anchor': anchor || 'end', 'font-family': 'var(--fm)', 'font-size': 10, fill: 'var(--muted)' }, s)); }
+  function drawCost(svg, g, s){
+    const W = 340, H = 130, L = 34, R = 6, T = 8, B = 16, pw = W - L - R, ph = H - T - B;
+    svg.innerHTML = '';
+    svg.appendChild(el('line', { x1: L, y1: T + ph, x2: W - R, y2: T + ph, stroke: 'var(--line-2)' }));
+    svg.appendChild(el('line', { x1: L, y1: T, x2: W - R, y2: T, stroke: 'var(--line)', 'stroke-dasharray': '3 3' }));
+    txtAxis(svg, L - 5, T + ph, '0'); txtAxis(svg, L - 5, T + 8, fmtN(costMax));
+    txtAxis(svg, L, H - 3, '1', 'start'); txtAxis(svg, W - R, H - 3, fmtN(N));
+    const cols = Math.min(N, 300), per = N / cols, bw = pw / cols, gap = cols <= 60 ? Math.min(2, bw * 0.25) : 0;
+    for (let c = 0; c < cols; c++){
+      const i0 = Math.floor(c * per), i1 = Math.min(s, Math.floor((c + 1) * per));
+      if (i0 >= s) break;
+      let mx = 0; for (let i = i0; i < i1; i++) if (g.cost[i] > mx) mx = g.cost[i];
+      const h = Math.max(1.2, mx / costMax * ph);
+      const isCur = cols === N && c === s - 1;
+      svg.appendChild(el('rect', { x: L + c * bw + gap / 2, y: T + ph - h, width: Math.max(0.6, bw - gap), height: h, fill: mx > 1 ? 'var(--baja)' : 'var(--memo)', opacity: isCur || cols !== N ? 1 : 0.85, stroke: isCur ? 'var(--ink)' : 'none', 'stroke-width': isCur ? 1.2 : 0 }));
+    }
+  }
+  function drawAvg(svg, g, s, ymax){
+    const W = 340, H = 110, L = 34, R = 6, T = 8, B = 14, pw = W - L - R, ph = H - T - B;
+    const X = i => L + (N === 1 ? 0 : (i - 1) / (N - 1)) * pw, Y = v => T + ph - Math.min(v, ymax) / ymax * ph;
+    svg.innerHTML = '';
+    svg.appendChild(el('line', { x1: L, y1: T + ph, x2: W - R, y2: T + ph, stroke: 'var(--line-2)' }));
+    txtAxis(svg, L - 5, T + ph, '0'); txtAxis(svg, L - 5, T + 8, String(ymax));
+    svg.appendChild(el('line', { x1: L, y1: Y(3), x2: W - R, y2: Y(3), stroke: 'var(--ink-2)', 'stroke-dasharray': '5 4' }));
+    txtAxis(svg, W - R, Y(3) - 4, 'y = 3');
+    if (!s) return;
+    const step = Math.max(1, Math.floor(N / 300));
+    let d = '';
+    for (let i = 1; i <= s; i += step) d += (d ? ' L' : 'M') + X(i).toFixed(2) + ' ' + Y(g.cum[i - 1] / i).toFixed(2);
+    if ((s - 1) % step) d += ' L' + X(s).toFixed(2) + ' ' + Y(g.cum[s - 1] / s).toFixed(2);
+    svg.appendChild(el('path', { d, fill: 'none', stroke: 'var(--sube)', 'stroke-width': 2, 'stroke-linejoin': 'round' }));
+    svg.appendChild(el('circle', { cx: X(s), cy: Y(g.cum[s - 1] / s), r: 3.5, fill: 'var(--sube)' }));
+  }
+  function stepTxt(g, s, label){
+    const nb = s - 1, mb = s >= 2 ? g.mAfter[s - 2] : 8, c = g.cost[s - 1];
+    if (c > 1) return '<b>' + label + ':</b> hay n = ' + nb + ' claves y m = ' + mb + '. Con la nueva, 3 · ' + s + ' = ' + (3 * s) + ' &gt; 2 · ' + mb + ' = ' + (2 * mb) + ': α pasaría de 2/3. Crece a m = ' + g.mAfter[s - 1] + ', reubica las ' + nb + ' claves y luego inserta: <b>costo ' + c + '</b>.';
+    return '<b>' + label + ':</b> 3 · ' + s + ' = ' + (3 * s) + ' ≤ 2 · ' + mb + ' = ' + (2 * mb) + ': cabe sin crecer. Costo 1.';
+  }
+  function render(s){
+    figs.forEach((f, t) => {
+      const g = G[t];
+      f.tot.textContent = s ? fmtN(g.cum[s - 1]) : '0';
+      f.avg.textContent = s ? fmt2(g.cum[s - 1] / s) : '—';
+      f.m.textContent = s ? fmtN(g.mAfter[s - 1]) : '8';
+      let k = 0; for (let i = 0; i < s; i++) if (g.cost[i] > 1) k++;
+      f.gr.textContent = k;
+      drawCost(f.cost, g, s);
+      drawAvg(f.avgc, g, s, avgMax[t]);
+      const lim = Math.min(s, 25);
+      f.list.innerHTML = s ? 'costos: ' + g.cost.slice(0, lim).map((c, i) => '<span class="' + (i === s - 1 ? 'now' : 'done') + '">' + c + '</span>').join(' ') + (s > 25 ? ' …' : '') : 'costos: —';
+    });
+    let t;
+    if (!s) t = 'Ninguna inserción todavía: m = 8 en las dos tablas. Antes de cada inserción, si 3(n + 1) &gt; 2m, la tabla crece; el costo es 1 más las claves reubicadas.';
+    else if (s === N && N > 100) t = '<b>' + fmtN(N) + ' inserciones.</b> Duplicar costó ' + fmtN(G[0].total) + ', ' + fmt2(G[0].total / N) + ' por inserción. Sumar 8 costó ' + fmtN(G[1].total) + ', ' + fmt2(G[1].total / N) + ' por inserción. Use Atrás para ver inserciones sueltas.';
+    else {
+      t = 'Inserción ' + s + '.<br>' + stepTxt(G[0], s, 'Duplicar') + '<br>' + stepTxt(G[1], s, 'Sumar 8');
+      if (s === N) t += '<br><b>Totales:</b> ' + fmtN(G[0].total) + ' contra ' + fmtN(G[1].total) + '.';
+    }
+    narr.innerHTML = t;
+  }
+  const S = stepper('gr', { render });
+  nSeg.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; N = +b.dataset.n; segPick(nSeg, b); build(); });
+  build();
+})();
+
+/* ===== 06 · dos sumas ===== */
+(function(){
+  const DATA = [{ a: [8, 3, 5, 9, 1, 7], k: 10 }, { a: [5, 1, 2], k: 10 }];
+  const st = { a: DATA[0].a.slice(), k: 10, mode: 'ok' };
+  let snaps = [], correct = false;
+  const arrBox = $('#tsArr'), line = $('#tsLine'), setBox = $('#tsSet'), logBody = $('#tsLog tbody'), narr = $('#tsNarr'), res = $('#tsRes');
+  const codeOk = $('#tsCodeOk'), codeBad = $('#tsCodeBad'), modeSeg = $('#tsMode'), dataSeg = $('#tsData');
+  const aIn = $('#tsA'), kIn = $('#tsK'), errEl = $('#tsErr');
+  function build(){
+    snaps = HT.twoSum(st.a, st.k, st.mode);
+    const ok = HT.twoSum(st.a, st.k, 'ok'); correct = ok[ok.length - 1].ans;
+    codeOk.hidden = st.mode !== 'ok'; codeBad.hidden = st.mode === 'ok';
+    aIn.value = st.a.join(', '); kIn.value = st.k;
+    [...dataSeg.children].forEach((b, i) => b.classList.toggle('on', DATA[i].k === st.k && DATA[i].a.join() === st.a.join()));
+    S.reload(snaps.length - 1, 0);
+  }
+  function render(i){
+    const sn = snaps[i], a = st.a, k = st.k;
+    /* arreglo */
+    const cells = a.map(x => ({ s: 1, k: x }));
+    const ov = {};
+    if (sn.j >= 0) ov.cur = sn.j;
+    if (sn.kind === 'ask' && sn.hit) ov.found = sn.j;
+    if (sn.pair && (sn.kind === 'ask' || sn.kind === 'end')){ ov.found = sn.pair.j; ov.fd = sn.pair.i; }
+    drawSlots(arrBox, cells, ov);
+    /* línea */
+    line.innerHTML = sn.j >= 0 ? 'j = ' + sn.j + ' · x = <b>' + sn.x + '</b> · busca k − x = ' + k + ' − ' + sn.x + ' = <b>' + sn.y + '</b>' : 'k = ' + k;
+    /* conjunto */
+    cellsHTML(setBox, sn.vistos.slice().sort((p, q) => p - q).map(v => {
+      let cls = 'q';
+      if (sn.kind === 'ask' && sn.hit && v === sn.y) cls = sn.pair && sn.pair.i === sn.pair.j ? 'bad' : 'found';
+      else if (sn.kind === 'add' && v === sn.x && !sn.had) cls = 'q new';
+      else if (sn.kind === 'ask' && !sn.hit) cls = 'q dim';
+      return { html: v, cls };
+    }), 'vacío');
+    /* traza */
+    logBody.innerHTML = sn.rows.length ? sn.rows.map((r, j) => {
+      const self = r.hit && a.indexOf(r.y) === r.j;
+      return '<tr' + (j === sn.rows.length - 1 && sn.kind === 'ask' ? ' class="on"' : '') + '><td>' + r.j + '</td><td>' + r.x + '</td><td>' + r.y + '</td><td>' + setTxt(r.before) + '</td><td class="' + (r.hit ? (self ? 'bad' : 'ok') : '') + '">' + (r.hit ? 'sí' + (self ? ' (es el mismo x)' : ' → ' + r.y + ' + ' + r.x) : 'no') + '</td></tr>';
+    }).join('') : '<tr><td colspan="5" class="h">Todavía no se ha preguntado nada.</td></tr>';
+    const self = !!(sn.pair && sn.pair.i === sn.pair.j);
+    /* código */
+    const okL = { init: [1], ask: [2, 3], add: [5], end: sn.ans ? [4] : [6] };
+    const badL = { init: [1], add: [2, 3], ask: [4], end: sn.ans ? [5] : [6] };
+    const lines = (st.mode === 'ok' ? okL : badL)[sn.kind] || [];
+    const pre = st.mode === 'ok' ? codeOk : codeBad, warn = st.mode === 'bad' && (sn.kind === 'add' || self);
+    hiLines(pre, warn ? [] : lines); hiLines(pre, warn ? lines : [], 'hibad');
+    /* respuesta */
+    if (sn.ans === null){ res.textContent = '…'; res.style.color = 'var(--muted)'; }
+    else if (sn.ans){ res.textContent = 'True' + (self ? ' · falso' : ' · ' + sn.pair.y + ' + ' + sn.pair.x + ' = ' + k); res.style.color = self ? '#C62828' : 'var(--sube)'; }
+    else { res.textContent = 'False · ningún par'; res.style.color = 'var(--ink)'; }
+    /* narración */
+    let t;
+    if (sn.kind === 'init') t = 'a = [' + a.join(', ') + '], k = ' + k + '. vistos empieza vacío. Para cada x ' + (st.mode === 'ok' ? 'se pregunta si k − x ya se vio, y después se anota x.' : '<b>se anota x y después</b> se pregunta si k − x ya se vio.');
+    else if (sn.kind === 'ask'){
+      const before = setTxt(sn.vistos);
+      if (!sn.hit) t = 'j = ' + sn.j + ', x = ' + sn.x + ': busca ' + sn.y + ' en vistos = ' + before + '. <b>No está.</b>' + (sn.y === sn.x ? ' Correcto aunque ' + sn.x + ' + ' + sn.x + ' = ' + k + ': no hay otro ' + sn.x + ' antes, y el enunciado exige i ≠ j.' : '');
+      else if (self){
+        t = 'j = ' + sn.j + ', x = ' + sn.x + ': busca ' + sn.y + ' y lo encuentra, pero es el ' + sn.x + ' que se acaba de anotar: i = j. <span class="bad">La función responde True con un solo ' + sn.x + '.</span>';
+        t += correct ? ' Existe otro par en la lista, así que la respuesta coincide por casualidad: la encontró por la razón equivocada.' : ' Y es falso: en esta lista ningún par de posiciones distintas suma ' + k + '.';
+      }
+      else t = 'j = ' + sn.j + ', x = ' + sn.x + ': busca ' + sn.y + ' en vistos = ' + before + '. <b>Está</b>: ' + sn.y + ' apareció antes, en la posición ' + sn.pair.i + '. Existe el par ' + sn.y + ' + ' + sn.x + ' = ' + k + '.';
+    }
+    else if (sn.kind === 'add'){
+      t = (sn.had ? sn.x + ' ya estaba en vistos; el conjunto no cambia.' : 'Anota ' + sn.x + ': vistos = ' + setTxt(sn.vistos) + '.');
+      t += st.mode === 'ok' ? ' Solo ahora, después de preguntar: así x nunca se empareja consigo mismo.' : ' <span class="bad">Antes de preguntar:</span> ahora ' + sn.x + ' está en vistos y, si k − x = x, se encuentra a sí mismo.';
+    }
+    else t = sn.ans ? (self ? '<b>Fin:</b> la función devolvió True con i = j. ' + (correct ? 'La respuesta correcta también es True, pero por otro par.' : '<span class="bad">La respuesta correcta es False.</span>') : '<b>Fin:</b> True. Recorrió ' + (sn.pair.j + 1) + ' de ' + a.length + ' elementos: n búsquedas e inserciones de Θ(1) promedio, Θ(n) en total.')
+      : '<b>Fin:</b> False. Ningún par de posiciones distintas suma ' + k + ': revisó los ' + a.length + ' elementos.';
+    narr.innerHTML = t;
+  }
+  const S = stepper('ts', { render });
+  modeSeg.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    st.mode = b.dataset.m; segPick(modeSeg, b);
+    if (st.mode === 'bad'){ st.a = DATA[1].a.slice(); st.k = DATA[1].k; }
+    build();
+  });
+  dataSeg.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const d = DATA[+b.dataset.i]; st.a = d.a.slice(); st.k = d.k; errEl.textContent = ''; build();
+  });
+  $('#tsApply').addEventListener('click', () => {
+    const p = parseInts(aIn.value, -999, 999, 12); if (p.err){ errEl.textContent = 'a: ' + p.err; return; }
+    const k = Math.round(+kIn.value);
+    if (kIn.value.trim() === '' || !(k >= -1998 && k <= 1998)){ errEl.textContent = 'k debe ser un entero entre −1998 y 1998.'; return; }
+    errEl.textContent = ''; st.a = p.vals; st.k = k; build();
+  });
+  build();
+})();
+
+/* ===== 07 · errores ===== */
+(function(){
+  const grid = $('#errGrid');
+  function chainRows(box, B, opts){
+    opts = opts || {};
+    box.innerHTML = '';
+    B.forEach((list, c) => {
+      const row = document.createElement('div'); row.className = 'brow' + (opts.on === c ? ' on' : '');
+      row.innerHTML = '<span class="bidx">' + c + '</span>';
+      const ch = document.createElement('div'); ch.className = 'chain';
+      if (!list.length) ch.innerHTML = '<div class="cell empty">[ ]</div>';
+      list.forEach((k, j) => {
+        const d = document.createElement('div');
+        d.className = 'cell ' + (opts.cls ? opts.cls(c, j, k) : 'q');
+        d.textContent = typeof k === 'object' ? k[0] + ':' + k[1] : k;
+        ch.appendChild(d);
+      });
+      row.appendChild(ch); box.appendChild(row);
+    });
+  }
+  const cards = [
+    { h: 'Una sola lista repetida m veces', sym: 'self.cajones = [[]] * m',
+      code: 'cajones = [[]] * 5          # INCORRECTO\ncajones[15 % 5].append(15)\nprint(cajones[3])           # [15]',
+      p: 'Las m entradas son la <b>misma</b> lista: cada clave aparece en todos los cajones a la vez. La tabla responde bien, pero cada búsqueda recorre las n claves: es un arreglo sin orden, Θ(n). La pregunta: ¿son m listas distintas? Use <code>[[] for _ in range(m)]</code>.',
+      build(root){
+        const KEYS = [15, 8, 22, 3, 10, 29], m = 5;
+        root.innerHTML = '<div class="two"><div><div class="rowlab"><b class="r-ok">[[] for _ in range(5)]</b></div><div class="buckets" data-a></div></div><div><div class="rowlab"><b class="r-bad">[[]] * 5</b></div><div class="buckets" data-b></div></div></div><p class="res" data-res></p><div class="act"><button data-go class="primary"></button><button data-rs>Reiniciar</button></div>';
+        const A = $('[data-a]', root), Bx = $('[data-b]', root), res = $('[data-res]', root), go = $('[data-go]', root);
+        let n = 0;
+        function draw(){
+          const ok = Array.from({ length: m }, () => []), shared = KEYS.slice(0, n);
+          shared.forEach(k => ok[k % m].push(k));
+          const last = n ? KEYS[n - 1] : null;
+          chainRows(A, ok, { on: last === null ? -1 : last % m, cls: (c, j, k) => k === last ? 'found' : 'q' });
+          chainRows(Bx, Array.from({ length: m }, () => shared), { cls: (c, j, k) => k === last ? 'bad' : 'q' });
+          res.innerHTML = n ? 'Insertó ' + last + ' en el cajón ' + (last % m) + '. Correcto: buscar ' + last + ' recorre ' + ok[last % m].length + (ok[last % m].length === 1 ? ' clave' : ' claves') + '. Con <code>[[]] * 5</code>: <b class="bad">' + n + (n === 1 ? ' clave' : ' claves') + '</b>, y el cajón 3 dice tener ' + (n === 1 ? 'la clave ' + shared[0] : 'las claves ' + shared.join(', ')) + '.' : 'Las dos tablas empiezan vacías.';
+          go.textContent = n < KEYS.length ? 'insertar ' + KEYS[n] : 'todas insertadas';
+          go.disabled = n >= KEYS.length;
+        }
+        go.addEventListener('click', () => { if (n < KEYS.length){ n++; draw(); } });
+        $('[data-rs]', root).addEventListener('click', () => { n = 0; draw(); });
+        draw();
+      } },
+    { h: 'Comparar hashes en lugar de claves', sym: 'if hash(clave) % m == hash(k) % m',
+      code: 'for clave, valor in self._cajon(k):\n    if hash(clave) % self.m == hash(k) % self.m:   # INCORRECTO\n        return valor',
+      p: 'Todas las claves de un mismo cajón tienen el mismo h: eso es lo que significa colisionar. Esta versión devuelve el valor de la <b>primera</b> clave del cajón, sea cual sea la clave buscada, y «encuentra» claves que nunca se insertaron. La pregunta: ¿comparo con <code>==</code> dentro del cajón?',
+      build(root){
+        const B = [[15, 'a'], [8, 'b'], [22, 'c']], m = 7;
+        root.innerHTML = '<div class="act" style="margin-top:0"><span class="mono" style="font-size:12px;color:var(--muted)">m = 7 · cajón 1 · buscar</span><div class="seg" data-q><button data-k="22">22</button><button data-k="29">29</button><button data-k="8">8</button></div></div><div class="rowlab"><b class="r-ok">compara clave == k</b></div><div class="buckets" data-a></div><div class="rowlab"><b class="r-bad">compara hash(clave) % m == hash(k) % m</b></div><div class="buckets" data-b></div><p class="res" data-res></p>';
+        const boxA = $('[data-a]', root), boxB = $('[data-b]', root), res = $('[data-res]', root), seg = $('[data-q]', root);
+        function draw(k){
+          const idx = k === null ? -2 : B.findIndex(p => p[0] === k);
+          const comps = idx === -1 ? B.length : idx + 1;
+          chainRows(boxA, [B], { on: k === null ? -1 : 0, cls: (c, j) => k === null ? 'q' : (j === idx ? 'found' : (j < comps ? 'q seen' : 'q')) });
+          chainRows(boxB, [B], { on: k === null ? -1 : 0, cls: (c, j) => k === null ? 'q' : (j === 0 ? (idx === 0 ? 'found' : 'bad') : 'q dim') });
+          $('.bidx', boxA).textContent = '1'; $('.bidx', boxB).textContent = '1';
+          if (k === null){ res.innerHTML = 'Escoja una clave. 29 nunca se insertó, pero 29 mod 7 = 1: cae en este mismo cajón.'; return; }
+          const okTxt = 'Con <code>==</code>: compara ' + B.slice(0, comps).map(p => p[0]).join(', ') + ' → ' + (idx === -1 ? '<b class="ok">None</b>, no está.' : '<b class="ok">«' + B[idx][1] + '»</b>.');
+          const badTxt = 'Con hashes: 15 mod 7 = 1 = ' + k + ' mod 7 ya en la primera comparación → <b class="' + (idx === 0 ? 'ok' : 'bad') + '">«a»</b>' +
+            (idx === -1 ? ', para una clave que nunca se insertó.' : (idx === 0 ? '.' : ', el valor de 15 y no el de ' + k + '.'));
+          res.innerHTML = okTxt + '<br>' + badTxt;
+        }
+        seg.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; segPick(seg, b); draw(+b.dataset.k); });
+        draw(null);
+      } },
+    { h: 'Borrar con VACÍA', sym: 'self.celdas[p] = VACIA',
+      code: 'def borrar(self, k):\n    p, _, _ = self._sondear(k)\n    if p != -1:\n        self.celdas[p] = VACIA      # INCORRECTO: rompe el invariante',
+      p: 'Después de borrar 13, la celda 2 queda VACÍA en la secuencia de 33, antes de su posición. Buscar 33 para ahí y responde que no está: el síntoma aparece en otra clave, lejos de la causa. La pregunta: ¿qué marca deja <code>borrar</code>? Debe ser una lápida.',
+      build(root){
+        const ops = HT.LP_GUIDE.slice(0, 11);
+        const tr = { tomb: HT.lpTrace(11, ops, 'tomb'), vacia: HT.lpTrace(11, ops, 'vacia') };
+        const seq = k => tr[k].filter(s => s.op === 10);
+        const S0 = { tomb: seq('tomb'), vacia: seq('vacia') };
+        root.innerHTML = '<div class="rowlab"><b class="r-ok">borrar 13 con lápida</b><span data-ra></span></div><div class="scroller"><div data-t></div></div><div class="rowlab"><b class="r-bad">borrar 13 con VACÍA</b><span data-rb></span></div><div class="scroller"><div data-v></div></div><div class="act"><button data-go class="primary">buscar 33</button></div>';
+        const bt = $('[data-t]', root), bv = $('[data-v]', root), ra = $('[data-ra]', root), rb = $('[data-rb]', root), go = $('[data-go]', root);
+        let timer = null;
+        function ovOf(sn){
+          const r = sn.rec, pr = r.pr.slice(0, sn.np), ov = { probed: pr };
+          if (sn.kind === 'probe') ov.cur = pr[pr.length - 1];
+          if (sn.kind === 'result'){ if (r.res === 'hit') ov.found = r.pos; else { ov.cur = pr[pr.length - 1]; const at = sn.cells.findIndex(c => c.s === 1 && c.k === r.k); if (at !== -1) ov.bad = [at]; } }
+          return ov;
+        }
+        function frame(t){
+          [['tomb', bt, ra], ['vacia', bv, rb]].forEach(([k, box, lab]) => {
+            const list = S0[k], sn = list[Math.min(t, list.length - 1)];
+            drawSlots(box, sn.cells, t < 0 ? {} : ovOf(sn), true);
+            if (t < 0) lab.textContent = '';
+            else if (sn.kind === 'result') lab.innerHTML = sn.rec.res === 'hit' ? '<b class="r-ok">celda ' + sn.rec.pos + ' · ' + sn.rec.pr.length + ' sondeos</b>' : '<b class="r-bad">«no está» · ' + sn.rec.pr.length + ' sondeos · falso</b>';
+            else lab.textContent = 'sondeo ' + sn.np;
+          });
+        }
+        function run(){
+          if (timer) clearInterval(timer);
+          let t = 0; const end = Math.max(S0.tomb.length, S0.vacia.length) - 1;
+          frame(0);
+          timer = setInterval(() => { t++; frame(t); if (t >= end){ clearInterval(timer); timer = null; } }, 650);
+        }
+        go.addEventListener('click', run);
+        const before = S0.tomb[0];
+        drawSlots(bt, before.cells, {}, true); drawSlots(bv, S0.vacia[0].cells, {}, true);
+      } },
+    { h: 'Insertar en la primera lápida sin terminar de buscar', sym: 'while ... is not BORRADA ...',
+      code: 'def insertar(self, k):                      # INCORRECTO\n    i = hash(k) % self.m\n    while self.celdas[i] is not VACIA and \\\n          self.celdas[i] is not BORRADA and self.celdas[i] != k:\n        i = (i + 1) % self.m\n    self.celdas[i] = k',
+      p: 'Si k ya estaba más adelante en su secuencia, detrás de una lápida, esta versión la guarda otra vez en la lápida. Ahora k está dos veces; al borrarla se quita una copia y la otra sigue apareciendo. La pregunta: ¿llegué a una VACÍA (o a m sondeos) antes de escoger dónde insertar?',
+      build(root){
+        const base = HT.lpTrace(11, HT.LP_GUIDE.slice(0, 10), 'tomb');
+        const start = base[base.length - 1].cells;
+        root.innerHTML = '<div class="rowlab"><b class="r-ok">correcto: busca hasta una VACÍA</b><span data-ra></span></div><div class="scroller"><div data-t></div></div><div class="rowlab"><b class="r-bad">incorrecto: para en la primera lápida</b><span data-rb></span></div><div class="scroller"><div data-v></div></div><div class="act"><button data-go class="primary"></button><button data-rs>Reiniciar</button></div><p class="res" data-res></p>';
+        const bt = $('[data-t]', root), bv = $('[data-v]', root), ra = $('[data-ra]', root), rb = $('[data-rb]', root), go = $('[data-go]', root), res = $('[data-res]', root);
+        const LABELS = ['insertar 33', 'borrar 33', 'buscar 33'];
+        let stage = 0, okC, badC;
+        function reset(){ stage = 0; okC = HT.copyCells(start); badC = HT.copyCells(start); drawSlots(bt, okC, {}, true); drawSlots(bv, badC, {}, true); ra.textContent = ''; rb.textContent = ''; res.innerHTML = 'Tabla de la guía después de borrar 13: la celda 2 es una lápida y 33 está en la celda 5.'; go.textContent = '1. ' + LABELS[0]; go.disabled = false; }
+        function step(){
+          if (stage === 0){
+            const r = HT.lpApply(okC, 11, { t: 'ins', k: 33 }, 'tomb');
+            const w = HT.lpInsertWrong(badC, 11, 33);
+            drawSlots(bt, okC, { probed: r.pr, found: r.pos }, true);
+            const twice = badC.map((c, i) => c.s === 1 && c.k === 33 ? i : -1).filter(i => i !== -1);
+            drawSlots(bv, badC, { probed: w.pr, bad: twice }, true);
+            ra.innerHTML = '<b class="r-ok">ya estaba en ' + r.pos + ' · ' + r.pr.length + ' sondeos</b>';
+            rb.innerHTML = '<b class="r-bad">guardada en ' + w.dest + ' · 33 dos veces</b>';
+            res.innerHTML = 'La versión correcta pasa por la lápida, llega a 33 en la celda 5 y no inserta. La incorrecta para en la lápida de la celda 2 y guarda otra copia.';
+          } else if (stage === 1){
+            const r1 = HT.lpApply(okC, 11, { t: 'del', k: 33 }, 'tomb');
+            const r2 = HT.lpApply(badC, 11, { t: 'del', k: 33 }, 'tomb');
+            drawSlots(bt, okC, { probed: r1.pr, cur: r1.dest }, true);
+            const left = badC.findIndex(c => c.s === 1 && c.k === 33);
+            drawSlots(bv, badC, { probed: r2.pr, cur: r2.dest, bad: left === -1 ? [] : [left] }, true);
+            ra.innerHTML = '<b class="r-ok">† en ' + r1.dest + '</b>';
+            rb.innerHTML = '<b class="r-bad">† en ' + r2.dest + ' · queda la copia de ' + left + '</b>';
+            res.innerHTML = 'Borrar quita la primera copia que encuentra. En la tabla incorrecta esa es la de la celda 2; la de la celda 5 sigue ahí.';
+          } else {
+            const r1 = HT.lpApply(okC, 11, { t: 'bus', k: 33 }, 'tomb');
+            const r2 = HT.lpApply(badC, 11, { t: 'bus', k: 33 }, 'tomb');
+            drawSlots(bt, okC, { probed: r1.pr, cur: r1.pr[r1.pr.length - 1] }, true);
+            drawSlots(bv, badC, { probed: r2.pr, bad: [r2.pos] }, true);
+            ra.innerHTML = '<b class="r-ok">no está · ' + r1.pr.length + ' sondeos</b>';
+            rb.innerHTML = '<b class="r-bad">encontrada en ' + r2.pos + ' · ' + r2.pr.length + ' sondeos</b>';
+            res.innerHTML = 'La clave borrada <b class="bad">revive</b> en la tabla incorrecta. El error se cometió dos operaciones antes.';
+          }
+          stage++;
+          go.textContent = stage < 3 ? (stage + 1) + '. ' + LABELS[stage] : 'fin';
+          go.disabled = stage >= 3;
+        }
+        go.addEventListener('click', step);
+        $('[data-rs]', root).addEventListener('click', reset);
+        reset();
+      } }
+  ];
+  cards.forEach(c => {
+    const d = document.createElement('div'); d.className = 'errcard';
+    d.innerHTML = '<h4>' + c.h + '</h4><div class="sym">' + c.sym + '</div>';
+    const w = document.createElement('div'); d.appendChild(w); c.build(w);
+    const pre = document.createElement('pre'); pre.textContent = c.code; d.appendChild(pre);
+    const p = document.createElement('p'); p.innerHTML = c.p; d.appendChild(p);
+    grid.appendChild(d);
+  });
+})();
+</script>
+</body>
+</html>

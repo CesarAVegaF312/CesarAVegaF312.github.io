@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Complemento visual: memoizacion y tabulacion sobre los dos problemas del taller.">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>El orden de la tabla</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --ground:#F1F0F5; --surface:#FDFCFF; --sunk:#E9E7F0;
+  --ink:#191826; --ink-2:#3D3A50; --muted:#6B687E; --line:#DFDCE8; --line-2:#CBC7DA;
+  --td:#BE5A0E;    /* arriba-abajo: la recursion que baja */
+  --bu:#00897B;    /* abajo-arriba: la tabla que sube */
+  --hit:#6D46E0;   /* estado ya resuelto que se reutiliza */
+  --td-soft:#F8E9DB; --bu-soft:#DBEFEC; --hit-soft:#E8E2FB;
+  --shadow:0 1px 2px rgba(25,24,38,.05), 0 10px 26px -18px rgba(25,24,38,.4);
+  --fd:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --fb:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --fm:'JetBrains Mono','Cascadia Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#131220; --surface:#1C1B25; --sunk:#232232;
+    --ink:#E9E7F2; --ink-2:#C3BFD3; --muted:#948FA8; --line:#2F2D3E; --line-2:#413E54;
+    --td:#CE7526; --bu:#0BA187; --hit:#8E76EC;
+    --td-soft:#372516; --bu-soft:#0D2C29; --hit-soft:#231D40;
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 26px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#131220; --surface:#1C1B25; --sunk:#232232;
+  --ink:#E9E7F2; --ink-2:#C3BFD3; --muted:#948FA8; --line:#2F2D3E; --line-2:#413E54;
+  --td:#CE7526; --bu:#0BA187; --hit:#8E76EC;
+  --td-soft:#372516; --bu-soft:#0D2C29; --hit-soft:#231D40;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 26px -18px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--fb);font-size:17px;line-height:1.62;
+  -webkit-font-smoothing:antialiased;padding:0 20px 80px}
+.wrap{max-width:1080px;margin:0 auto}
+h1,h2,h3,h4{font-family:var(--fd);text-wrap:balance;margin:0;line-height:1.15;letter-spacing:-.015em}
+p{margin:0}
+code{font-family:var(--fm);font-size:.85em}
+.eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500}
+a{color:var(--hit)}
+
+header.hero{padding:56px 0 34px;border-bottom:1px solid var(--line)}
+.hero h1{font-size:clamp(38px,6.4vw,64px);font-weight:800;max-width:15ch;margin-top:14px}
+.hero h1 em{font-style:normal;color:var(--td)}
+.hero .sub{margin-top:22px;max-width:63ch;font-size:19px;color:var(--ink-2)}
+.thesis{margin-top:26px;border-left:3px solid var(--hit);padding:2px 0 2px 18px;max-width:60ch;
+  font-size:19px;font-style:italic}
+.key{margin-top:30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--surface)}
+.key div{padding:14px 17px;border-right:1px solid var(--line)}
+.key div:last-child{border-right:0}
+.key b{font-family:var(--fd);font-size:14.5px;display:flex;align-items:center;gap:9px;font-weight:600}
+.key .dot{width:13px;height:13px;border-radius:2px;flex:none}
+.key p{font-size:14px;color:var(--muted);margin-top:4px;line-height:1.45}
+
+section.lab{padding:54px 0;border-bottom:1px solid var(--line)}
+.lab-head{display:flex;gap:15px;align-items:baseline}
+.lab-num{font-family:var(--fm);font-size:12px;font-weight:700;color:var(--td);letter-spacing:.08em;flex:none}
+.lab h2{font-size:clamp(25px,3.4vw,34px);font-weight:600}
+.lab .lede{max-width:65ch;margin-top:13px;color:var(--ink-2)}
+.stage{margin-top:26px;background:var(--surface);border:1px solid var(--line);border-radius:4px;
+  box-shadow:var(--shadow);overflow:hidden}
+.stage-body{padding:22px}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 292px}
+.split>.rail{border-left:1px solid var(--line);padding:20px;background:var(--sunk);min-width:0}
+@media (max-width:860px){.split{grid-template-columns:1fr}.split>.rail{border-left:0;border-top:1px solid var(--line)}}
+
+.ctl{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);
+  background:var(--sunk)}
+button{font-family:var(--fd);font-size:14px;font-weight:600;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:3px;padding:6px 12px;cursor:pointer;line-height:1.25}
+button:hover:not(:disabled){border-color:var(--ink-2)}
+button:disabled{opacity:.35;cursor:default}
+button.primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+button.on{background:var(--hit);border-color:var(--hit);color:#fff}
+:focus-visible{outline:2px solid var(--hit);outline-offset:2px}
+.ctl label{font-family:var(--fm);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.step-count{font-family:var(--fm);font-size:12px;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:3px;overflow:hidden}
+.seg button{border:0;border-radius:0;border-right:1px solid var(--line-2)}
+.seg button:last-child{border-right:0}
+
+.mono{font-family:var(--fm)}
+.rail h4,.blockhead{font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);font-weight:500;margin-bottom:11px}
+.rail-block+.rail-block{margin-top:24px}
+.narration{font-size:15px;color:var(--ink-2);line-height:1.5}
+.narration b{color:var(--ink);font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--fm);font-size:11.5px;font-weight:500;
+  padding:3px 8px;border-radius:2px;border:1px solid var(--line-2);color:var(--muted);background:var(--surface)}
+.pill.td{color:var(--td);border-color:var(--td);background:var(--td-soft)}
+.pill.bu{color:var(--bu);border-color:var(--bu);background:var(--bu-soft)}
+.pill.hit{color:var(--hit);border-color:var(--hit);background:var(--hit-soft)}
+figure{margin:0}
+figcaption{font-size:14.5px;color:var(--muted);margin-top:13px;line-height:1.5;max-width:72ch}
+.scroller{overflow-x:auto;padding-bottom:4px}
+pre{font-family:var(--fm);font-size:12.5px;line-height:1.65;background:var(--sunk);border:1px solid var(--line);
+  border-radius:3px;padding:14px 16px;overflow-x:auto;margin:0;color:var(--ink-2)}
+.stat-row{display:flex;gap:24px;flex-wrap:wrap}
+.stat b{display:block;font-family:var(--fd);font-size:24px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{font-family:var(--fm);font-size:10.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.note{margin-top:24px;padding:16px 19px;background:var(--hit-soft);border:1px solid var(--hit);
+  border-radius:3px;font-size:15.5px;max-width:75ch}
+.note b{font-family:var(--fd)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---- carriles de estrategia (lab 01) ---- */
+.lane{padding:20px 22px}
+.lane+.lane{border-top:1px solid var(--line)}
+.lane-head{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin-bottom:14px}
+.lane-head h3{font-size:18px;font-weight:600}
+.lane-head .sig{font-family:var(--fm);font-size:12px;color:var(--muted)}
+.lane-head .done{margin-left:auto;font-family:var(--fm);font-size:11.5px;font-weight:700}
+.cells{display:flex;gap:4px;min-width:min-content}
+.cell{width:40px;flex:none;border:1px solid var(--line-2);border-radius:3px;background:var(--surface);
+  padding:3px 0 5px;text-align:center;position:relative;transition:background .15s,border-color .15s}
+.cell .idx{display:block;font-family:var(--fm);font-size:9.5px;color:var(--muted);line-height:1.4}
+.cell .val{display:block;font-family:var(--fm);font-size:15px;font-weight:700;line-height:1.5;color:var(--line-2)}
+.cell .ord{position:absolute;top:-7px;right:-6px;width:17px;height:17px;border-radius:9px;display:grid;
+  place-items:center;font-family:var(--fm);font-size:9.5px;font-weight:700;color:#fff;background:var(--muted)}
+.cell.filled .val{color:var(--ink)}
+.cell.filled.td-c{border-color:var(--td)}
+.cell.filled.td-c .ord{background:var(--td)}
+.cell.filled.bu-c{border-color:var(--bu)}
+.cell.filled.bu-c .ord{background:var(--bu)}
+.cell.cur{box-shadow:0 0 0 2px var(--ink)}
+.cell.cur.td-c{background:var(--td-soft)}
+.cell.cur.bu-c{background:var(--bu-soft)}
+/* .filled.td-c ya fija border-color con 3 clases: la dependencia debe empatarle y ganar por orden */
+.cell.dep,.cell.filled.dep{background:var(--hit-soft);border-color:var(--hit)}
+.cell.never{border-style:dashed;opacity:.55}
+.cell.never .val{color:var(--muted)}
+.cell .flag{position:absolute;bottom:-16px;left:0;right:0;font-family:var(--fm);font-size:9px;color:var(--hit)}
+.laneinfo{display:flex;gap:22px;flex-wrap:wrap;align-items:center;margin-top:24px}
+.stackstrip{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.schip{font-family:var(--fm);font-size:11.5px;padding:2px 7px;border-radius:2px;border:1px solid var(--td);
+  color:var(--td);background:var(--td-soft)}
+.schip.last{background:var(--td);color:#fff}
+.sarrow{font-family:var(--fm);font-size:11px;color:var(--muted)}
+
+/* ---- escalera (lab 04) ---- */
+.stairgrid{display:flex;gap:6px;min-width:min-content}
+.stair{width:78px;flex:none;text-align:center}
+.stair .cost{font-family:var(--fm);font-size:12px;color:var(--muted);border:1px solid var(--line);
+  border-radius:3px 3px 0 0;padding:4px 0;background:var(--sunk)}
+.stair .fv{font-family:var(--fm);font-size:17px;font-weight:700;border:1px solid var(--line-2);border-top:0;
+  border-radius:0 0 3px 3px;padding:7px 0;color:var(--line-2);background:var(--surface)}
+.stair.filled .fv{color:var(--ink);border-color:var(--bu)}
+.stair.cur .fv{background:var(--bu-soft);box-shadow:0 0 0 2px var(--bu)}
+.stair.dep .fv{background:var(--hit-soft);border-color:var(--hit)}
+.stair.path .fv{background:var(--bu);color:#fff;border-color:var(--bu)}
+.stair .lbl{font-family:var(--fm);font-size:9.5px;color:var(--muted);margin-top:4px}
+.window{display:flex;gap:10px;margin-top:6px}
+.wvar{border:1px solid var(--line-2);border-radius:3px;padding:7px 12px;font-family:var(--fm);font-size:12.5px;
+  background:var(--surface)}
+.wvar b{display:block;font-size:16px;color:var(--bu);font-weight:700}
+
+/* ---- decision (lab 05) ---- */
+.choose{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}
+@media (max-width:800px){.choose{grid-template-columns:1fr}}
+.ccard{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:20px 21px;box-shadow:var(--shadow)}
+.ccard.a{border-top:3px solid var(--td)}
+.ccard.b{border-top:3px solid var(--bu)}
+.ccard h3{font-size:19px;font-weight:600}
+.ccard .tag{font-family:var(--fm);font-size:11.5px;color:var(--muted);margin:3px 0 14px}
+.ccard ul{margin:0;padding-left:19px;font-size:15px;color:var(--ink-2);line-height:1.55}
+.ccard li{margin-bottom:8px}
+.ccard li b{color:var(--ink);font-weight:600}
+table.cmp{border-collapse:collapse;width:100%;margin-top:26px;font-size:15px}
+table.cmp th{text-align:left;font-family:var(--fm);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);font-weight:500;padding:9px 12px;border-bottom:1px solid var(--line-2)}
+table.cmp td{padding:11px 12px;border-bottom:1px solid var(--line);color:var(--ink-2);vertical-align:top}
+table.cmp td:first-child{color:var(--ink);font-weight:600;font-family:var(--fd);font-size:14.5px}
+table.cmp tr td:nth-child(2){border-left:2px solid var(--td-soft)}
+table.cmp tr td:nth-child(3){border-left:2px solid var(--bu-soft)}
+
+/* ---- codigo triple (lab 06) ---- */
+.tri{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:26px}
+@media (max-width:900px){.tri{grid-template-columns:1fr}}
+.tri h4{font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+  font-weight:500;margin-bottom:9px}
+pre .same{background:var(--bu-soft);color:var(--ink);display:inline-block;width:100%;box-shadow:inset 2px 0 0 var(--bu)}
+pre .add{background:var(--hit-soft);color:var(--ink);display:inline-block;width:100%;box-shadow:inset 2px 0 0 var(--hit)}
+footer{padding:46px 0 0;color:var(--muted);font-size:15px;max-width:70ch}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <p class="eyebrow">Taller de memoización · Estructuras de datos y algoritmos</p>
+  <h1>El orden de <em>la tabla</em></h1>
+  <p class="sub">Memoización y tabulación resuelven los mismos estados, con la misma recurrencia y la misma
+  complejidad. Suenan a dos técnicas distintas y no lo son. Lo único que cambia —&nbsp;y cambia todo lo
+  demás&nbsp;— es <b>quién decide el orden</b> en que se llenan las casillas.</p>
+  <p class="thesis">Con memoización, el orden lo descubre la recursión sola. Con tabulación, el orden lo elige
+  usted, y tiene que acertar.</p>
+  <div class="key">
+    <div><b><span class="dot" style="background:var(--td)"></span>Arriba&nbsp;→&nbsp;abajo</b>
+      <p>Memoización. Arranca en el problema grande y baja pidiendo lo que necesita.</p></div>
+    <div><b><span class="dot" style="background:var(--bu)"></span>Abajo&nbsp;→&nbsp;arriba</b>
+      <p>Tabulación. Arranca en los casos base y sube llenando en un orden fijo.</p></div>
+    <div><b><span class="dot" style="background:var(--hit)"></span>Estado reutilizado</b>
+      <p>La casilla de la que depende el cálculo actual, ya resuelta antes.</p></div>
+  </div>
+</header>
+
+<!-- ============ 1 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">01</span>
+    <h2>La misma tabla, dos órdenes de llenado</h2></div>
+  <p class="lede">Problema 1 del taller: mínimo número de monedas para formar exactamente <code>C</code>.
+  El estado es <code>c</code> = valor que falta por formar, y hay una casilla por cada
+  <code>c</code> entre 0 y C. Las dos estrategias llenan esas casillas; avance el reloj y compare
+  <b>cuál casilla llena cada una en el mismo instante</b>. El número en el círculo es el turno de llenado.</p>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="coin">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <button data-act="play" id="coinPlay">▶ Reproducir</button>
+      <div class="seg" id="coinSets"></div>
+      <span class="step-count" data-role="count"></span>
+    </div>
+
+    <div class="lane">
+      <div class="lane-head">
+        <h3>Memoización</h3><span class="pill td">arriba → abajo</span>
+        <span class="sig">f(c) = 1 + min f(c − m) · empieza en f(C)</span>
+        <span class="done" id="tdDone"></span>
+      </div>
+      <div class="scroller" style="padding:10px 0 20px"><div class="cells" id="tdCells"></div></div>
+      <div class="laneinfo">
+        <div class="stat"><b id="tdCount">0</b><span>casillas llenas</span></div>
+        <div style="min-width:0">
+          <div class="blockhead" style="margin-bottom:6px">Pila de llamadas ahora</div>
+          <div class="stackstrip" id="tdStack"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lane">
+      <div class="lane-head">
+        <h3>Tabulación</h3><span class="pill bu">abajo → arriba</span>
+        <span class="sig">t[0] = 0 · luego c = 1, 2, 3, … , C</span>
+        <span class="done" id="buDone"></span>
+      </div>
+      <div class="scroller" style="padding:10px 0 20px"><div class="cells" id="buCells"></div></div>
+      <div class="laneinfo">
+        <div class="stat"><b id="buCount">0</b><span>casillas llenas</span></div>
+        <div style="min-width:0">
+          <div class="blockhead" style="margin-bottom:6px">Pila de llamadas ahora</div>
+          <div class="stackstrip"><span class="schip" style="border-color:var(--bu);color:var(--bu);
+            background:var(--bu-soft)">ninguna · es un bucle</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lane" style="background:var(--sunk)">
+      <p class="narration" id="coinNarr" style="min-height:3em"></p>
+    </div>
+  </div>
+  <p class="note" id="coinNote"></p>
+</section>
+
+<!-- ============ 2 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">02</span>
+    <h2>Por qué el orden de la tabulación no es libre</h2></div>
+  <p class="lede">La memoización nunca se equivoca de orden porque no elige ninguno: si necesita
+  <code>f(c−m)</code>, lo pide y espera. La tabulación no puede esperar a nadie —&nbsp;cuando llega a una
+  casilla, lo que necesite ya tiene que estar escrito. Ese es todo el requisito, y esta figura lo muestra.</p>
+
+  <figure style="margin-top:26px">
+    <div class="scroller"><svg id="orderSvg" role="img" aria-label="Todas las dependencias de la tabla de monedas apuntan hacia la izquierda, por eso llenarla de izquierda a derecha funciona y de derecha a izquierda no"></svg></div>
+    <figcaption>Con <code>M = [3, 7]</code>, cada casilla depende de <code>c−3</code> y <code>c−7</code>:
+    <b>todas las flechas apuntan a la izquierda</b>. Por eso recorrer de 0 hacia C siempre encuentra sus
+    dependencias listas, y recorrer al revés lee casillas vacías. Un orden de llenado válido es exactamente un
+    orden topológico de este grafo; la memoización encuentra uno gratis.</figcaption>
+  </figure>
+
+  <p class="note"><b>Cómo se detecta el error en la práctica.</b> Si tabula en mal orden, el programa
+  <em>no</em> falla: lee el valor inicial de la casilla (0, o infinito) y devuelve una respuesta silenciosamente
+  incorrecta. Es el error más difícil de ver en programación dinámica. La prueba rápida: para cada término
+  <code>t[c−m]</code> de su transición, pregúntese si el bucle ya pasó por <code>c−m</code>.</p>
+</section>
+
+<!-- ============ 3 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">03</span>
+    <h2>El muro que solo golpea la recursión</h2></div>
+  <p class="lede">Las dos estrategias hacen el mismo trabajo, pero la memoización lo apila. Cada llamada
+  pendiente ocupa un marco, y Python corta a las 1000 llamadas anidadas. La tabulación no apila nada: su
+  profundidad es 1 sin importar el tamaño de la entrada.</p>
+
+  <figure style="margin-top:26px">
+    <div class="scroller"><svg id="depthSvg" role="img" aria-label="La profundidad de pila de la memoización crece linealmente con C y cruza el límite de recursión de Python, mientras la de tabulación es constante"></svg></div>
+    <figcaption>Profundidad máxima de pila para el problema de monedas cuando existe la denominación 1
+    (el peor caso: la cadena <code>C → C−1 → C−2 → …</code>). Se puede subir el tope con
+    <code>sys.setrecursionlimit</code>, pero eso solo traslada el problema a la pila del sistema operativo,
+    donde el fallo ya no es una excepción sino una caída del proceso.</figcaption>
+  </figure>
+</section>
+
+<!-- ============ 4 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">04</span>
+    <h2>La escalera, y la tabla que se encoge</h2></div>
+  <p class="lede">Problema 2 del taller: costo mínimo para llegar al último escalón subiendo de 1 o de 2.
+  Aquí la tabulación se gana algo que la memoización no puede dar: como el bucle avanza en orden y
+  <code>f(i)</code> solo mira dos casillas hacia atrás, <b>no hace falta guardar la tabla entera</b>. Dos
+  variables bastan.</p>
+
+  <div class="stage">
+    <div class="ctl" data-ctl="stair">
+      <button data-act="reset">⟲ Reiniciar</button>
+      <button data-act="prev">◀ Atrás</button>
+      <button data-act="next" class="primary">Adelante ▶</button>
+      <div class="seg" id="stairSets"></div>
+      <span class="step-count" data-role="count"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <div class="scroller" style="padding-bottom:10px"><div class="stairgrid" id="stairGrid"></div></div>
+        <div style="margin-top:22px">
+          <div class="blockhead">La misma cuenta, sin tabla · espacio O(1)</div>
+          <div class="window" id="stairWin"></div>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué está pasando</h4><p class="narration" id="stairNarr" style="min-height:6em"></p></div>
+        <div class="rail-block"><h4>La recurrencia</h4>
+          <pre>f(i) = {
+  costo[0]        si i = 0
+  costo[1]        si i = 1
+  costo[i] +
+    min( f(i−1),
+         f(i−2) ) si i &gt; 1
+}
+respuesta = f(n−1)</pre></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>Esta compresión no existe con memoización.</b> El diccionario se llena en orden de
+  descubrimiento, no de izquierda a derecha, así que en cualquier momento puede volver a pedirse una casilla
+  vieja. Solo cuando usted controla el orden puede afirmar «de aquí en adelante nadie va a mirar esa casilla»
+  y botarla.</p>
+</section>
+
+<!-- ============ 5 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">05</span>
+    <h2>Cuál usar, y por qué</h2></div>
+  <p class="lede">Ninguna es «la buena». Las dos tienen la misma complejidad asintótica: número de estados
+  por costo de cada transición. La decisión se toma por otras tres razones —&nbsp;cobertura de estados,
+  profundidad de pila y espacio.</p>
+
+  <div class="choose">
+    <div class="ccard a">
+      <h3>Prefiera memoización</h3>
+      <p class="tag">arriba → abajo · recursión + diccionario</p>
+      <ul>
+        <li><b>Cuando solo se alcanza una parte de los estados.</b> Con <code>M = [3,7]</code> y
+        <code>C = 20</code> visita 15 de 21 casillas; con <code>M = [4,6]</code> y <code>C = 15</code>, apenas
+        7 de 16. La tabulación llena todas, útiles o no.</li>
+        <li><b>Cuando el orden topológico es incómodo de escribir.</b> Estados con varios índices, o
+        transiciones que saltan, se vuelven un rompecabezas de bucles anidados. La recursión no lo necesita.</li>
+        <li><b>Cuando ya tiene la recurrencia.</b> Es traducción casi literal: agregar el diccionario y dos
+        líneas. Menos superficie para equivocarse.</li>
+      </ul>
+    </div>
+    <div class="ccard b">
+      <h3>Prefiera tabulación</h3>
+      <p class="tag">abajo → arriba · bucle + arreglo</p>
+      <ul>
+        <li><b>Cuando de todos modos va a visitar casi todos los estados.</b> Ahí la recursión solo agrega
+        costo: marcos de pila y búsquedas en el diccionario.</li>
+        <li><b>Cuando la entrada es grande.</b> Es la única de las dos que no se estrella contra el límite de
+        recursión, como se ve en el laboratorio 03.</li>
+        <li><b>Cuando el espacio importa.</b> Controlar el orden es lo que permite botar lo que ya nadie va a
+        mirar y bajar de O(n) a O(1), como en la escalera.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="scroller"><table class="cmp">
+    <thead><tr><th></th><th>Memoización</th><th>Tabulación</th></tr></thead>
+    <tbody>
+      <tr><td>Quién fija el orden</td><td>la recursión, sola</td><td>usted, y tiene que acertar</td></tr>
+      <tr><td>Estados que toca</td><td>solo los alcanzables desde la respuesta</td><td>todos los del rango</td></tr>
+      <tr><td>Profundidad de pila</td><td>hasta la longitud de la cadena más larga</td><td>1</td></tr>
+      <tr><td>Espacio de la tabla</td><td>la tabla completa</td><td>completa, o una ventana si el orden lo permite</td></tr>
+      <tr><td>Si el orden está mal</td><td>no aplica: no hay orden que equivocar</td><td>respuesta incorrecta, sin error visible</td></tr>
+      <tr><td>Complejidad</td><td colspan="2" style="border-left:2px solid var(--hit-soft)">la misma: estados × transiciones</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section class="lab" style="border-bottom:0">
+  <div class="lab-head"><span class="lab-num">◆</span>
+    <h2>La misma recurrencia, escrita tres veces</h2></div>
+  <p class="lede">Problema 1 del taller, en las tres formas. Las líneas verdes son <b>la recurrencia</b>: la
+  transición y el caso base. Son la misma en las tres. Lo morado es lo único que agrega cada técnica.</p>
+
+  <div class="tri">
+    <div><h4>1 · recurrencia pura</h4>
+<pre>def monedas(C, M):
+<span class="same">    if C == 0:</span>
+<span class="same">        return 0</span>
+
+
+    mejor = INF
+<span class="same">    for m in M:</span>
+<span class="same">        if C - m &gt;= 0:</span>
+<span class="same">            mejor = min(mejor,</span>
+<span class="same">                1 + monedas(C-m, M))</span>
+
+    return mejor</pre></div>
+    <div><h4>2 · memoización</h4>
+<pre>def monedas(C, M, memo=None):
+<span class="add">    if memo is None: memo = {}</span>
+<span class="same">    if C == 0:</span>
+<span class="same">        return 0</span>
+<span class="add">    if C in memo:</span>
+<span class="add">        return memo[C]</span>
+    mejor = INF
+<span class="same">    for m in M:</span>
+<span class="same">        if C - m &gt;= 0:</span>
+<span class="same">            mejor = min(mejor,</span>
+<span class="same">                1 + monedas(C-m, M, memo))</span>
+<span class="add">    memo[C] = mejor</span>
+    return mejor</pre></div>
+    <div><h4>3 · tabulación</h4>
+<pre>def monedas(C, M):
+<span class="add">    t = [INF] * (C + 1)</span>
+<span class="same">    t[0] = 0</span>
+<span class="add">    for c in range(1, C + 1):</span>
+
+
+<span class="same">        for m in M:</span>
+<span class="same">            if c - m &gt;= 0:</span>
+<span class="same">                t[c] = min(t[c],</span>
+<span class="same">                    1 + t[c - m])</span>
+
+<span class="add">    return t[C]</span></pre></div>
+  </div>
+
+  <p class="note"><b>El caso «NO ES POSIBLE».</b> En las tres, un valor que sigue en <code>INF</code> al final
+  significa que no existe combinación. Con <code>M = [4,6]</code> y <code>C = 15</code> pasa exactamente eso:
+  todo objetivo impar es inalcanzable. Devuelva el texto en la capa de salida, no dentro de la recurrencia
+  —&nbsp;la recurrencia debe seguir devolviendo números para poder combinarse.</p>
+
+  <footer>
+    <p>Complemento visual del <em>Taller: Programación Dinámica con Memoización</em>, sobre sus dos problemas.
+    Sugerencia de uso en clase: abra el laboratorio 01 en <code>M = [3,7]</code>, pregunte en qué turno cada
+    estrategia llena la casilla 14, y solo después cambie a <code>M = [1,5,10]</code> —&nbsp;el ejemplo del
+    taller— para que vean el caso en que los dos órdenes coinciden y la diferencia parece desaparecer.</p>
+  </footer>
+</section>
+</div>
+
+<script>
+const $ = (s, r) => (r || document).querySelector(s);
+const SVGNS = 'http://www.w3.org/2000/svg';
+/* var() no resuelve de forma fiable en atributos de presentacion SVG: lo enrutamos a style */
+function el(tag, attrs, text){
+  const n = document.createElementNS(SVGNS, tag);
+  let style = '';
+  for (const k in attrs){
+    const v = String(attrs[k]);
+    if (v.indexOf('var(') !== -1) style += k + ':' + v + ';';
+    else n.setAttribute(k, v);
+  }
+  if (style) n.setAttribute('style', style);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function stepper(name, opts){
+  const bar = document.querySelector('[data-ctl="' + name + '"]');
+  const st = { i: 0, total: 0 };
+  const count = $('[data-role="count"]', bar);
+  function paint(){
+    st.i = Math.max(0, Math.min(st.total, st.i));
+    opts.render(st.i);
+    count.textContent = 'paso ' + st.i + ' / ' + st.total;
+    $('[data-act="prev"]', bar).disabled = st.i === 0;
+    $('[data-act="next"]', bar).disabled = st.i === st.total;
+  }
+  bar.addEventListener('click', e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const a = b.dataset.act;
+    if (a === 'next') st.i++; else if (a === 'prev') st.i--; else if (a === 'reset') st.i = 0;
+    if (a !== 'play') paint();
+  });
+  st.reload = (total, start) => { st.total = total; st.i = start === undefined ? total : start; paint(); };
+  st.paint = paint;
+  return st;
+}
+const fmt = v => (v === Infinity ? '∞' : String(v));
+
+/* ===== 01 · monedas: memoizacion vs tabulacion ===== */
+(function(){
+  const SETS = [
+    { label: 'M=[3,7] · C=20', M: [3, 7], C: 20 },
+    { label: 'M=[1,5,10] · C=11', M: [1, 5, 10], C: 11 },
+    { label: 'M=[4,6] · C=15', M: [4, 6], C: 15 }
+  ];
+  const tdCells = $('#tdCells'), buCells = $('#buCells'), narr = $('#coinNarr'), note = $('#coinNote');
+  const tdStack = $('#tdStack'), seg = $('#coinSets'), btnPlay = $('#coinPlay');
+  const tdCount = $('#tdCount'), buCount = $('#buCount'), tdDone = $('#tdDone'), buDone = $('#buDone');
+  let cur = SETS[0], td = [], bu = [], calls = 0, timer = null;
+
+  /* memoizacion: registra el orden real en que se resuelve cada estado */
+  function buildTD(C, M){
+    const memo = new Map(), fills = [], stack = [];
+    calls = 0;
+    (function f(c){
+      calls++;
+      if (memo.has(c)) return memo.get(c);
+      stack.push(c);
+      let best = c === 0 ? 0 : Infinity, deps = [];
+      if (c > 0) for (const m of M) if (c - m >= 0){ deps.push(c - m); const r = f(c - m); if (r + 1 < best) best = r + 1; }
+      memo.set(c, best);
+      fills.push({ c: c, v: best, deps: deps, stack: stack.slice() });
+      stack.pop();
+      return best;
+    })(C);
+    return fills;
+  }
+  /* tabulacion: el orden lo fija el bucle */
+  function buildBU(C, M){
+    const t = new Array(C + 1).fill(Infinity); t[0] = 0;
+    const fills = [];
+    for (let c = 0; c <= C; c++){
+      const deps = [];
+      if (c > 0) for (const m of M) if (c - m >= 0){ deps.push(c - m); if (t[c - m] + 1 < t[c]) t[c] = t[c - m] + 1; }
+      fills.push({ c: c, v: t[c], deps: deps, stack: null });
+    }
+    return fills;
+  }
+  SETS.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.textContent = s.label;
+    b.addEventListener('click', () => pick(i));
+    seg.appendChild(b);
+  });
+  function pick(i){
+    cur = SETS[i];
+    [...seg.children].forEach((b, j) => b.classList.toggle('on', i === j));
+    td = buildTD(cur.C, cur.M); bu = buildBU(cur.C, cur.M);
+    const nunca = cur.C + 1 - td.length;
+    note.innerHTML = '<b>Lo que acaba de pasar.</b> Para <span class="mono">' + cur.label + '</span>, la ' +
+      'memoización resolvió <b>' + td.length + '</b> de las ' + (cur.C + 1) + ' casillas' +
+      (nunca > 0 ? ' y <b>nunca miró ' + nunca + '</b> (las de borde punteado): son valores desde los que ' +
+        'no se puede llegar a C, así que calcularlos habría sido trabajo perdido.'
+                 : ' — es decir, todas. Cuando existe la denominación 1, todo estado es alcanzable y ' +
+                   'los dos órdenes terminan coincidiendo; por eso este ejemplo, el del taller, esconde la ' +
+                   'diferencia.') +
+      ' Hizo <b>' + calls + '</b> llamadas en total, de las cuales <b>' + (calls - td.length) + '</b> fueron ' +
+      'aciertos de caché: llamadas que encontraron el estado ya resuelto y volvieron de inmediato.';
+    S.reload(Math.max(td.length, bu.length));
+  }
+  function renderLane(host, fills, k, kind, C){
+    const done = Math.min(k, fills.length);
+    const byC = new Map();
+    for (let i = 0; i < done; i++) byC.set(fills[i].c, { v: fills[i].v, ord: i + 1 });
+    const current = done > 0 && done === k ? fills[done - 1] : null;
+    const deps = new Set(current ? current.deps : []);
+    const finished = k >= fills.length;
+    host.innerHTML = '';
+    for (let c = 0; c <= C; c++){
+      const d = document.createElement('div');
+      const got = byC.get(c);
+      let cls = 'cell ' + kind;
+      if (got) cls += ' filled';
+      if (current && current.c === c) cls += ' cur';
+      else if (deps.has(c)) cls += ' dep';
+      if (!got && finished) cls += ' never';
+      d.className = cls;
+      d.innerHTML = '<span class="idx">' + c + '</span><span class="val">' + (got ? fmt(got.v) : '·') + '</span>' +
+        (got ? '<span class="ord">' + got.ord + '</span>' : '');
+      host.appendChild(d);
+    }
+    return { done: done, finished: finished, current: current };
+  }
+  const S = stepper('coin', { render(k){
+    const a = renderLane(tdCells, td, k, 'td-c', cur.C);
+    const b = renderLane(buCells, bu, k, 'bu-c', cur.C);
+    tdCount.textContent = a.done + ' / ' + (cur.C + 1);
+    buCount.textContent = b.done + ' / ' + (cur.C + 1);
+    tdDone.textContent = a.finished && k > 0 ? '✓ terminó en el turno ' + td.length : '';
+    tdDone.style.color = 'var(--td)';
+    buDone.textContent = b.finished && k > 0 ? '✓ terminó en el turno ' + bu.length : '';
+    buDone.style.color = 'var(--bu)';
+    /* pila de la memoizacion en el instante actual */
+    tdStack.innerHTML = '';
+    const stk = a.current ? a.current.stack : null;
+    if (!stk) tdStack.innerHTML = '<span class="sarrow">' + (k === 0 ? 'todavía no arranca'
+      : 'ya terminó · la pila quedó vacía') + '</span>';
+    else stk.forEach((c, i) => {
+      if (i) tdStack.appendChild(Object.assign(document.createElement('span'),
+        { className: 'sarrow', textContent: '↓' }));
+      const s = document.createElement('span');
+      s.className = 'schip' + (i === stk.length - 1 ? ' last' : '');
+      s.textContent = 'f(' + c + ')';
+      tdStack.appendChild(s);
+    });
+    if (k === 0){
+      narr.innerHTML = 'Las dos tablas están vacías. La memoización va a empezar por <b>f(' + cur.C + ')</b>, ' +
+        'la casilla de más a la derecha; la tabulación por <b>t[0]</b>, la de más a la izquierda.';
+      return;
+    }
+    const at = a.current, bt = b.current;
+    let txt = '<b>Turno ' + k + '.</b> ';
+    if (at) txt += 'Memoización resuelve <b>f(' + at.c + ') = ' + fmt(at.v) + '</b>' +
+      (at.stack.length > 1 ? ', tras bajar ' + (at.stack.length - 1) + ' nivel' +
+        (at.stack.length > 2 ? 'es' : '') + ' desde f(' + cur.C + ')' : '') + '. ';
+    else txt += 'Memoización ya terminó. ';
+    if (bt) txt += 'Tabulación llena <b>t[' + bt.c + '] = ' + fmt(bt.v) + '</b>, la siguiente en la fila.';
+    else txt += 'Tabulación ya terminó.';
+    if (at && bt && at.c !== bt.c) txt += ' <b>En el mismo instante están en casillas distintas</b> — esa es ' +
+      'toda la diferencia entre las dos técnicas.';
+    narr.innerHTML = txt;
+  }});
+  btnPlay.addEventListener('click', () => {
+    if (timer){ clearInterval(timer); timer = null; btnPlay.textContent = '▶ Reproducir'; btnPlay.classList.remove('on'); return; }
+    if (S.i >= S.total) S.i = 0;
+    btnPlay.textContent = '❙❙ Pausa'; btnPlay.classList.add('on');
+    timer = setInterval(() => {
+      if (S.i >= S.total){ clearInterval(timer); timer = null; btnPlay.textContent = '▶ Reproducir'; btnPlay.classList.remove('on'); return; }
+      S.i++; S.paint();
+    }, 520);
+  });
+  pick(0);
+})();
+
+/* ===== 02 · el orden valido ===== */
+(function(){
+  const svg = $('#orderSvg');
+  const C = 12, M = [3, 7], CW = 52, GAP = 6, L = 20, TOP = 96;
+  const W = L * 2 + (C + 1) * (CW + GAP), H = 240;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  svg.style.maxWidth = 'none'; svg.style.height = 'auto';
+  const cx = c => L + c * (CW + GAP) + CW / 2;
+  /* arcos de dependencia, todos hacia la izquierda */
+  for (let c = 0; c <= C; c++){
+    M.forEach(m => {
+      if (c - m < 0) return;
+      const x1 = cx(c), x2 = cx(c - m), r = (x1 - x2) / 2;
+      const up = m === 3;
+      const y = TOP, arc = up ? 34 : 62;
+      svg.appendChild(el('path', {
+        d: 'M ' + x1 + ' ' + y + ' C ' + (x1 - r * .35) + ' ' + (y - arc) + ', ' + (x2 + r * .35) + ' ' + (y - arc) + ', ' + x2 + ' ' + y,
+        fill: 'none', stroke: up ? 'var(--bu)' : 'var(--hit)', 'stroke-width': 1.2, opacity: .62 }));
+    });
+  }
+  svg.appendChild(el('text', { x: L, y: 20, 'font-size': 12, 'font-family': 'var(--fm)', fill: 'var(--bu)' },
+    '─ depende de c−3'));
+  svg.appendChild(el('text', { x: L + 140, y: 20, 'font-size': 12, 'font-family': 'var(--fm)', fill: 'var(--hit)' },
+    '─ depende de c−7'));
+  /* casillas */
+  for (let c = 0; c <= C; c++){
+    svg.appendChild(el('rect', { x: cx(c) - CW / 2, y: TOP, width: CW, height: 40, rx: 3,
+      fill: c === 0 ? 'var(--bu-soft)' : 'var(--surface)', stroke: c === 0 ? 'var(--bu)' : 'var(--line-2)',
+      'stroke-width': c === 0 ? 2 : 1 }));
+    svg.appendChild(el('text', { x: cx(c), y: TOP + 26, 'text-anchor': 'middle', 'font-size': 14,
+      'font-family': 'var(--fm)', 'font-weight': 500, fill: 'var(--ink)' }, String(c)));
+  }
+  svg.appendChild(el('text', { x: cx(0), y: TOP + 56, 'text-anchor': 'middle', 'font-size': 10.5,
+    'font-family': 'var(--fm)', fill: 'var(--bu)' }, 'caso base'));
+  /* dos recorridos */
+  function sweep(y, x1, x2, col, label, ok){
+    svg.appendChild(el('line', { x1: x1, y1: y, x2: x2, y2: y, stroke: col, 'stroke-width': 2 }));
+    const dir = x2 > x1 ? 1 : -1;
+    svg.appendChild(el('polygon', { points: (x2) + ',' + y + ' ' + (x2 - dir * 9) + ',' + (y - 4.5) + ' ' +
+      (x2 - dir * 9) + ',' + (y + 4.5), fill: col }));
+    svg.appendChild(el('text', { x: L, y: y - 9, 'font-size': 12, 'font-family': 'var(--fm)',
+      'font-weight': 700, fill: col }, (ok ? '✓ ' : '✗ ') + label));
+  }
+  sweep(184, cx(0), cx(C), 'var(--bu)', 'c = 0, 1, 2, … , C  ·  cada dependencia ya está escrita', true);
+  sweep(224, cx(C), cx(0), 'var(--td)', 'c = C, … , 2, 1, 0  ·  lee casillas todavía vacías', false);
+})();
+
+/* ===== 03 · profundidad de pila ===== */
+(function(){
+  const c = $('#depthSvg');
+  const W = 780, H = 270, L = 66, R = 130, T = 24, B = 44;
+  const pw = W - L - R, ph = H - T - B, XM = 3000, YM = 3000;
+  c.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  c.setAttribute('width', W); c.setAttribute('height', H);
+  c.style.maxWidth = 'none'; c.style.height = 'auto';
+  const X = v => L + (v / XM) * pw, Y = v => T + ph - (v / YM) * ph;
+  [0, 1000, 2000, 3000].forEach(v => {
+    c.appendChild(el('line', { x1: L, y1: Y(v), x2: L + pw, y2: Y(v), stroke: 'var(--line)', 'stroke-width': 1 }));
+    c.appendChild(el('text', { x: L - 10, y: Y(v) + 4, 'text-anchor': 'end', 'font-size': 10.5,
+      'font-family': 'var(--fm)', fill: 'var(--muted)' }, v.toLocaleString('es')));
+  });
+  [0, 1000, 2000, 3000].forEach(v => {
+    c.appendChild(el('text', { x: X(v), y: H - B + 20, 'text-anchor': 'middle', 'font-size': 11,
+      'font-family': 'var(--fm)', fill: 'var(--muted)' }, v.toLocaleString('es')));
+  });
+  c.appendChild(el('text', { x: L + pw / 2, y: H - 6, 'text-anchor': 'middle', 'font-size': 11,
+    'font-family': 'var(--fm)', fill: 'var(--muted)' }, 'valor objetivo C'));
+  /* encima del plano: a la altura de la primera marca chocaría con su etiqueta */
+  c.appendChild(el('text', { x: 14, y: 14, 'font-size': 11, 'font-family': 'var(--fm)',
+    fill: 'var(--muted)' }, 'profundidad de pila'));
+  /* limite de python */
+  c.appendChild(el('line', { x1: L, y1: Y(1000), x2: L + pw, y2: Y(1000), stroke: 'var(--hit)',
+    'stroke-width': 1.6, 'stroke-dasharray': '6 4' }));
+  c.appendChild(el('text', { x: L + pw + 8, y: Y(1000) - 6, 'font-size': 11, 'font-family': 'var(--fm)',
+    'font-weight': 700, fill: 'var(--hit)' }, 'límite de Python'));
+  c.appendChild(el('text', { x: L + pw + 8, y: Y(1000) + 9, 'font-size': 10.5, 'font-family': 'var(--fm)',
+    fill: 'var(--muted)' }, '1000 llamadas'));
+  /* series */
+  c.appendChild(el('line', { x1: X(0), y1: Y(0), x2: X(XM), y2: Y(XM), stroke: 'var(--td)', 'stroke-width': 2.5 }));
+  c.appendChild(el('line', { x1: X(0), y1: Y(1), x2: X(XM), y2: Y(1), stroke: 'var(--bu)', 'stroke-width': 2.5 }));
+  c.appendChild(el('text', { x: L + pw + 8, y: Y(XM) + 4, 'font-size': 11.5, 'font-family': 'var(--fm)',
+    'font-weight': 700, fill: 'var(--td)' }, 'memoización'));
+  c.appendChild(el('text', { x: L + pw + 8, y: Y(1) + 4, 'font-size': 11.5, 'font-family': 'var(--fm)',
+    'font-weight': 700, fill: 'var(--bu)' }, 'tabulación'));
+  c.appendChild(el('text', { x: L + pw + 8, y: Y(1) + 18, 'font-size': 10.5, 'font-family': 'var(--fm)',
+    fill: 'var(--muted)' }, 'siempre 1'));
+  /* punto de ruptura */
+  c.appendChild(el('circle', { cx: X(1000), cy: Y(1000), r: 5, fill: 'var(--hit)' }));
+  c.appendChild(el('line', { x1: X(1000), y1: Y(1000), x2: X(1000), y2: T + ph, stroke: 'var(--hit)',
+    'stroke-width': 1, 'stroke-dasharray': '3 3', opacity: .7 }));
+  c.appendChild(el('text', { x: X(1000) + 10, y: Y(1000) - 12, 'font-size': 11.5, 'font-family': 'var(--fm)',
+    'font-weight': 700, fill: 'var(--hit)' }, 'C ≈ 1000: RecursionError'));
+})();
+
+/* ===== 04 · escalera + ventana deslizante ===== */
+(function(){
+  const SETS = [
+    { label: '[10,15,20,5,10] · el taller', c: [10, 15, 20, 5, 10] },
+    { label: '[1,100,1,1,100,1]', c: [1, 100, 1, 1, 100, 1] }
+  ];
+  const grid = $('#stairGrid'), win = $('#stairWin'), narr = $('#stairNarr'), seg = $('#stairSets');
+  let costo = SETS[0].c, f = [];
+  SETS.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.textContent = s.label;
+    b.addEventListener('click', () => pick(i));
+    seg.appendChild(b);
+  });
+  function pick(i){
+    costo = SETS[i].c;
+    [...seg.children].forEach((b, j) => b.classList.toggle('on', i === j));
+    f = [];
+    for (let k = 0; k < costo.length; k++)
+      f[k] = k <= 1 ? costo[k] : costo[k] + Math.min(f[k-1], f[k-2]);
+    S.reload(costo.length);
+  }
+  /* de dónde vino cada escalón, para dibujar el camino óptimo al final */
+  function path(){
+    const p = new Set(); let i = costo.length - 1;
+    while (i > 1){ p.add(i); i = f[i-1] <= f[i-2] ? i - 1 : i - 2; }
+    p.add(i); return p;
+  }
+  const S = stepper('stair', { render(k){
+    const i = k - 1, finished = k >= costo.length;
+    const best = finished ? path() : new Set();
+    grid.innerHTML = '';
+    costo.forEach((c, idx) => {
+      const d = document.createElement('div');
+      let cls = 'stair';
+      if (idx < k) cls += ' filled';
+      if (idx === i) cls += ' cur';
+      else if (i > 1 && (idx === i - 1 || idx === i - 2)) cls += ' dep';
+      if (finished && best.has(idx)) cls += ' path';
+      d.className = cls;
+      d.innerHTML = '<div class="cost">c=' + c + '</div><div class="fv">' + (idx < k ? f[idx] : '·') + '</div>' +
+        '<div class="lbl">f(' + idx + ')</div>';
+      grid.appendChild(d);
+    });
+    /* la misma cuenta con dos variables */
+    win.innerHTML =
+      '<div class="wvar">prev2<b>' + (k >= 2 ? f[k-2] : '—') + '</b></div>' +
+      '<div class="wvar">prev1<b>' + (k >= 1 ? f[k-1] : '—') + '</b></div>' +
+      '<div class="wvar" style="border-color:var(--hit)">memoria<b style="color:var(--hit)">O(1)</b></div>';
+    if (k === 0){ narr.innerHTML = 'La tabla está vacía. <b>f(i)</b> es el costo mínimo para <b>llegar</b> al ' +
+      'escalón i, pagando siempre el costo del escalón donde se aterriza.'; return; }
+    if (i <= 1) narr.innerHTML = 'Caso base <b>f(' + i + ') = ' + f[i] + '</b>: se puede entrar directamente al ' +
+      'escalón ' + i + ' desde el piso, así que solo se paga su costo. Se necesitan <b>dos</b> casos base porque ' +
+      'la transición mira dos escalones atrás.';
+    else {
+      const from = f[i-1] <= f[i-2] ? i - 1 : i - 2;
+      narr.innerHTML = '<b>f(' + i + ') = ' + costo[i] + ' + min(' + f[i-1] + ', ' + f[i-2] + ') = ' + f[i] +
+        '</b>. Conviene venir del escalón <b>' + from + '</b>. Note que solo se miraron las dos casillas ' +
+        'anteriores: por eso la tabla entera es innecesaria.' +
+        (finished ? ' <b>Terminó:</b> la respuesta es f(' + i + ') = ' + f[i] + ', y el camino marcado en verde ' +
+          'es el que la consigue.' : '');
+    }
+  }});
+  pick(0);
+})();
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { cargarCursos } from '../../lib/datos';
+import { cargarCursos, nivelCorto, nombreVisible } from '../../lib/datos';
 
 const cursos = cargarCursos();
 
@@ -31,8 +31,10 @@ const grupos = [
             {g.cursos.map((c) => (
               <li>
                 <a class="tarjeta" href={`/cursos/${c.id}/`}>
-                  <span class="etiqueta">{c.codigo}</span>
-                  <span class="tarjeta__nombre">{c.nombre}</span>
+                  <span class="etiqueta">
+                    {c.codigo} · {nivelCorto(c.nivel)}
+                  </span>
+                  <span class="tarjeta__nombre">{nombreVisible(c, cursos)}</span>
                   <span class="tarjeta__texto">{c.descripcion}</span>
                   <span class="tarjeta__pie">
                     {c.modulos.length} {c.nombre_modulos.toLowerCase()}

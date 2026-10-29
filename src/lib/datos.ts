@@ -233,6 +233,30 @@ function leerTaller(t: any, donde: string): Taller {
   };
 }
 
+/** Nombre corto del nivel: Pregrado o Maestría. */
+export function nivelCorto(nivel: Nivel): string {
+  return nivel === 'pregrado' ? 'Pregrado' : 'Maestría';
+}
+
+/** Nombre completo del nivel, como se muestra en la página del curso. */
+export function nivelLargo(nivel: Nivel): string {
+  return nivel === 'pregrado' ? 'Pregrado' : 'Maestría en Ingeniería de Software';
+}
+
+/** Cursos con el mismo nombre o el mismo código en otro nivel. */
+export function cursosRelacionados(curso: Curso, cursos: Curso[]): Curso[] {
+  return cursos.filter(
+    (otro) => otro.id !== curso.id && (otro.nombre === curso.nombre || otro.codigo === curso.codigo),
+  );
+}
+
+/** Nombre del curso, con el nivel entre paréntesis si otro curso se llama igual. */
+export function nombreVisible(curso: Curso, cursos: Curso[]): string {
+  return cursosRelacionados(curso, cursos).length > 0
+    ? `${curso.nombre} (${nivelCorto(curso.nivel)})`
+    : curso.nombre;
+}
+
 // ------------------------------------------------------ Charlas y semilleros
 
 export function cargarCharlas(): Charla[] {

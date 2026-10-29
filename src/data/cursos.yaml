@@ -152,6 +152,8 @@ cursos:
         presentaciones:
           - titulo: Riesgos arquitectónicos
             archivo: 10-riesgos-arquitectonicos.pdf
+          - titulo: Infografía de riesgos
+            archivo: 10-infografia-riesgos.pdf
         talleres:
           - titulo: Taller 8. Integración de vistas de arquitectura
             repo: AREM-Taller_8_Integracion_Vistas
@@ -216,18 +218,44 @@ cursos:
         presentaciones:
           - titulo: Complejidad algorítmica
             archivo: 04-complejidad-algoritmica.pdf
+        material:
+          - titulo: Recurrencias, visualización
+            archivo: 04-recurrencias-visual.html
+          - titulo: Recurrencias y programación dinámica, clase
+            archivo: 04-recurrencias-pd.html
       - titulo: Estructuras de datos
         presentaciones:
           - titulo: Estructuras de datos
             archivo: 05-estructuras-datos.pdf
+        material:
+          - titulo: Taller de tablas hash
+            archivo: 05-taller-tablas-hash.pdf
+          - titulo: Tablas hash, clase
+            archivo: 05-tablas-hash-clase.html
+          - titulo: Tablas hash, visualización
+            archivo: 05-tablas-hash-visual.html
       - titulo: Tipos de algoritmos
         presentaciones:
           - titulo: Tipos de algoritmos
             archivo: 06-tipos-algoritmos.pdf
+        material:
+          - titulo: Taller de divide y conquista
+            archivo: 06-taller-divide-conquista.pdf
+          - titulo: Divide y conquista, visualización
+            archivo: 06-divide-conquista-visual.html
+          - titulo: Taller de memoización
+            archivo: 06-taller-memoizacion.pdf
+          - titulo: Memoización y tabulación, visualización
+            archivo: 06-memoizacion-tabulacion.html
       - titulo: Introducción a grafos
         presentaciones:
           - titulo: Introducción a grafos
             archivo: 07-introduccion-grafos.pdf
+        material:
+          - titulo: Taller de grafos
+            archivo: 07-taller-grafos.pdf
+          - titulo: Recorridos en grafos, visualización
+            archivo: 07-grafos-visual.html
       - titulo: Algoritmos para grafos
         presentaciones:
           - titulo: Algoritmos para grafos
@@ -336,6 +364,14 @@ cursos:
         presentaciones:
           - titulo: Arquitecturas (estilos, SOA, microservicios, REST)
             archivo: 05-arquitecturas.pdf
+          - titulo: Estilos de arquitectura
+            archivo: 05-estilos-arquitectura.pdf
+          - titulo: SOA, arquitectura orientada a servicios
+            archivo: 05-soa.html
+          - titulo: Microservicios
+            archivo: 05-microservicios.html
+          - titulo: REST
+            archivo: 05-rest.html
         # talleres:
         #   - titulo: Event Sourcing
         #     repo: DAYS-Pattern_EventSourcing
@@ -347,11 +383,19 @@ cursos:
         presentaciones:
           - titulo: Arquitectura limpia y hexagonal
             archivo: 06-arquitectura-limpia-hexagonal.pdf
+          - titulo: Arquitectura limpia y hexagonal
+            archivo: 06-clean-hexagonal.html
 
       - titulo: DevOps
         presentaciones:
           - titulo: DevOps
             archivo: 07-devops.pdf
+          - titulo: Integración continua
+            archivo: 07-integracion-continua.html
+          - titulo: Docker
+            archivo: 07-docker.html
+          - titulo: Monitoreo
+            archivo: 07-monitoreo.html
         talleres:
           - titulo: Integración continua con GitHub Actions
             repo: DYAS-Integracion_continua
@@ -381,6 +425,8 @@ cursos:
         presentaciones:
           - titulo: Comunicación asíncrona
             archivo: 08-comunicacion-asincrona.pdf
+          - titulo: Programación reactiva
+            archivo: 08-programacion-reactiva.html
         talleres:
           - titulo: Multi-threading en Java
             repo: DYAS-Multi-threading
@@ -450,6 +496,11 @@ cursos:
         presentaciones:
           - titulo: Clasificación de texto
             archivo: 06-clasificacion-texto.pdf
+          - titulo: Clasificación de texto
+            archivo: 06-presentacion.html
+        material:
+          - titulo: Laboratorio de clasificación de texto
+            archivo: 06-laboratorio.html
       - titulo: Análisis de sentimiento
         presentaciones:
           - titulo: Análisis de sentimiento
@@ -539,6 +590,8 @@ cursos:
         presentaciones:
           - titulo: Evolución del software y mantenimiento
             archivo: 01-evolucion-mantenimiento.pdf
+          - titulo: Apertura del curso
+            archivo: 01-apertura.pdf
       - titulo: Gestión de configuración
         presentaciones:
           - titulo: Gestión de configuración

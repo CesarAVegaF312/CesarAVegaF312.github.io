@@ -24,17 +24,12 @@ export interface Taller {
   descripcion?: string;
 }
 
-export interface Enlace {
-  titulo: string;
-  url: string;
-}
-
 export interface Modulo {
   titulo: string;
   descripcion?: string;
   presentaciones: Presentacion[];
   talleres: Taller[];
-  material: Enlace[];
+  material: Presentacion[];
 }
 
 export interface Curso {
@@ -208,22 +203,22 @@ function leerModulo(m: any, donde: string): Modulo {
   return {
     titulo: texto(m.titulo),
     descripcion: texto(m.descripcion) || undefined,
-    presentaciones: lista<any>(m.presentaciones).map((p, k) => {
-      const lugar = `${donde}, presentación ${k + 1}`;
-      exigir(p && texto(p.titulo), `${lugar} no tiene "titulo".`);
-      exigir(texto(p.archivo) || texto(p.url), `${lugar} necesita "archivo" o "url".`);
-      return {
-        titulo: texto(p.titulo),
-        archivo: texto(p.archivo) || undefined,
-        url: texto(p.url) || undefined,
-      };
-    }),
+    presentaciones: lista<any>(m.presentaciones).map((p, k) =>
+      leerEnlace(p, `${donde}, presentación ${k + 1}`),
+    ),
     talleres: lista<any>(m.talleres).map((t, k) => leerTaller(t, `${donde}, taller ${k + 1}`)),
-    material: lista<any>(m.material).map((e, k) => {
-      const lugar = `${donde}, material ${k + 1}`;
-      exigir(e && texto(e.titulo) && texto(e.url), `${lugar} necesita "titulo" y "url".`);
-      return { titulo: texto(e.titulo), url: texto(e.url) };
-    }),
+    material: lista<any>(m.material).map((e, k) => leerEnlace(e, `${donde}, material ${k + 1}`)),
+  };
+}
+
+/** Presentación o material: un título con un archivo en public/ o una URL. */
+function leerEnlace(p: any, donde: string): Presentacion {
+  exigir(p && texto(p.titulo), `${donde} no tiene "titulo".`);
+  exigir(texto(p.archivo) || texto(p.url), `${donde} necesita "archivo" o "url".`);
+  return {
+    titulo: texto(p.titulo),
+    archivo: texto(p.archivo) || undefined,
+    url: texto(p.url) || undefined,
   };
 }
 
@@ -236,6 +231,30 @@ function leerTaller(t: any, donde: string): Taller {
     url: texto(t.url) || undefined,
     descripcion: texto(t.descripcion) || undefined,
   };
+}
+
+/** Nombre corto del nivel: Pregrado o Maestría. */
+export function nivelCorto(nivel: Nivel): string {
+  return nivel === 'pregrado' ? 'Pregrado' : 'Maestría';
+}
+
+/** Nombre completo del nivel, como se muestra en la página del curso. */
+export function nivelLargo(nivel: Nivel): string {
+  return nivel === 'pregrado' ? 'Pregrado' : 'Maestría en Ingeniería de Software';
+}
+
+/** Cursos con el mismo nombre o el mismo código en otro nivel. */
+export function cursosRelacionados(curso: Curso, cursos: Curso[]): Curso[] {
+  return cursos.filter(
+    (otro) => otro.id !== curso.id && (otro.nombre === curso.nombre || otro.codigo === curso.codigo),
+  );
+}
+
+/** Nombre del curso, con el nivel entre paréntesis si otro curso se llama igual. */
+export function nombreVisible(curso: Curso, cursos: Curso[]): string {
+  return cursosRelacionados(curso, cursos).length > 0
+    ? `${curso.nombre} (${nivelCorto(curso.nivel)})`
+    : curso.nombre;
 }
 
 // ------------------------------------------------------ Charlas y semilleros
@@ -309,8 +328,17 @@ function formatoDe(direccion: string): string | undefined {
  * y las que tienen un archivo que ya existe en public/.
  */
 export function presentacionesVisibles(curso: Curso, modulo: Modulo): EnlaceVisible[] {
+  return enlacesVisibles(curso, modulo.presentaciones);
+}
+
+/** Material de un módulo que se puede mostrar, con la misma regla que las presentaciones. */
+export function materialVisible(curso: Curso, modulo: Modulo): EnlaceVisible[] {
+  return enlacesVisibles(curso, modulo.material);
+}
+
+function enlacesVisibles(curso: Curso, lista: Presentacion[]): EnlaceVisible[] {
   const visibles: EnlaceVisible[] = [];
-  for (const p of modulo.presentaciones) {
+  for (const p of lista) {
     if (p.archivo) {
       const ruta = rutaPresentacion(curso, p.archivo);
       if (!existeEnPublic(ruta)) continue;
@@ -340,12 +368,12 @@ export function urlTaller(taller: Taller, usuarioGithub: string): string {
   return taller.url ?? `https://github.com/${usuarioGithub}/${taller.repo}`;
 }
 
-/** Lista de archivos declarados en los YAML que todavía no están en public/. */
+/** Archivos de presentaciones y material declarados en los YAML que todavía no están en public/. */
 export function archivosFaltantes(): string[] {
   const faltantes: string[] = [];
   for (const curso of cargarCursos()) {
     for (const modulo of curso.modulos) {
-      for (const p of modulo.presentaciones) {
+      for (const p of [...modulo.presentaciones, ...modulo.material]) {
         if (!p.archivo) continue;
         const ruta = rutaPresentacion(curso, p.archivo);
         if (!existeEnPublic(ruta)) faltantes.push(`public/${ruta}`);

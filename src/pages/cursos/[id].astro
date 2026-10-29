@@ -4,6 +4,10 @@ import Aeva from '../../components/Aeva.astro';
 import {
   cargarCursos,
   cargarPerfil,
+  cursosRelacionados,
+  materialVisible,
+  nivelCorto,
+  nivelLargo,
   presentacionesVisibles,
   urlTaller,
   type Curso,
@@ -21,24 +25,26 @@ interface Props {
 const { curso } = Astro.props;
 const { usuario_github } = cargarPerfil();
 
-const nivel =
-  curso.nivel === 'pregrado' ? 'Pregrado' : 'Maestría en Ingeniería de Software';
+const nivel = nivelLargo(curso.nivel);
+const relacionados = cursosRelacionados(curso, cargarCursos());
 
 const modulos = curso.modulos.map((modulo, i) => ({
   ...modulo,
   ancla: `modulo-${i + 1}`,
   numero: i + 1,
   visibles: presentacionesVisibles(curso, modulo),
+  materiales: materialVisible(curso, modulo),
 }));
 
 const enlaceTaller = (t: Taller) => urlTaller(t, usuario_github);
 ---
 
-<Base titulo={`${curso.nombre} (${curso.codigo})`} descripcion={curso.descripcion}>
+<Base titulo={`${curso.nombre}, ${nivelCorto(curso.nivel)}`} descripcion={curso.descripcion}>
   <div class="contenedor">
     <nav class="migas" aria-label="Ruta de navegación">
       <ol>
         <li><a href="/cursos/">Cursos</a></li>
+        <li><a href={`/cursos/#grupo-${curso.nivel}`}>{nivelCorto(curso.nivel)}</a></li>
         <li aria-current="page">{curso.codigo}</li>
       </ol>
     </nav>
@@ -50,6 +56,19 @@ const enlaceTaller = (t: Taller) => urlTaller(t, usuario_github);
       <p>{curso.descripcion}</p>
       {curso.periodo && <p class="periodo">Material del periodo {curso.periodo}</p>}
     </header>
+
+    {
+      relacionados.map((otro) => (
+        <p class="relacionado">
+          Este curso también se dicta en{' '}
+          {otro.nivel === 'maestria' ? 'la Maestría en Ingeniería de Software' : 'pregrado'}:{' '}
+          <a href={`/cursos/${otro.id}/`}>
+            {otro.nombre} ({nivelCorto(otro.nivel)})
+          </a>
+          .
+        </p>
+      ))
+    }
 
     {curso.aeva && <Aeva url={curso.aeva} curso={curso.nombre} />}
 
@@ -97,20 +116,21 @@ const enlaceTaller = (t: Taller) => urlTaller(t, usuario_github);
                 </div>
               )}
 
-              {m.material.length > 0 && (
+              {m.materiales.length > 0 && (
                 <div class="bloque">
                   <h4>Material</h4>
                   <ul class="enlaces">
-                    {m.material.map((e) => (
+                    {m.materiales.map((e) => (
                       <li>
-                        <a href={e.url}>{e.titulo}</a>
+                        <a href={e.href}>{e.titulo}</a>
+                        {e.formato && <span class="formato">{e.formato}</span>}
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
 
-              {m.visibles.length === 0 && m.talleres.length === 0 && m.material.length === 0 && (
+              {m.visibles.length === 0 && m.talleres.length === 0 && m.materiales.length === 0 && (
                 <p class="suave sin-material">Sin material publicado por ahora.</p>
               )}
             </li>
@@ -167,6 +187,15 @@ const enlaceTaller = (t: Taller) => urlTaller(t, usuario_github);
     font-size: 0.95rem;
     font-weight: 600;
     color: var(--acento-texto);
+  }
+
+  .relacionado {
+    max-width: 52rem;
+    margin: 0 0 1.5rem;
+    padding: 0.75rem 1rem;
+    border-left: 3px solid var(--acento);
+    background: var(--fondo-suave);
+    border-radius: var(--radio);
   }
 
   .programa {

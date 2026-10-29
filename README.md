@@ -130,12 +130,14 @@ Agregue una entrada a la lista `modulos` del curso, en la posición que le corre
         talleres: []
 ```
 
-Además de `presentaciones` y `talleres`, un módulo puede tener una lista `material` con otros enlaces (portadas, repositorios, lecturas):
+Además de `presentaciones` y `talleres`, un módulo puede tener una lista `material` con otros recursos: portadas, repositorios, guías de taller en PDF o visualizaciones HTML. Igual que las presentaciones, cada elemento lleva `url` o `archivo` (en `public/presentaciones/<curso>/`), y un archivo que todavía no existe no se muestra:
 
 ```yaml
         material:
           - titulo: Portada de la unidad
             url: https://cesaravegaf312.github.io/AREM-S1_Marcos_y_Capacidades-repositorio/
+          - titulo: Taller de grafos
+            archivo: 07-taller-grafos.pdf
 ```
 
 Un módulo sin presentaciones visibles, talleres ni material muestra el texto "Sin material publicado por ahora."

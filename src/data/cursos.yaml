@@ -385,6 +385,13 @@ cursos:
             archivo: 06-arquitectura-limpia-hexagonal.pdf
           - titulo: Arquitectura limpia y hexagonal
             archivo: 06-clean-hexagonal.html
+        talleres:
+          - titulo: Arquitectura hexagonal con puertos y adaptadores
+            repo: DYAS-ArquitecturaHexagonal
+            descripcion: >-
+              Cambia la persistencia de un servicio de reservas de memoria a
+              PostgreSQL y agrega un puerto de notificaciones sin tocar las
+              reglas de negocio, verificando las fronteras con ArchUnit.
 
       - titulo: DevOps
         presentaciones:

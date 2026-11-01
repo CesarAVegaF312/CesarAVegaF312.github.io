@@ -372,12 +372,19 @@ cursos:
             archivo: 05-microservicios.html
           - titulo: REST
             archivo: 05-rest.html
-        # talleres:
-        #   - titulo: Event Sourcing
-        #     repo: DAYS-Pattern_EventSourcing
-        #     descripcion: >-
-        #       Implementa el patrón Event Sourcing en un sistema de cuentas
-        #       bancarias y reconstruye su estado a partir de los eventos.
+        talleres:
+          - titulo: Del monolito a los microservicios
+            repo: DYAS-MonolitoAMicroservicios
+            descripcion: >-
+              Separa un monolito REST en dos microservicios que se comunican
+              por HTTP detrás de un API gateway, maneja los fallos de la red y
+              compara los dos estilos con mediciones.
+          # Repositorio público de una versión anterior del curso que no se publica por ahora.
+          # - titulo: Event Sourcing
+          #   repo: DAYS-Pattern_EventSourcing
+          #   descripcion: >-
+          #     Implementa el patrón Event Sourcing en un sistema de cuentas
+          #     bancarias y reconstruye su estado a partir de los eventos.
 
       - titulo: Arquitectura limpia y hexagonal
         presentaciones:

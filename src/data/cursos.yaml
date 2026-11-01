@@ -466,6 +466,13 @@ cursos:
         presentaciones:
           - titulo: Documentar la arquitectura
             archivo: 09-documentar-arquitectura.pdf
+        talleres:
+          - titulo: Documentación de la arquitectura como código
+            repo: DYAS-DocumentarArquitectura
+            descripcion: >-
+              Documenta el servicio de reservas con el modelo C4 en Structurizr
+              DSL, decisiones en ADR y un documento arc42, verificados en un
+              pipeline para que los diagramas no se desactualicen.
 
   - id: fpln
     codigo: FPLN
